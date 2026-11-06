@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "model": "mrt2_small",
+  "magenta_rt_version": "2.0.3",
+  "seed": 17,
+  "use_mapper": true,
+  "prompts": [
+    "warm mellow lo fi instrumental, soft piano chords, gentle drums, relaxed evening",
+    "melodic lo fi electronic instrumental, flowing piano phrases, warm bass, shimmering arpeggios, gentle groove"
+  ],
+  "tokens": [
+    [
+      62,
+      371,
+      93,
+      492,
+      938,
+      483,
+      911,
+      611,
+      225,
+      0,
+      123,
+      852
+    ],
+    [
+      860,
+      961,
+      769,
+      486,
+      220,
+      940,
+      402,
+      586,
+      725,
+      855,
+      696,
+      956
+    ]
+  ],
+  "encoding_seconds": 12.045443375129253
+}

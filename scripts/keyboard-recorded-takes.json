@@ -1,0 +1,166 @@
+{
+  "sources": {
+    "macbook-pro.ogg": {
+      "url": "https://bigsoundbank.com/UPLOAD/ogg/1729.ogg?v=m",
+      "page": "https://bigsoundbank.com/slow-macbook-pro-keyboard-2-s1729.html",
+      "author": "Joseph Sardin / BigSoundBank",
+      "license": "CC0-1.0",
+      "bytes": 884053,
+      "sha256": "6b3d47a9b148b405fbd5a0a3992f8183a57584402503c6be49c72e620080cd5d"
+    },
+    "typewriter-key.ogg": {
+      "url": "https://bigsoundbank.com/UPLOAD/ogg/2842.ogg?v=m",
+      "page": "https://bigsoundbank.com/typewriter-key-s2842.html",
+      "author": "Joseph Sardin / BigSoundBank",
+      "license": "CC0-1.0",
+      "bytes": 11999,
+      "sha256": "3570880fd69524b74e0a47b4c2dead81c36fe5d65de077e3f170cdfb48fe9726"
+    },
+    "typewriter-space.ogg": {
+      "url": "https://bigsoundbank.com/UPLOAD/ogg/2843.ogg?v=m",
+      "page": "https://bigsoundbank.com/typewriter-space-s2843.html",
+      "author": "Joseph Sardin / BigSoundBank",
+      "license": "CC0-1.0",
+      "bytes": 12630,
+      "sha256": "9c03d391b87d32f5e3a31e374f05c9a569972996a911bdf9db41dc8012a542ba"
+    },
+    "typewriter-bell.ogg": {
+      "url": "https://bigsoundbank.com/UPLOAD/ogg/2845.ogg?v=m",
+      "page": "https://bigsoundbank.com/typewriter-bell-s2845.html",
+      "author": "Joseph Sardin / BigSoundBank",
+      "license": "CC0-1.0",
+      "bytes": 20776,
+      "sha256": "c8aa745a2c169c6051e75ba24f2317eaaffefba76c49bc6acb8e18b596b7eb5e"
+    },
+    "typewriter-typing.ogg": {
+      "url": "https://bigsoundbank.com/UPLOAD/ogg/2839.ogg?v=d",
+      "page": "https://bigsoundbank.com/typewriter-6-s2839.html",
+      "author": "Joseph Sardin / BigSoundBank",
+      "license": "CC0-1.0",
+      "bytes": 74620,
+      "sha256": "bccb37e4968ba2661a942d8b858e988b4d4ff1957ce3fe9966b842d43d57fc57"
+    },
+    "wood-table.ogg": {
+      "url": "https://bigsoundbank.com/UPLOAD/ogg/1428.ogg?v=m",
+      "page": "https://bigsoundbank.com/impatient-finger-tapping-2-s1428.html",
+      "author": "Joseph Sardin / BigSoundBank",
+      "license": "CC0-1.0",
+      "bytes": 804015,
+      "sha256": "876de639e8fec24c90e20f75f13b3d241b5f8e07890a1f46a569c6ae194e1870"
+    },
+    "mahjong-tile.mp3": {
+      "url": "https://cdn.freesound.org/previews/785/785585_16768120-hq.mp3",
+      "page": "https://freesound.org/people/Detective_Lemons/sounds/785585/",
+      "author": "Detective_Lemons / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 82407,
+      "sha256": "2655e1c6d8d6680a88c00c0f4d9641704bbcd1ec3962664b9425e70745a143bb"
+    }
+  },
+  "packs": {
+    "macbookPro": {
+      "title": "MacBook Pro Keyboard",
+      "titleZh": "MacBook Pro 键盘",
+      "category": "keyboard",
+      "splitContacts": true,
+      "takes": {
+        "ordinary": [
+          {"file": "macbook-pro.ogg", "windowMs": [112, 320], "sourceKey": "Unlabeled key"},
+          {"file": "macbook-pro.ogg", "windowMs": [3312, 3490], "sourceKey": "Unlabeled key"},
+          {"file": "macbook-pro.ogg", "windowMs": [7580, 7760], "sourceKey": "Unlabeled key"},
+          {"file": "macbook-pro.ogg", "windowMs": [1200, 1383], "sourceKey": "Unlabeled key"}
+        ],
+        "space": [
+          {"file": "macbook-pro.ogg", "windowMs": [2760, 2950], "sourceKey": "Unlabeled key"},
+          {"file": "macbook-pro.ogg", "windowMs": [7300, 7500], "sourceKey": "Unlabeled key"}
+        ],
+        "enter": [
+          {"file": "macbook-pro.ogg", "windowMs": [4730, 4940], "sourceKey": "Unlabeled key"},
+          {"file": "macbook-pro.ogg", "windowMs": [8340, 8510], "sourceKey": "Unlabeled key"}
+        ],
+        "backspace": [
+          {"file": "macbook-pro.ogg", "windowMs": [6490, 6720], "sourceKey": "Unlabeled key"},
+          {"file": "macbook-pro.ogg", "windowMs": [7910, 8080], "sourceKey": "Unlabeled key"}
+        ]
+      }
+    },
+    "hermes": {
+      "title": "Hermes Typewriter",
+      "titleZh": "Hermes 打字机",
+      "category": "recordedFoley",
+      "takes": {
+        "ordinary": [
+          {"file": "typewriter-key.ogg", "windowMs": [115, 270], "sourceKey": "Typewriter key"},
+          {"file": "typewriter-typing.ogg", "windowMs": [377, 468], "sourceKey": "Unlabeled typebar strike"},
+          {"file": "typewriter-typing.ogg", "windowMs": [907, 998], "sourceKey": "Unlabeled typebar strike"},
+          {"file": "typewriter-typing.ogg", "windowMs": [1424, 1515], "sourceKey": "Unlabeled typebar strike"},
+          {"file": "typewriter-typing.ogg", "windowMs": [2004, 2095], "sourceKey": "Unlabeled typebar strike"}
+        ],
+        "space": [
+          {"file": "typewriter-space.ogg", "windowMs": [65, 316], "sourceKey": "Space", "fadeOutMS": 5}
+        ],
+        "enter": [
+          {"file": "typewriter-bell.ogg", "windowMs": [105, 400], "sourceKey": "Margin bell", "fadeOutMS": 28}
+        ],
+        "backspace": [
+          {"file": "typewriter-typing.ogg", "windowMs": [2300, 2391], "sourceKey": "Unlabeled typebar strike"},
+          {"file": "typewriter-typing.ogg", "windowMs": [2486, 2577], "sourceKey": "Unlabeled typebar strike"},
+          {"file": "typewriter-typing.ogg", "windowMs": [3012, 3103], "sourceKey": "Unlabeled typebar strike"},
+          {"file": "typewriter-typing.ogg", "windowMs": [3700, 3791], "sourceKey": "Unlabeled typebar strike"}
+        ]
+      }
+    },
+    "mahjongTiles": {
+      "title": "Mahjong Tiles",
+      "titleZh": "麻将牌实录",
+      "category": "recordedFoley",
+      "takes": {
+        "ordinary": [
+          {"file": "mahjong-tile.mp3", "windowMs": [49, 129], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8},
+          {"file": "mahjong-tile.mp3", "windowMs": [542, 622], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8},
+          {"file": "mahjong-tile.mp3", "windowMs": [1662, 1742], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8},
+          {"file": "mahjong-tile.mp3", "windowMs": [2112, 2192], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8},
+          {"file": "mahjong-tile.mp3", "windowMs": [2233, 2313], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8}
+        ],
+        "space": [
+          {"file": "mahjong-tile.mp3", "windowMs": [695, 775], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8}
+        ],
+        "enter": [
+          {"file": "mahjong-tile.mp3", "windowMs": [912, 992], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8}
+        ],
+        "backspace": [
+          {"file": "mahjong-tile.mp3", "windowMs": [1960, 2040], "sourceKey": "Mahjong tiles on corkboard", "fadeOutMS": 8}
+        ]
+      }
+    },
+    "woodDesk": {
+      "title": "Wooden Desk",
+      "titleZh": "木桌轻叩",
+      "category": "recordedFoley",
+      "takes": {
+        "ordinary": [
+          {"file": "wood-table.ogg", "windowMs": [280, 376], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [785, 881], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [1308, 1404], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [1855, 1951], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [2376, 2472], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [2837, 2933], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [4815, 4911], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [6309, 6405], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5}
+        ],
+        "space": [
+          {"file": "wood-table.ogg", "windowMs": [3843, 3939], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [5189, 5285], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5}
+        ],
+        "enter": [
+          {"file": "wood-table.ogg", "windowMs": [6189, 6285], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [1736, 1832], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5}
+        ],
+        "backspace": [
+          {"file": "wood-table.ogg", "windowMs": [3238, 3334], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
+          {"file": "wood-table.ogg", "windowMs": [3718, 3814], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5}
+        ]
+      }
+    }
+  }
+}

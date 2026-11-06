@@ -1,0 +1,57 @@
+name: Windows release build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['windows/**', 'assets/**', 'release-version.json', 'scripts/prepare-assets.py', 'Sources/KeyDance/Resources/KeyboardSounds/**', 'docs/**', 'THIRD-PARTY-NOTICES.md', '.github/workflows/windows.yml']
+  pull_request:
+    paths: ['windows/**', 'assets/**', 'release-version.json', 'scripts/prepare-assets.py', 'Sources/KeyDance/Resources/KeyboardSounds/**', '.github/workflows/windows.yml']
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore verified shared audio assets
+        run: python scripts/prepare-assets.py
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Ensure the Windows installer compiler is available
+        shell: pwsh
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $compiler)) {
+            choco install innosetup --no-progress --yes
+            if ($LASTEXITCODE -ne 0) { throw 'Could not install Inno Setup.' }
+          }
+      - name: Test, publish, install, upgrade and uninstall
+        shell: pwsh
+        run: ./windows/build.ps1 -VerifyInstaller
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-validation
+          path: |
+            windows/artifacts/tests/**
+            windows/artifacts/installer-tests/**
+            windows/artifacts/packaged-assets.json
+            windows/artifacts/*-manifest.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Upload Windows release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeyWoo-win-x64
+          path: |
+            windows/artifacts/KeyWoo-*-win-x64.zip
+            windows/artifacts/KeyWoo-*-win-x64-setup.exe
+            windows/artifacts/KeyWoo-*-win-x64-manifest.json
+          if-no-files-found: error
+          retention-days: 30

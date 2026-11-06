@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>disable</ImplicitUsings><AssemblyName>KeyWoo</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PublishTrimmed>false</PublishTrimmed><DebugType>embedded</DebugType>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../KeyWoo.Core/KeyWoo.Core.csproj"/><PackageReference Include="NAudio" Version="2.2.1"/></ItemGroup>
+  <ItemGroup>
+    <Content Include="../../Sources/KeyDance/Resources/KeyboardSounds/**/*" Link="Assets/KeyboardSounds/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+    <Content Include="../licenses/*" Link="Licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+  </ItemGroup>
+  <Target Name="IncludeRuntimeLicenses" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(SelfContained)' == 'true'">
+    <ItemGroup>
+      <_DotNetRuntime Include="@(ResolvedRuntimePack)" Condition="'%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.NETCore.App' or '%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.WindowsDesktop.App'"/>
+      <_DotNetNotice Include="%(_DotNetRuntime.PackageDirectory)/LICENSE;%(_DotNetRuntime.PackageDirectory)/LICENSE.TXT;%(_DotNetRuntime.PackageDirectory)/THIRD-PARTY-NOTICES.TXT">
+        <FrameworkName>%(_DotNetRuntime.FrameworkName)</FrameworkName>
+      </_DotNetNotice>
+      <ResolvedFileToPublish Include="@(_DotNetNotice)" Condition="Exists('%(_DotNetNotice.Identity)')">
+        <RelativePath>Licenses/%(_DotNetNotice.FrameworkName)/%(_DotNetNotice.Filename)%(_DotNetNotice.Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+</Project>

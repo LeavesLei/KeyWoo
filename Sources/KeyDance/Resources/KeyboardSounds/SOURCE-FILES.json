@@ -1,0 +1,305 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-red-abs/config.json",
+    "file": "red/config.json",
+    "bytes": 14218,
+    "sha256": "e901930bc2e804b928fffb41a0bf84af40c8959bf6e53559eb04e25a02e82ccd"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-red-abs/sound.ogg",
+    "file": "red/sound.ogg",
+    "bytes": 2330601,
+    "sha256": "330f91fc14f5a5232594f17058f02603ea67226fafd362fcf94e90463dbdcb40"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-blue-abs/config.json",
+    "file": "blue/config.json",
+    "bytes": 14218,
+    "sha256": "ccc7ba449c7753a960a16a80d47a713c566a43ad6c07a459a26b1ade73dab480"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-blue-abs/sound.ogg",
+    "file": "blue/sound.ogg",
+    "bytes": 2063096,
+    "sha256": "8cf6f7dc90f869b5544c4ec8d1fdb8d975c057d9383020920b03cf46323b1ca1"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-brown-pbt/config.json",
+    "file": "brown/config.json",
+    "bytes": 14213,
+    "sha256": "6966bc33a52a85d86ab78729590eb0632294c68f4a954e8bbf6f54e3af0d4ab8"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-brown-pbt/sound.ogg",
+    "file": "brown/sound.ogg",
+    "bytes": 1941031,
+    "sha256": "10390a4325fe218b005c509cac28c90bdd21c16bfcc303fe57d51d2588efd047"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-black-pbt/config.json",
+    "file": "black/config.json",
+    "bytes": 14213,
+    "sha256": "5821ebb9187015b7b288c4a567e31d913e58917462fb95424fae12d14dd603f8"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-black-pbt/sound.ogg",
+    "file": "black/sound.ogg",
+    "bytes": 1978897,
+    "sha256": "29f3ce7f6b700db7076831ceb2ef8b616652538195690707763563b4a8805b37"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/eg-oreo/config.json",
+    "file": "oreo/config.json",
+    "bytes": 14046,
+    "sha256": "f6f5dccf1c69aadba1fdb901b2df8bc85457f08a3307ad05b8e84e58b6f45463"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/eg-oreo/oreo.ogg",
+    "file": "oreo/oreo.ogg",
+    "bytes": 325094,
+    "sha256": "6e40d3e8acaf32b0b19b777fb628c0f563a7d29dc4b6b652c1dadff31c828a98"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/eg-crystal-purple/config.json",
+    "file": "purple/config.json",
+    "bytes": 14076,
+    "sha256": "685d036e039c4fa5c68d79fbbcc8982a2917ac8f89b4a509c7ab790ecc9b4da8"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/eg-crystal-purple/purple.ogg",
+    "file": "purple/purple.ogg",
+    "bytes": 331138,
+    "sha256": "8f5da33383bcbc610fb510e04571c65d07ef6bd214d82fbc39738ee1810b5d84"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/topre-purple-hybrid-pbt/config.json",
+    "file": "topre/config.json",
+    "bytes": 14269,
+    "sha256": "e3fc883989968b2e4fe5922cc25583b96ee564469b90340933cf53f59059b58e"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/topre-purple-hybrid-pbt/sound.ogg",
+    "file": "topre/sound.ogg",
+    "bytes": 1600647,
+    "sha256": "af073650844bced0050df018bf872b16307a1143c8f356be5ea75340e6dc0298"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/LICENSE",
+    "file": "Mechvibes-LICENSE",
+    "bytes": 1071,
+    "sha256": "2af83c37e54f5156ee4cce2ef2f87c611162b9ec4111a3dce156e7649d302928"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/README.md",
+    "file": "Mechvibes-README.md",
+    "bytes": 13936,
+    "sha256": "3731c26386801b1126087d0944c6919ec521d32cf9a9d9080c7fcea03653c031"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/BACKSPACE.mp3",
+    "file": "panda/press/BACKSPACE.mp3",
+    "bytes": 2088,
+    "sha256": "293a4fb1ab19605348018c2e8fea805ef9454963aa69e2d26a06ed7217636889"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/ENTER.mp3",
+    "file": "panda/press/ENTER.mp3",
+    "bytes": 2088,
+    "sha256": "56d78f9b2b662ddd07255e2e130410536a0e877bdc639fef7e205edfd73558a1"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/GENERIC_R0.mp3",
+    "file": "panda/press/GENERIC_R0.mp3",
+    "bytes": 2088,
+    "sha256": "79b2811f3061c406ac9dcf802ae83d68f5fac78f8ed588a515e2550d2fcd05df"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/GENERIC_R1.mp3",
+    "file": "panda/press/GENERIC_R1.mp3",
+    "bytes": 2088,
+    "sha256": "cb9aefe55a81c48d6680d2ab8960220c20439e31ba1e32fd570106ed15c7fd40"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/GENERIC_R2.mp3",
+    "file": "panda/press/GENERIC_R2.mp3",
+    "bytes": 2088,
+    "sha256": "d346d76ef4c32f09be58556ccce843d7a88199214f9ebfdbf8b95226faf7ba3e"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/GENERIC_R3.mp3",
+    "file": "panda/press/GENERIC_R3.mp3",
+    "bytes": 2088,
+    "sha256": "4141524713fc19942166866c093777351f6f122acb9d79c7503981a5b906c7dc"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/GENERIC_R4.mp3",
+    "file": "panda/press/GENERIC_R4.mp3",
+    "bytes": 2088,
+    "sha256": "60ac51060cc0f1880016be2dffa05d3e3cf928290df37be998fb081bdf1ea66f"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/press/SPACE.mp3",
+    "file": "panda/press/SPACE.mp3",
+    "bytes": 5850,
+    "sha256": "bcba046d707877095ff2fc6d031091348515f9a6f724ee73c029831d105b71a6"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/release/BACKSPACE.mp3",
+    "file": "panda/release/BACKSPACE.mp3",
+    "bytes": 1670,
+    "sha256": "dd092c78c99322f3bf9c45c2095a91e6a91450889f2a0976fb9858397b360c06"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/release/ENTER.mp3",
+    "file": "panda/release/ENTER.mp3",
+    "bytes": 1252,
+    "sha256": "be0f86e85d17dce47a607960c37eb54240ff1648b8eb54b6293cb8beb38c17ed"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/release/GENERIC.mp3",
+    "file": "panda/release/GENERIC.mp3",
+    "bytes": 2088,
+    "sha256": "9b0859c4ccb2adabdd9e9447aa0684f3ba12f59551aaf1a4d867d458d4ca56b1"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/assets/audio/holypanda/release/SPACE.mp3",
+    "file": "panda/release/SPACE.mp3",
+    "bytes": 1252,
+    "sha256": "980bfca97b89f2dc114f23cdb440c956a62137430d5e22682e011d16d43f2153"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/LICENSE.md",
+    "file": "kbsim-LICENSE.md",
+    "bytes": 1049,
+    "sha256": "1603fe1e3aa5011bfc8b3810b1cd8a31ce14c128344db4da1a37fc0bfae71c30"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/README.md",
+    "file": "kbsim-README.md",
+    "bytes": 2940,
+    "sha256": "d1b76de37a37dfd93e6cf8832ee6e3d720516374b0e4969e269f6f9a737cffe6"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/tplai/kbsim/ba103f3b0afa9dab80447aa2e7e2ed80b6bd80e4/src/features/audioModules/holypanda.js",
+    "file": "panda/holypanda.js",
+    "bytes": 1483,
+    "sha256": "af8ce03da74c55099486ff6369d8d710c38c7939365cd55c44ad321b0d6fc071"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-blue-pbt/config.json",
+    "file": "bluePBT/config.json",
+    "bytes": 14221,
+    "sha256": "d6fd3500385aa32fa5c9f637ed1e40ce7e4d200cf5e54d2d37e9e300da1768b8",
+    "license": "MIT",
+    "author": "Hải Nguyễn / Mechvibes",
+    "repositoryCommit": "e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-blue-pbt/sound.ogg",
+    "file": "bluePBT/sound.ogg",
+    "bytes": 2486477,
+    "sha256": "68d46de5a091e4d6daf468327c87e3e75494e645dacc8d55418d5151aaf84349",
+    "license": "MIT",
+    "author": "Hải Nguyễn / Mechvibes",
+    "repositoryCommit": "e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-brown-abs/config.json",
+    "file": "brownABS/config.json",
+    "bytes": 14205,
+    "sha256": "1d7e52bdcf47ba01b97293c8a97564c520bcc5a92167424ca78b20f065243509",
+    "license": "MIT",
+    "author": "Hải Nguyễn / Mechvibes",
+    "repositoryCommit": "e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-brown-abs/sound.ogg",
+    "file": "brownABS/sound.ogg",
+    "bytes": 1883746,
+    "sha256": "1a77001c5741aff8102c967ba7b8f42d40771506f185174ff40d0de78a265385",
+    "license": "MIT",
+    "author": "Hải Nguyễn / Mechvibes",
+    "repositoryCommit": "e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-black-abs/config.json",
+    "file": "blackABS/config.json",
+    "bytes": 14224,
+    "sha256": "c0af226f5e4740d1c126986e650da393f28f1bf10c71d49cfaac8cb0dc739400",
+    "license": "MIT",
+    "author": "Hải Nguyễn / Mechvibes",
+    "repositoryCommit": "e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/hainguyents13/mechvibes/e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df/soundpacks/keyboard/cherrymx-black-abs/sound.ogg",
+    "file": "blackABS/sound.ogg",
+    "bytes": 2661746,
+    "sha256": "8c23cf05846e7126c3d3b7cde161395dcbabc084493458716bffbdf491ed14ab",
+    "license": "MIT",
+    "author": "Hải Nguyễn / Mechvibes",
+    "repositoryCommit": "e94ad2fd9a31e77c8a3c9dc5617d6ac91eb581df"
+  },
+  {
+    "url": "https://bigsoundbank.com/UPLOAD/ogg/1729.ogg?v=m",
+    "page": "https://bigsoundbank.com/slow-macbook-pro-keyboard-2-s1729.html",
+    "author": "Joseph Sardin / BigSoundBank",
+    "license": "CC0-1.0",
+    "bytes": 884053,
+    "sha256": "6b3d47a9b148b405fbd5a0a3992f8183a57584402503c6be49c72e620080cd5d",
+    "file": "macbook-pro.ogg"
+  },
+  {
+    "url": "https://bigsoundbank.com/UPLOAD/ogg/2845.ogg?v=m",
+    "page": "https://bigsoundbank.com/typewriter-bell-s2845.html",
+    "author": "Joseph Sardin / BigSoundBank",
+    "license": "CC0-1.0",
+    "bytes": 20776,
+    "sha256": "c8aa745a2c169c6051e75ba24f2317eaaffefba76c49bc6acb8e18b596b7eb5e",
+    "file": "typewriter-bell.ogg"
+  },
+  {
+    "url": "https://bigsoundbank.com/UPLOAD/ogg/2842.ogg?v=m",
+    "page": "https://bigsoundbank.com/typewriter-key-s2842.html",
+    "author": "Joseph Sardin / BigSoundBank",
+    "license": "CC0-1.0",
+    "bytes": 11999,
+    "sha256": "3570880fd69524b74e0a47b4c2dead81c36fe5d65de077e3f170cdfb48fe9726",
+    "file": "typewriter-key.ogg"
+  },
+  {
+    "url": "https://bigsoundbank.com/UPLOAD/ogg/2843.ogg?v=m",
+    "page": "https://bigsoundbank.com/typewriter-space-s2843.html",
+    "author": "Joseph Sardin / BigSoundBank",
+    "license": "CC0-1.0",
+    "bytes": 12630,
+    "sha256": "9c03d391b87d32f5e3a31e374f05c9a569972996a911bdf9db41dc8012a542ba",
+    "file": "typewriter-space.ogg"
+  },
+  {
+    "url": "https://bigsoundbank.com/UPLOAD/ogg/2839.ogg?v=d",
+    "page": "https://bigsoundbank.com/typewriter-6-s2839.html",
+    "author": "Joseph Sardin / BigSoundBank",
+    "license": "CC0-1.0",
+    "bytes": 74620,
+    "sha256": "bccb37e4968ba2661a942d8b858e988b4d4ff1957ce3fe9966b842d43d57fc57",
+    "file": "typewriter-typing.ogg"
+  },
+  {
+    "url": "https://cdn.freesound.org/previews/785/785585_16768120-hq.mp3",
+    "page": "https://freesound.org/people/Detective_Lemons/sounds/785585/",
+    "author": "Detective_Lemons / Freesound",
+    "license": "CC0-1.0",
+    "bytes": 82407,
+    "sha256": "2655e1c6d8d6680a88c00c0f4d9641704bbcd1ec3962664b9425e70745a143bb",
+    "file": "mahjong-tile.mp3"
+  },
+  {
+    "url": "https://bigsoundbank.com/UPLOAD/ogg/1428.ogg?v=m",
+    "page": "https://bigsoundbank.com/impatient-finger-tapping-2-s1428.html",
+    "author": "Joseph Sardin / BigSoundBank",
+    "license": "CC0-1.0",
+    "bytes": 804015,
+    "sha256": "876de639e8fec24c90e20f75f13b3d241b5f8e07890a1f46a569c6ae194e1870",
+    "file": "wood-table.ogg"
+  }
+]

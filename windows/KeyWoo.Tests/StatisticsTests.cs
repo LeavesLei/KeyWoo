@@ -1,0 +1,11 @@
+using KeyWoo.Core;
+using Xunit;
+namespace KeyWoo.Tests;
+public sealed class StatisticsTests {
+    private readonly PhysicalKey a=new(0x41,0x1E),space=new(0x20,0x39);
+    [Fact] public async Task RoundTripKeepsPerKeyCountsAndExclusiveEnd(){string dir=Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString());string path=Path.Combine(dir,"counts.json");try{var s=new StatisticsStore(path);var time=new DateTimeOffset(2026,11,6,12,0,0,TimeSpan.Zero);s.Record(a,time);s.Record(space,time.AddSeconds(40));s.Record(a,time.AddMinutes(1));await s.FlushAsync();var loaded=new StatisticsStore(path);Assert.Equal(2,loaded.Counts(time,time.AddMinutes(1)).Sum(r=>r.Count));Assert.Equal(3,loaded.Counts(time,time.AddMinutes(2)).Sum(r=>r.Count));Assert.Equal(0,loaded.SessionTotal);}finally{if(Directory.Exists(dir))Directory.Delete(dir,true);}}
+    [Fact] public void PartialMinuteIncludesIntersectingBucket(){var s=new StatisticsStore(Path.Combine(Path.GetTempPath(),Guid.NewGuid()+".json"));var time=DateTimeOffset.Parse("2026-11-06T12:00:00Z");s.Record(a,time);Assert.Single(s.Counts(time.AddSeconds(20),time.AddSeconds(25)));Assert.Empty(s.Counts(time,time));}
+    [Fact] public async Task CorruptSavedDataIsNotOverwritten(){string path=Path.Combine(Path.GetTempPath(),Guid.NewGuid()+".json");await File.WriteAllTextAsync(path,"broken original");try{var s=new StatisticsStore(path);s.Record(a,DateTimeOffset.UtcNow);await s.FlushAsync();Assert.NotNull(s.Error);Assert.Equal("broken original",await File.ReadAllTextAsync(path));}finally{File.Delete(path);}}
+    [Fact] public async Task NullMinuteBucketIsRejectedWithoutOverwritingOriginal(){string path=Path.Combine(Path.GetTempPath(),Guid.NewGuid()+".json");const string json="{\"Schema\":1,\"Minutes\":{\"1\":null},\"Labels\":{}}";await File.WriteAllTextAsync(path,json);try{var s=new StatisticsStore(path);Assert.NotNull(s.Error);s.Record(a,DateTimeOffset.UtcNow);await s.FlushAsync();Assert.Equal(json,await File.ReadAllTextAsync(path));}finally{File.Delete(path);}}
+    [Fact] public void CsvUsesHardwareCountsOnly(){var s=new StatisticsStore(Path.Combine(Path.GetTempPath(),Guid.NewGuid()+".json"));var now=DateTimeOffset.UtcNow;s.Record(space,now);string csv=s.Csv(now.AddMinutes(-1),now.AddMinutes(1));Assert.Contains("Space",csv);Assert.Contains(",1\r\n",csv);Assert.DoesNotContain("application",csv);}
+}

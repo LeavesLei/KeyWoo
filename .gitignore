@@ -1,0 +1,25 @@
+.build/
+dist/
+.DS_Store
+*.log
+.swiftpm/
+__pycache__/
+**/bin/
+**/obj/
+windows/artifacts/
+*.keychain-db
+*.secret
+*.p12
+*.pfx
+*.key
+.env
+.env.*
+# Local design iterations, historical QA and personal preview launchers.
+design/
+PROGRESS.md
+VERIFICATION.md
+打开*.command
+Sources/KeyDance/Resources/**/*.wav
+Resources/KeyWooIconSource.png
+Resources/KeyWooIcon.png
+:-

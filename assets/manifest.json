@@ -1,0 +1,268 @@
+{
+  "archive": {
+    "bytes": 75831847,
+    "format": "zip",
+    "sha256": "413883d04bf3c1c4a0eafc8c4562af68871820bbc784366cd5d9e649c222a587"
+  },
+  "files": [
+    {
+      "bytes": 1034240,
+      "path": "Resources/KeyWooIcon.png",
+      "sha256": "7cdd4261665285bc63eb706136761bc41990807be8d34f64f7198eb906455533"
+    },
+    {
+      "bytes": 1609364,
+      "path": "Resources/KeyWooIconSource.png",
+      "sha256": "329cdeb4b6480b649f4800825cdf16f68830fe4a9770e02868ce7e989bbfd95c"
+    },
+    {
+      "bytes": 780592,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/arcade/samples.wav",
+      "sha256": "ade23c49f631b67485f8ed245ed85c37dfbcf63e47433a3b633b6bd46d82eb93"
+    },
+    {
+      "bytes": 1183032,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/black/samples.wav",
+      "sha256": "f6aed4ecb46bbd35ab5914205886d05d30d62f26b0ab4527506fb8a406c99882"
+    },
+    {
+      "bytes": 1990484,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/blackABS/samples.wav",
+      "sha256": "4a0140db75af3d187c4770d65c6351793d0695633674fa6f998aa8c4cad39199"
+    },
+    {
+      "bytes": 2318388,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/blue/samples.wav",
+      "sha256": "254794fb3a659833965a7a2607fe54abddf0ea6a43636e17a10423a09c9081d9"
+    },
+    {
+      "bytes": 2333016,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/bluePBT/samples.wav",
+      "sha256": "93cd9e5d3ae0a5ca45e2b2b3a54df2c5d568cada2673601e9e26ce0e2e01c0fe"
+    },
+    {
+      "bytes": 696952,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/brick/samples.wav",
+      "sha256": "cb8986789319b6c2d5be7c6dc927303c27b9094264aec2bffc03353ec145aad2"
+    },
+    {
+      "bytes": 1690924,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/brown/samples.wav",
+      "sha256": "2ee15ac015145efb6edc2613eeac15dbed40efbcac93375afcc0ecb249e57126"
+    },
+    {
+      "bytes": 1281940,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/brownABS/samples.wav",
+      "sha256": "59b0f74e0f0c2228e70e8bad61aa5c87c9d9bdafe37eb57d426c3402c218756d"
+    },
+    {
+      "bytes": 840304,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/bubble/samples.wav",
+      "sha256": "8dfe143b7de6d536892f890f3d92dccbb11b9425660a5071deb335984c2370dd"
+    },
+    {
+      "bytes": 229188,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/hermes/samples.wav",
+      "sha256": "6341f27cf540ffafecd98839ca60afb9b9e738db341d49177972652ce8b78349"
+    },
+    {
+      "bytes": 1043344,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/laser/samples.wav",
+      "sha256": "a8c6af895d8544c053058c5298ac1665b811bf9acf70662387184247c84e55f9"
+    },
+    {
+      "bytes": 215856,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/macbookPro/samples.wav",
+      "sha256": "b719362aecb3ec6ab9178286d0a810a704ba644bb1caabeee00da9befface802"
+    },
+    {
+      "bytes": 1145848,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/mahjong/samples.wav",
+      "sha256": "6a111f76714c8a0c44758e36daaa7e43c155fc580367cb35040fb5efd78988c2"
+    },
+    {
+      "bytes": 107780,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/mahjongTiles/samples.wav",
+      "sha256": "9caa678c38abab9405b78089dce5dfa174e0275405991d5bde801bfdb2bd0966"
+    },
+    {
+      "bytes": 1691364,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/oreo/samples.wav",
+      "sha256": "21d1e2d8bfe7abcaa7ed6aba2b9b72506cd96eb3453273f1833912ba4fa70899"
+    },
+    {
+      "bytes": 149520,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/panda/samples.wav",
+      "sha256": "90ffd8328c3f1db8f6269d653aa99e7ad5a6f5f70c9eebbb9997152da02aa7ac"
+    },
+    {
+      "bytes": 1091128,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/paper/samples.wav",
+      "sha256": "41ad4fbf35f0d11f8116700508b960fcf5d38c184852671e5659530c4c648cbe"
+    },
+    {
+      "bytes": 1641460,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/purple/samples.wav",
+      "sha256": "d27100825c88f9c52a00c7d6eb536234379084b42e0f95a7ec74fc7842838970"
+    },
+    {
+      "bytes": 971704,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/raindrop/samples.wav",
+      "sha256": "66ae60e269dfed83d74dc51bee4962949808739448bbab4803f21cc19c70b0c7"
+    },
+    {
+      "bytes": 1626544,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/red/samples.wav",
+      "sha256": "93b615762beb6f1878b287a6cf369c36a0e6d66e46a2fd38cf670b8aac854da4"
+    },
+    {
+      "bytes": 2121308,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/topre/samples.wav",
+      "sha256": "04fb1b8aa1e452d3e5ada5d2d2e6e7e89b642daca360298d8b8d910149a77e61"
+    },
+    {
+      "bytes": 1007512,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/typewriter/samples.wav",
+      "sha256": "22f173c6443efbc31733ce3824b71fb02fa55536200f517e2d34a3dac788d44c"
+    },
+    {
+      "bytes": 226088,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/woodDesk/samples.wav",
+      "sha256": "386ef5348bbd84924fff320d206756e1eaf0397da85ff20b69773f88defb53f3"
+    },
+    {
+      "bytes": 911968,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/woodblock/samples.wav",
+      "sha256": "74eaa0d940ae598e8cb89e4bc25af183c55967faefab41f3c464caac088c410c"
+    },
+    {
+      "bytes": 17372712,
+      "path": "Sources/KeyDance/Resources/Music/keywoo-after-hours-rich.wav",
+      "sha256": "99aacc93590bd558f36888651fbbc7daf790bc0a019ad08e1eb96cf486973df8"
+    },
+    {
+      "bytes": 17372712,
+      "path": "Sources/KeyDance/Resources/Music/keywoo-after-hours.wav",
+      "sha256": "fb6f4ac1d2b4de2748a602a0a2a6ba28c02434a2f85364746a12df07b809b3f3"
+    },
+    {
+      "bytes": 1526444,
+      "path": "Sources/KeyDance/Resources/Music/keywoo-ai-seed.wav",
+      "sha256": "30f5ed47ae23304e8d6a489cb93fecca4bbb4865affeb6a69468a80c5ca52ecb"
+    },
+    {
+      "bytes": 768044,
+      "path": "Sources/KeyDance/Resources/Music/keywoo-ai-variation.wav",
+      "sha256": "db37c8574782eea96914a70d958365e76988e40c9ccd278e6922118d064a0c38"
+    },
+    {
+      "bytes": 15399004,
+      "path": "Sources/KeyDance/Resources/Music/keywoo-soft-current-rich.wav",
+      "sha256": "da278ad7e04ef08c358d653a4fef7cad4f8fbfccc818450c8ff2b22015a7d3ea"
+    },
+    {
+      "bytes": 15399004,
+      "path": "Sources/KeyDance/Resources/Music/keywoo-soft-current.wav",
+      "sha256": "5d6c8d1b03ff565679dffa96e8afb23c8eb040993b5b0b66ab7b21a9b9686c95"
+    }
+  ],
+  "partSize": 4194304,
+  "parts": [
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-001.part",
+      "sha256": "7f70c6c2d1c94a7250d6d28330b23e919a47f14f53f800c06b7bf214750b98a8"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-002.part",
+      "sha256": "9935b4f71c5157c1c296585e6bf3ee94c3e6378361652a23df07a9b2115cdbd4"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-003.part",
+      "sha256": "2f404abf55165299748aaf602c3c11885495c0f255d369383b24ac00b7728c23"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-004.part",
+      "sha256": "fa29e92be2ab234b27680874d3f3f6254d0851d8fc97d6b88ef77435a57b7e31"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-005.part",
+      "sha256": "8a7d801e42e7e4ef78fe43171edc41f662a0b4ce47720b592546f377a2d0c0df"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-006.part",
+      "sha256": "4b8f43a479328ffe9b4fb602876e1d59b31783bce8f2292472df4081999c2723"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-007.part",
+      "sha256": "b1ae29158a78cebdfb5f44aea4e48def32c321ce1cc825135bb54ccdd8ddcdf4"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-008.part",
+      "sha256": "297fac5d6ac604648229b28cbccb30ca23f08f812a0602c9146ba05c319f8961"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-009.part",
+      "sha256": "1a86b24df33247d05488c825f11212c58cae84d1ea54698a9c592c5434992fa6"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-010.part",
+      "sha256": "8b68b0049cc0f2533b8ebff5118ca587d8c9b7042a45b5225296585660ba6818"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-011.part",
+      "sha256": "910a4cdf4b1a7f5942cdcbaa1c8c2ab0f2b5b1a16c462d35030bfd3c54271650"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-012.part",
+      "sha256": "d3f83aaf7fb2e0bdbb8fc491c4aa0eac2bb21fc7e167f32cbb3d4711bb2d1b45"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-013.part",
+      "sha256": "f70300cd39c4fe54155d2aff9b46cb035340c422124a296055e187df3c0a0fc0"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-014.part",
+      "sha256": "6083d49fc75fc531195d1f59886c2d0929381011a7cf81ca1bd7d9b188a0addd"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-015.part",
+      "sha256": "2ea6fbb67085edda19c5667581c44645a038abca915cded38ce5537dad76151e"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-016.part",
+      "sha256": "ba17eb07d32eb2e1311f68d6f2cbbeb953f57e11b6c96d9cc60dc90869c5b9ad"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-017.part",
+      "sha256": "7f20923109ff669df3c36ff557bd8f03abc9ebe215b104c2428d738a2e55846b"
+    },
+    {
+      "bytes": 4194304,
+      "file": "keywoo-assets-018.part",
+      "sha256": "677bfcf8edf09a1fa0aa66d7060b3377b6ecc836176ecb66001699ba76b2a17a"
+    },
+    {
+      "bytes": 334375,
+      "file": "keywoo-assets-019.part",
+      "sha256": "06395e453ba6bb7f2f047fe4e33911da775c42522bd2294f0c286a33d6be8adf"
+    }
+  ],
+  "schema": 1
+}
