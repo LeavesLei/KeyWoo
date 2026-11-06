@@ -11,9 +11,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/preview-v1.0.0-C15F34?style=flat-square" alt="v1.0.0 预览版"></a>
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/macOS_14%2B-Apple_silicon-334155?style=flat-square" alt="下载 macOS 版"></a>
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-win-x64-setup.exe"><img src="https://img.shields.io/badge/Windows_11-x64-334155?style=flat-square" alt="下载 Windows 版"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/preview-v1.0.1-C15F34?style=flat-square" alt="v1.0.1 预览版"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-mac-arm64.dmg"><img src="https://img.shields.io/badge/macOS_14%2B-Apple_silicon-334155?style=flat-square" alt="下载 macOS 版"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-win-x64-setup.exe"><img src="https://img.shields.io/badge/Windows_11-x64-334155?style=flat-square" alt="下载 Windows 版"></a>
 </p>
 
 键舞是一款在 Mac 和 Windows 上运行的键盘音效软件。在笔记本或外接键盘上打字，就能听到红轴、青轴、Holy Panda、Topre 等实录音色，也可以试试麻将和打字机。
@@ -35,6 +35,6 @@
 
 [安装帮助](docs/INSTALL.md) · [隐私说明](docs/PRIVACY.md) · [音效来源与第三方许可](THIRD-PARTY-NOTICES.md) · [反馈问题](https://github.com/LeavesLei/KeyWoo/issues)
 
-[mac]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-mac-arm64.dmg
-[win]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-win-x64-setup.exe
-[release]: https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.0
+[mac]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-mac-arm64.dmg
+[win]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-win-x64-setup.exe
+[release]: https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.1
