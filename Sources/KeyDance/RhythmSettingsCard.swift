@@ -15,7 +15,7 @@ struct RhythmSettingsCard: View {
                     .accessibilityHidden(true)
                 HStack(spacing: 4) {
                     Text(L("桌面律动")).font(.system(size: 14, weight: .semibold))
-                    InfoHelpButton(title: "桌面律动", message: "连续打字积蓄能量，蓄满后维持高能流光，停手后缓缓回落。脉冲随按键起跳，快打后的空格更有力，回车次之。演示只播放动画，不发声，也不计入统计。", identifier: "rhythm-help")
+                    InfoHelpButton(title: "桌面律动", message: "能量条随打字蓄能，脉冲随按键起跳，键阵爆破让按键发光，并在空格时化成碎光。演示只播放动画，不发声，也不计入统计。", identifier: "rhythm-help")
                 }
                 Spacer(minLength: 8)
                 Button(L("演示")) { model.previewRhythm() }
@@ -38,8 +38,14 @@ struct RhythmSettingsCard: View {
                         }
                     }
                     .pickerStyle(.segmented).labelsHidden()
-                    .frame(width: 212)
+                    .frame(width: 260)
                     .accessibilityIdentifier("rhythm-style")
+                }
+                if model.rhythmStyle == .burst {
+                    Text(L("最近的按键会化成发光字符。空格将它们打成碎光，回车轻轻收束，旧字符会自行淡出。"))
+                        .font(.system(size: 11))
+                        .foregroundStyle(Palette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: 12) {
                     HStack(spacing: 2) {

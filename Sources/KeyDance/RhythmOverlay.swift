@@ -317,7 +317,7 @@ private struct RhythmFrameCanvas: View {
     }
 }
 
-/// Two quiet desktop forms share the same clock and bounded key dynamics.
+/// Desktop forms share the same clock and bounded key dynamics.
 /// Neither form stacks independently drawn key paths or leaves a scrolling trail.
 enum RhythmPainter {
     private static let cyan = Color(red: 0.31, green: 0.89, blue: 0.94)
@@ -334,6 +334,9 @@ enum RhythmPainter {
             drawPulse(context: &context, size: size, dynamics: dynamics, time: time,
                       intensity: intensity, reducedMotion: reducedMotion,
                       flashesEnabled: flashesEnabled)
+        case .burst:
+            drawBurst(context: &context, size: size, dynamics: dynamics, time: time,
+                      intensity: intensity, reducedMotion: reducedMotion, flashesEnabled: flashesEnabled)
         }
     }
 
@@ -475,6 +478,191 @@ enum RhythmPainter {
             }
             context.stroke(tip, with: .color(.white.opacity(accent * 0.62)),
                            style: StrokeStyle(lineWidth: 1.2, lineCap: .round))
+        }
+    }
+
+    /// A temporary line of physical key glyphs. One short outgoing group and
+    /// a bounded set of colored fragments leave room for the next input.
+    private static func drawBurst(context: inout GraphicsContext, size: CGSize, dynamics: RhythmDynamics,
+                                  time: TimeInterval, intensity: Double, reducedMotion: Bool, flashesEnabled: Bool) {
+        let baseline = Double(size.height) * 0.57
+        let left = 29.0
+
+        func ease(_ value: Double) -> Double {
+            let p = min(1, max(0, value))
+            return 1 - pow(1 - p, 3)
+        }
+        func capSize(_ count: Double) -> Double { 44 - min(9, max(0, count - 1)) * 20 / 9 }
+        func layout(_ keys: [RhythmPulse], index: Int, at timestamp: Double) -> (CGPoint, Double, Double) {
+            let count = keys.count
+            let newestAge = max(0, timestamp - (keys.last?.time ?? timestamp))
+            // Below capacity the whole row eases to its new size. At capacity
+            // dimensions remain fixed while the oldest physical key drops out.
+            let progress = count >= 10 || reducedMotion ? 1 : ease(newestAge / 0.12)
+            let effectiveCount = max(1, Double(count - 1) + progress)
+            let edge = capSize(effectiveCount)
+            let gap = 6 - min(1, (effectiveCount - 1) / 9) * 2.5
+            let key = keys[index]
+            let jitter = reducedMotion ? 0 : Double((key.id * 7 + Int(key.profile.code)) % 5 - 2) * 0.75
+            let angle = reducedMotion ? 0 : Double((key.id * 11 + Int(key.profile.code)) % 9 - 4)
+            return (CGPoint(x: left + edge / 2 + Double(index) * (edge + gap),
+                            y: baseline - edge / 2 + jitter), edge, angle)
+        }
+        func keyColor(_ key: RhythmPulse) -> Color {
+            let hues = [0.49, 0.62, 0.75, 0.88, 0.40, 0.10]
+            let index = (Int(key.profile.code) * 7 + key.id * 3) % hues.count
+            return Color(hue: hues[index], saturation: 0.68, brightness: 1)
+        }
+        func label(_ code: UInt16) -> String {
+            switch code {
+            case 49: return "␣"
+            case 36, 76: return "↵"
+            case 51, 117: return "⌫"
+            case 48: return "⇥"
+            case 53: return "esc"
+            case 56, 60: return "⇧"
+            case 57: return "⇪"
+            case 54, 55: return "⌘"
+            case 58, 61: return "⌥"
+            case 59, 62: return "⌃"
+            case 63: return "fn"
+            default:
+                let value = KeyLayout.label(for: code)
+                if value.hasPrefix("keypad ") { return String(value.dropFirst(7)) }
+                if value.hasPrefix("key ") { return "•" }
+                return value.count <= 3 ? value.uppercased() : "◇"
+            }
+        }
+        func placement(_ keys: [RhythmPulse], index: Int, at timestamp: Double) -> (CGPoint, Double, Double, Double, Double) {
+            var (center, edge, angle) = layout(keys, index: index, at: timestamp)
+            let entered = ease(max(0, timestamp - keys[index].time) / 0.085)
+            if !reducedMotion {
+                center.x += (1 - entered) * 5
+                center.y += (1 - entered) * 7
+            }
+            return (center, edge, angle, reducedMotion ? 1 : 0.86 + entered * 0.14, 0.52 + entered * 0.48)
+        }
+        func drawGlyph(_ key: RhythmPulse, center: CGPoint, edge: Double, angle: Double,
+                       opacity: Double, glow: Double, scale: Double = 1) {
+            guard opacity > 0.002 else { return }
+            var layer = context
+            layer.opacity *= opacity
+            layer.translateBy(x: center.x, y: center.y)
+            layer.rotate(by: .degrees(angle))
+            layer.scaleBy(x: scale, y: scale)
+            let color = keyColor(key)
+            let text = label(key.profile.code)
+            let fontSize = min(edge * 0.64, edge * 1.55 / Double(max(1, text.count)))
+            let glyph = Text(text).font(.system(size: fontSize, weight: .bold, design: .rounded))
+            // A fine ink edge defines saturated glyphs on white desktops;
+            // every layer follows the glyph itself, with no keycap or backdrop.
+            layer.drawLayer { shadow in
+                shadow.addFilter(.blur(radius: 0.8))
+                shadow.draw(glyph.foregroundColor(.black.opacity(0.84)), at: CGPoint(x: 0, y: 0.65))
+            }
+            for offset in [CGPoint(x: -0.45, y: 0), CGPoint(x: 0.45, y: 0), CGPoint(x: 0, y: -0.45)] {
+                layer.draw(glyph.foregroundColor(.black.opacity(0.38)), at: offset)
+            }
+            layer.drawLayer { light in
+                light.addFilter(.blur(radius: 3.2 + glow * 1.8))
+                light.draw(glyph.foregroundColor(color.opacity(0.42 + glow * 0.24)), at: .zero)
+            }
+            layer.draw(glyph.foregroundColor(color), at: .zero)
+            layer.draw(glyph.foregroundColor(.white.opacity(0.12 + glow * 0.10)), at: .zero)
+        }
+
+        // The old glyphs break down in under 100ms; sparse shards finish within
+        // 260ms. The next queue is drawn last and never waits for this group.
+        if let burst = dynamics.keyBurst {
+            let age = max(0, time - burst.strike.time)
+            let isSpace = burst.strike.profile.kind == .space
+            let charge = burst.strike.accentCharge
+            let keys = burst.keys.isEmpty ? [burst.strike] : burst.keys
+            let glyphLifetime = reducedMotion ? 0.22 : (isSpace ? 0.095 : 0.14)
+            let p = min(1, age / glyphLifetime)
+            let rowCenter = keys.indices.map { placement(keys, index: $0, at: burst.strike.time).0.x }
+                .reduce(0, +) / Double(keys.count)
+            if p < 1 {
+                for index in keys.indices {
+                    let key = keys[index]
+                    let (origin, edge, angle, entryScale, entryOpacity) = placement(keys, index: index, at: burst.strike.time)
+                    let direction = keys.count > 1 ? Double(index) / Double(keys.count - 1) * 2 - 1 : 0
+                    let travel = ease(p)
+                    var center = origin
+                    var rotation = angle
+                    if !reducedMotion {
+                        if isSpace {
+                            center.x += direction * (8 + charge * 9) * travel
+                            center.y -= (12 + charge * 10) * travel
+                            rotation += direction * 14 * travel
+                        } else {
+                            center.x += (rowCenter - origin.x) * 0.17 * travel
+                            center.y -= (13 + charge * 6) * travel
+                            rotation += direction * 5 * travel
+                        }
+                    }
+                    let flash = flashesEnabled && !reducedMotion ? (1 - p) * (0.25 + charge * 0.4) : 0
+                    let opacity = RhythmDynamics.keyOpacity(key, at: burst.strike.time) * entryOpacity * pow(1 - p, 1.45)
+                    drawGlyph(key, center: center, edge: edge, angle: rotation, opacity: opacity,
+                              glow: 0.18 + flash, scale: entryScale * (reducedMotion ? 1 : 1 - travel * 0.40))
+                }
+            }
+            if isSpace && !reducedMotion && age < 0.26 {
+                let count = min(20, max(6, keys.count * 2))
+                let fragmentProgress = min(1, age / 0.26)
+                let travel = ease(fragmentProgress)
+                let fade = min(1, age / 0.018) * pow(1 - fragmentProgress, 1.4)
+                let force = min(1.3, intensity) * (0.72 + charge * 0.50)
+                for fragment in 0..<count {
+                    let index = min(keys.count - 1, fragment * keys.count / count)
+                    let key = keys[index]
+                    let seed = fragment * 17 + key.id * 7 + Int(key.profile.code)
+                    let (origin, edge, _, entryScale, entryOpacity) = placement(keys, index: index, at: burst.strike.time)
+                    let position = count > 1 ? Double(fragment) / Double(count - 1) * 2 - 1 : 0
+                    let jitter = Double(seed % 7 - 3) / 3
+                    let start = CGPoint(x: origin.x + jitter * edge * 0.13 * entryScale,
+                                        y: origin.y + Double(seed % 5 - 2) * edge * 0.065 * entryScale)
+                    // Clamp the destination, not each moving frame, so shards
+                    // approach the visible edge smoothly without sudden stops.
+                    let endX = min(size.width - 12, max(12, start.x + (position * 0.82 + jitter * 0.35) * (35 + charge * 35) * force))
+                    let endY = max(18, start.y - (30 + Double(seed % 5) * 7 + charge * 20) * force)
+                    let point = CGPoint(x: start.x + (endX - start.x) * travel,
+                                        y: start.y + (endY - start.y) * travel + 10 * fragmentProgress * fragmentProgress)
+                    let opacity = fade * RhythmDynamics.keyOpacity(key, at: burst.strike.time) * entryOpacity
+                    guard opacity > 0.002 else { continue }
+                    let angle = atan2(endY - start.y, endX - start.x)
+                    let length = (2.6 + Double(seed % 3) * 1.25) * (1 - fragmentProgress * 0.30)
+                    var shard = Path()
+                    shard.move(to: CGPoint(x: point.x - cos(angle) * length / 2, y: point.y - sin(angle) * length / 2))
+                    shard.addLine(to: CGPoint(x: point.x + cos(angle) * length / 2, y: point.y + sin(angle) * length / 2))
+                    context.stroke(shard, with: .color(.black.opacity(opacity * 0.22)),
+                                   style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                    context.stroke(shard, with: .color(keyColor(key).opacity(opacity * 0.94)),
+                                   style: StrokeStyle(lineWidth: 1.35, lineCap: .round))
+                    if flashesEnabled && age < 0.07 && fragment % 4 == 0 {
+                        context.stroke(shard, with: .color(.white.opacity(opacity * (1 - age / 0.07) * 0.52)),
+                                       style: StrokeStyle(lineWidth: 0.7, lineCap: .round))
+                    }
+                }
+            }
+        }
+
+        for index in dynamics.queuedKeys.indices {
+            let key = dynamics.queuedKeys[index]
+            let (center, edge, angle, scale, opacity) = placement(dynamics.queuedKeys, index: index, at: time)
+            let age = max(0, time - key.time)
+            let fresh = flashesEnabled && !reducedMotion ? max(0, 1 - age / 0.18) * 0.45 : 0
+            drawGlyph(key, center: center, edge: edge, angle: angle,
+                      opacity: RhythmDynamics.keyOpacity(key, at: time) * opacity, glow: 0.18 + fresh, scale: scale)
+        }
+        let outgoingVisible = dynamics.keyBurst.map { max(0, time - $0.strike.time) < (reducedMotion ? 0.22 : 0.26) } ?? false
+        let queuedVisible = dynamics.queuedKeys.contains { RhythmDynamics.keyOpacity($0, at: time) > 0.01 }
+        if !queuedVisible && !outgoingVisible {
+            // A quiet three-light placeholder keeps the transparent widget findable.
+            for index in 0..<3 {
+                let dot = CGRect(x: left + Double(index) * 7, y: baseline - 7, width: 3, height: 3)
+                context.fill(Path(ellipseIn: dot), with: .color((index == 1 ? violet : cyan).opacity(0.48)))
+            }
         }
     }
 

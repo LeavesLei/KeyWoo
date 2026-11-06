@@ -4,16 +4,16 @@
 
 <h1 align="center">KeyWoo</h1>
 
-<p align="center">Mechanical keyboard sounds for everyday typing.</p>
+<p align="center">By Codex ｜ Mechanical keyboard sounds as you type. Pairs well with silent switches. Use wired headphones for lower audio latency.</p>
 
 <p align="center">
   <a href="README.md">简体中文</a> · <strong>English</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/preview-v1.0.0-C15F34?style=flat-square" alt="v1.0.0 preview"></a>
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/macOS_14%2B-Apple_silicon-334155?style=flat-square" alt="Download for macOS"></a>
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-win-x64-setup.exe"><img src="https://img.shields.io/badge/Windows_11-x64-334155?style=flat-square" alt="Download for Windows"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/preview-v1.0.1-C15F34?style=flat-square" alt="v1.0.1 preview"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-mac-arm64.dmg"><img src="https://img.shields.io/badge/macOS_14%2B-Apple_silicon-334155?style=flat-square" alt="Download for macOS"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-win-x64-setup.exe"><img src="https://img.shields.io/badge/Windows_11-x64-334155?style=flat-square" alt="Download for Windows"></a>
 </p>
 
 KeyWoo plays keyboard sounds as you type on a Mac or Windows PC. Give your laptop or external keyboard the sound of Cherry Red, Cherry Blue, Holy Panda, or Topre switches, or try mahjong tiles and a typewriter.
@@ -35,6 +35,6 @@ KeyWoo plays keyboard sounds as you type on a Mac or Windows PC. Give your lapto
 
 [Installation help](docs/INSTALL.en.md) · [Privacy](docs/PRIVACY.md#english) · [Sound credits and third-party licenses](THIRD-PARTY-NOTICES.md) · [Report an issue](https://github.com/LeavesLei/KeyWoo/issues)
 
-[mac]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-mac-arm64.dmg
-[win]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.0/KeyWoo-1.0.0-win-x64-setup.exe
-[release]: https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.0
+[mac]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-mac-arm64.dmg
+[win]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.1/KeyWoo-1.0.1-win-x64-setup.exe
+[release]: https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.1

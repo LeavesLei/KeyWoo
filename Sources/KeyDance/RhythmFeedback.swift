@@ -2,9 +2,15 @@ import Foundation
 import Combine
 
 enum RhythmVisualStyle: String, CaseIterable, Identifiable, Sendable {
-    case energy, pulse
+    case energy, pulse, burst
     var id: String { rawValue }
-    var title: String { L(self == .energy ? "能量条" : "脉冲") }
+    var title: String {
+        switch self {
+        case .energy: return L("能量条")
+        case .pulse: return L("脉冲")
+        case .burst: return L("键阵爆破")
+        }
+    }
 }
 
 /// The visual vocabulary follows physical keys, never the text being entered.
@@ -60,12 +66,23 @@ struct RhythmPulse: Identifiable, Equatable {
     var lifetime: Double { profile.kind == .space ? 1.35 : 1.05 }
 }
 
+struct RhythmKeyBurst: Equatable {
+    static let duration = 0.38
+    let keys: [RhythmPulse]
+    let strike: RhythmPulse
+}
+
 /// Bounded, clock-driven state: rendering and audio never share a timer or queue.
 struct RhythmDynamics {
     static let maximumPulses = 24
+    static let maximumQueuedKeys = 10
     static let settleDelay = 6.4
     static let maximumPulseLight = 1.25
+    private static let keyHoldDuration = 2.2
+    private static let keyFadeDuration = 0.75
     private(set) var pulses: [RhythmPulse] = []
+    private(set) var queuedKeys: [RhythmPulse] = []
+    private(set) var keyBurst: RhythmKeyBurst?
     private(set) var combo = 0
     private(set) var lastHit: TimeInterval?
     private var storedEnergy = 0.0
@@ -160,7 +177,19 @@ struct RhythmDynamics {
         return min(1, Self.maximumPulseLight / max(0.001, light))
     }
 
-    mutating func receiveKey(_ code: UInt16, at time: TimeInterval) {
+    func queueOpacity(at time: TimeInterval) -> Double {
+        guard let lastKey = queuedKeys.last else { return 0 }
+        return Self.keyOpacity(lastKey, at: time)
+    }
+
+    static func keyOpacity(_ key: RhythmPulse, at time: TimeInterval) -> Double {
+        guard time.isFinite else { return 0 }
+        let fade = max(0, time - key.time - keyHoldDuration) / keyFadeDuration
+        let progress = min(1, fade)
+        return 1 - progress * progress * (3 - 2 * progress)
+    }
+
+    mutating func receiveKey(_ code: UInt16, at time: TimeInterval, tracksKeyQueue: Bool = false) {
         guard time.isFinite else { return }
         let time = max(lastHit ?? time, time)
         let profile = RhythmKeyProfile(code: code)
@@ -209,13 +238,40 @@ struct RhythmDynamics {
         lastHit = time
         sequence &+= 1
         pulses.removeAll { time - $0.time > $0.lifetime }
-        pulses.append(RhythmPulse(id: sequence, time: time, profile: profile,
-                                  strength: profile.impact * (1 + (isAccent ? spentCharge * 0.85 : cadence * 0.24)),
-                                  accentCharge: spentCharge))
+        let pulse = RhythmPulse(id: sequence, time: time, profile: profile,
+                                strength: profile.impact * (1 + (isAccent ? spentCharge * 0.85 : cadence * 0.24)),
+                                accentCharge: spentCharge)
+        pulses.append(pulse)
         if pulses.count > Self.maximumPulses { pulses.removeFirst(pulses.count - Self.maximumPulses) }
+        if tracksKeyQueue { updateKeyQueue(with: pulse, isAccent: isAccent) }
+    }
+
+    private mutating func updateKeyQueue(with pulse: RhythmPulse, isAccent: Bool) {
+        if let keyBurst, pulse.time - keyBurst.strike.time >= RhythmKeyBurst.duration {
+            self.keyBurst = nil
+        }
+        if isAccent {
+            // An empty repeated accent should not cut off the row still in flight.
+            let hasVisibleKeys = queueOpacity(at: pulse.time) > 0
+            if hasVisibleKeys || keyBurst == nil {
+                // Keep the original slots so pieces fly from where they were drawn.
+                keyBurst = RhythmKeyBurst(keys: hasVisibleKeys ? queuedKeys : [], strike: pulse)
+            }
+            queuedKeys.removeAll(keepingCapacity: true)
+        } else {
+            queuedKeys.removeAll { Self.keyOpacity($0, at: pulse.time) == 0 }
+            if queuedKeys.count == Self.maximumQueuedKeys { queuedKeys.removeFirst() }
+            queuedKeys.append(pulse)
+        }
+    }
+
+    mutating func clearKeyQueue() {
+        queuedKeys.removeAll(keepingCapacity: true)
+        keyBurst = nil
     }
 
     mutating func reset() {
+        clearKeyQueue()
         pulses.removeAll(keepingCapacity: true)
         recentHits.removeAll(keepingCapacity: true)
         combo = 0
@@ -242,7 +298,11 @@ struct RhythmDynamics {
 final class RhythmFeedbackModel: ObservableObject {
     @Published private(set) var dynamics = RhythmDynamics()
     @Published private(set) var isAnimating = false
-    @Published var visualStyle: RhythmVisualStyle = .energy
+    @Published var visualStyle: RhythmVisualStyle = .energy {
+        didSet {
+            if oldValue == .burst && visualStyle != .burst { dynamics.clearKeyQueue() }
+        }
+    }
     @Published var flashesEnabled = true
     @Published var intensity = 1.0 {
         didSet {
@@ -254,7 +314,7 @@ final class RhythmFeedbackModel: ObservableObject {
 
     func receiveKey(_ code: UInt16, at time: TimeInterval = ProcessInfo.processInfo.systemUptime) {
         guard time.isFinite else { return }
-        dynamics.receiveKey(code, at: time)
+        dynamics.receiveKey(code, at: time, tracksKeyQueue: visualStyle == .burst)
         isAnimating = true
         settleTask?.cancel()
         settleTask = Task { [weak self] in

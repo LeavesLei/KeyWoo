@@ -15,23 +15,33 @@ enum RenderRhythmPreview {
                                       (1.48, 38), (1.58, 2), (1.7, 0), (1.8, 1), (1.9, 3),
                                       (2.0, 36), (2.12, 4), (2.22, 5), (2.32, 38), (2.42, 40),
                                       (2.52, 0), (2.62, 1), (2.72, 49), (2.81, 2), (2.92, 3)]
+        let fullRow: [UInt16] = [0, 1, 2, 3, 5, 4, 38, 40, 37, 18]
+        let burstHits = hits + fullRow.enumerated().map { (6.1 + Double($0.offset) * 0.1, $0.element) }
+            + [(7.08, 49), (7.12, 8), (7.19, 49), (7.24, 9)]
         func samples(style: RhythmVisualStyle) -> [(String, Double)] {
-            if style == .energy {
+            switch style {
+            case .energy:
                 return [("Rest", 0), ("Building", 0.99), ("Full energy", 2.8),
                         ("Holding after typing", 3.75), ("Fading", 5.1), ("Settled", 9.5)]
+            case .pulse:
+                return [("Rest", 0), ("Small key", 0.73), ("Space attack", 1.15),
+                        ("Space + next key", 1.22), ("Return attack", 2.05), ("Settled", 9.5)]
+            case .burst:
+                return [("First glyph", 0.25), ("Building the row", 1.06), ("Space fractures", 1.145),
+                        ("Sparks + next key", 1.22), ("Return sweep", 2.08), ("Fades without Space", 5.45)]
             }
-            return [("Rest", 0), ("Small key", 0.73), ("Space attack", 1.15),
-                    ("Space + next key", 1.22), ("Return attack", 2.05), ("Settled", 9.5)]
         }
-        func state(at time: Double) -> RhythmDynamics {
+        func state(at time: Double, style: RhythmVisualStyle) -> RhythmDynamics {
             var state = RhythmDynamics()
-            for (instant, code) in hits where instant <= time { state.receiveKey(code, at: instant) }
+            for (instant, code) in (style == .burst ? burstHits : hits) where instant <= time {
+                state.receiveKey(code, at: instant, tracksKeyQueue: style == .burst)
+            }
             if let last = state.lastHit, time - last > RhythmDynamics.settleDelay { state.reset() }
             return state
         }
         func artwork(time: Double, style: RhythmVisualStyle = .energy) -> some View {
             Canvas { context, size in
-                RhythmPainter.draw(context: &context, size: size, dynamics: state(at: time),
+                RhythmPainter.draw(context: &context, size: size, dynamics: state(at: time, style: style),
                                    time: time, intensity: 1, reducedMotion: false, style: style)
             }.frame(width: 340, height: 224)
         }
@@ -66,6 +76,6 @@ enum RenderRhythmPreview {
                          name: String(format: "\(style.rawValue)-frame-%03d.png", frame), scale: 1)
             }
         }
-        print("Rendered both production styles and 285 frames each to \(output.path)")
+        print("Rendered production styles and 285 frames each to \(output.path)")
     }
 }

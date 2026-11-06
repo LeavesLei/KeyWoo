@@ -527,4 +527,88 @@ struct RhythmIntegrationTests {
         #expect(dynamics.highEntryTime == nil && !dynamics.isHighEnergy(at: time))
         #expect(dynamics.highEnergyLevel(at: time) == 0 && dynamics.meterEnergy(at: time) == 0)
     }
+
+    @Test func burstQueueKeepsTenKeysAndAccentsAtomicallyReleaseItsSnapshot() throws {
+        var dynamics = RhythmDynamics()
+        let codes: [UInt16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 45, 46, 43]
+        for (index, code) in codes.enumerated() {
+            dynamics.receiveKey(code, at: Double(index) * 0.05, tracksKeyQueue: true)
+        }
+        #expect(dynamics.queuedKeys.map { $0.profile.code } == Array(codes.suffix(10)))
+        let queued = dynamics.queuedKeys
+        dynamics.receiveKey(49, at: 0.75, tracksKeyQueue: true)
+        let spaceBurst = try #require(dynamics.keyBurst)
+        #expect(dynamics.queuedKeys.isEmpty)
+        #expect(spaceBurst.keys == queued && spaceBurst.strike.profile.code == 49)
+        dynamics.receiveKey(49, at: 0.8, tracksKeyQueue: true)
+        #expect(dynamics.keyBurst?.strike.id == spaceBurst.strike.id,
+                "An empty accent must not interrupt the previous group while it is flying.")
+        dynamics.receiveKey(0, at: 0.85, tracksKeyQueue: true)
+        #expect(dynamics.queuedKeys.map { $0.profile.code } == [0])
+        #expect(dynamics.keyBurst?.keys == queued)
+        dynamics.receiveKey(36, at: 0.9, tracksKeyQueue: true)
+        let returnBurst = try #require(dynamics.keyBurst)
+        #expect(dynamics.queuedKeys.isEmpty)
+        #expect(returnBurst.keys.map { $0.profile.code } == [0])
+        #expect(returnBurst.strike.profile.code == 36 && returnBurst.strike.id != spaceBurst.strike.id)
+    }
+
+    @Test func idleBurstQueueFadesAndExpiredKeysCannotReappearInANewGroup() throws {
+        var dynamics = RhythmDynamics()
+        dynamics.receiveKey(0, at: 0, tracksKeyQueue: true)
+        let first = try #require(dynamics.queuedKeys.first)
+        dynamics.receiveKey(1, at: 1, tracksKeyQueue: true)
+        let second = try #require(dynamics.queuedKeys.last)
+        let fading = RhythmDynamics.keyOpacity(first, at: 2.5)
+        #expect(fading > 0 && fading < 1)
+        #expect(RhythmDynamics.keyOpacity(second, at: 2.5) == 1)
+        #expect(dynamics.queueOpacity(at: 2.5) == 1)
+        dynamics.receiveKey(2, at: 2.5, tracksKeyQueue: true)
+        #expect(dynamics.queuedKeys.map { $0.profile.code } == [0, 1, 2])
+        let preservedFirst = try #require(dynamics.queuedKeys.first)
+        #expect(RhythmDynamics.keyOpacity(preservedFirst, at: 2.5) == fading,
+                "A new key must preserve the older key's fading progress rather than relighting it.")
+        let latestFading = dynamics.queueOpacity(at: 5)
+        #expect(latestFading > 0 && latestFading < 1)
+        #expect(dynamics.queueOpacity(at: 5.6) == 0)
+        var expired = dynamics
+        expired.receiveKey(49, at: 6, tracksKeyQueue: true)
+        #expect(expired.queuedKeys.isEmpty && expired.keyBurst?.keys.isEmpty != false,
+                "Space must not revive a row that has already faded away.")
+        dynamics.receiveKey(3, at: 3.1, tracksKeyQueue: true)
+        #expect(dynamics.queuedKeys.map { $0.profile.code } == [1, 2, 3],
+                "A new key removes only fully faded entries while retaining younger keys.")
+    }
+
+    @Test @MainActor func burstBufferExistsOnlyInItsStyleAndClearsAtLifecycleBoundaries() throws {
+        let (model, root) = try fixture(RhythmDefaults(["rhythmEnabled": true]))
+        defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
+        model.receiveKey(0)
+        model.releaseKey(0)
+        #expect(model.rhythmFeedback.dynamics.queuedKeys.isEmpty)
+        model.rhythmStyle = .burst
+        model.receiveKey(1)
+        model.releaseKey(1)
+        #expect(model.rhythmFeedback.dynamics.queuedKeys.map { $0.profile.code } == [1])
+        model.isEnabled = false
+        #expect(model.rhythmFeedback.dynamics.queuedKeys.isEmpty && model.rhythmFeedback.dynamics.keyBurst == nil)
+        model.isEnabled = true
+        model.receiveKey(2)
+        model.monitor.onReset?()
+        #expect(model.rhythmFeedback.dynamics.queuedKeys.isEmpty && model.rhythmFeedback.dynamics.keyBurst == nil)
+        model.receiveKey(3)
+        model.releaseKey(3)
+        model.receiveKey(49)
+        model.releaseKey(49)
+        #expect(model.rhythmFeedback.dynamics.keyBurst != nil)
+        model.receiveKey(4)
+        model.releaseKey(4)
+        let count = model.sessionTotal
+        let sound = model.keyboardSoundStyle
+        model.rhythmStyle = .pulse
+        #expect(model.rhythmFeedback.dynamics.queuedKeys.isEmpty && model.rhythmFeedback.dynamics.keyBurst == nil)
+        #expect(model.sessionTotal == count && model.keyboardSoundStyle == sound)
+        model.receiveKey(5)
+        #expect(model.rhythmFeedback.dynamics.queuedKeys.isEmpty)
+    }
 }
