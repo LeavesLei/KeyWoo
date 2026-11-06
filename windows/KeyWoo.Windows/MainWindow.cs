@@ -31,7 +31,7 @@ public sealed class MainWindow : Window {
     private SampleBank? soundBank;
     private Action? refreshSoundCatalog;
     private CancellationTokenSource? preview;
-    private bool enabled=true,building,closing,started,resumeAfterUnlock,sessionLocked;
+    private bool enabled=true,building,closing,started,hookReady,resumeAfterUnlock,sessionLocked;
     private int queuedPresses,flushing;
     private long droppedCounts;
     private DateTimeOffset lastFlush=DateTimeOffset.MinValue;
@@ -87,7 +87,13 @@ public sealed class MainWindow : Window {
             audio.Recovered+=ClearAudioError;audio.Start();
         } catch(Exception ex){ShowAudioError(ex.Message);}
         if(closing)return;
-        try {await hook.StartAsync();if(closing){hook.Dispose();return;}await ConfigureHook();UpdatePause();}
+        try {
+            await hook.StartAsync();
+            if(closing){hook.Dispose();return;}
+            hookReady=true;
+            if(sessionLocked)await hook.SuspendSessionAsync();else await ConfigureHook();
+            UpdatePause();
+        }
         catch(Exception ex){enabled=false;audio?.Mixer.Reset();ShowError(T("全局输入启动失败：","Global input could not start: ")+ex.Message);UpdatePause();}
     }
     private void Build() {
@@ -306,7 +312,7 @@ public sealed class MainWindow : Window {
     private static KeyModifiers Modifiers(Dictionary<KeyModifiers,CheckBox> source)=>source.Where(p=>p.Value.IsChecked==true).Aggregate(KeyModifiers.None,(value,p)=>value|p.Key);
     private void UpdateRules()=>ruleGrid.ItemsSource=settings.Rules.Select(r=>new RuleRow(r,KeyboardKeys.Chord(r.Source,r.Modifiers,Chinese),KeyboardKeys.Chord(r.Target,r.TargetModifiers,Chinese))).ToArray();
     private async Task RulesChanged(){UpdateRules();await ConfigureHook();SaveSoon();}
-    private async Task ConfigureHook(){if(!started)return;try{await hook.ConfigureAsync(enabled,settings.MappingEnabled,settings.Rules.ToArray());}catch(Exception ex){ShowError(ex.Message);}}
+    private async Task ConfigureHook(){if(!hookReady||closing)return;try{await hook.ConfigureAsync(enabled,settings.MappingEnabled,settings.Rules.ToArray());}catch(Exception ex){ShowError(ex.Message);}}
     private UIElement Preferences() {
         var panel=Panel();panel.Children.Add(Text(T("语言","Language"),16));
         var languages=new ComboBox{ItemsSource=new KeyValuePair<string,string>[]{new("system",T("跟随系统","System")),new("zh","简体中文"),new("en","English")},DisplayMemberPath="Value",SelectedValuePath="Key",SelectedValue=settings.Language,Width=230,HorizontalAlignment=HorizontalAlignment.Left};
@@ -343,8 +349,8 @@ public sealed class MainWindow : Window {
             SaveSoon();
         };
         panel.Children.Add(show);
-        panel.Children.Add(Text(T("键位会短暂发光，空格打散成碎光，回车轻轻收束。演示不发声，也不计入统计。",
-            "Key labels glow briefly. Space scatters them into sparks and Return draws them together. The demo is silent and does not count keystrokes."),12,true));
+        panel.Children.Add(Text(T("其他应用中的键位也会短暂发光。空格打散成碎光，回车轻轻收束。演示不发声、不计数。",
+            "Key labels glow briefly across apps. Space scatters them into sparks and Return draws them together. The demo is silent and does not count keystrokes."),12,true));
         var flashes=new CheckBox{Content=T("闪光效果","Flashes"),IsChecked=settings.KeyBurstFlashes,Margin=new Thickness(0,8,0,0)};
         AutomationProperties.SetAutomationId(flashes,"key-burst-flashes");
         flashes.Click+=(_,_)=>{
@@ -430,11 +436,12 @@ public sealed class MainWindow : Window {
     }
     private void TrayOpen(object? sender,EventArgs e){Show();WindowState=WindowState.Normal;Activate();}
     private void SessionChanged(object sender,SessionSwitchEventArgs e)=>Dispatcher.InvokeAsync(()=>{
+        if(closing)return;
         if(e.Reason==SessionSwitchReason.SessionLock&&!sessionLocked){
             sessionLocked=true;
             resumeAfterUnlock=enabled;
             if(enabled)ToggleEnabled();else UpdateKeyBurst();
-            if(started)_=hook.SuspendSessionAsync();
+            if(hookReady)_=hook.SuspendSessionAsync();
         } else if(e.Reason==SessionSwitchReason.SessionUnlock&&sessionLocked){
             sessionLocked=false;
             bool resume=resumeAfterUnlock;

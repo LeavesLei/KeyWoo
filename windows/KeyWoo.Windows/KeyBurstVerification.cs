@@ -95,6 +95,11 @@ internal static class KeyBurstVerification {
         overlay.Enqueue(key);
         overlay.SetSuspended(false);
         Require(!overlay.IsRendering && !IsWindowVisible(handle), "Resuming must clear queued keys.");
+        overlay.Enqueue(key);
+        overlay.SetSuspended(true);
+        overlay.SetSuspended(false);
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+        Require(!overlay.IsRendering && !IsWindowVisible(handle), "A posted wake must not replay keys from before a pause.");
         overlay.Configure(false, true, 1, 1);
         overlay.Preview();
         Require(WaitFor(() => overlay.IsRendering && IsWindowVisible(overlay.Handle)),

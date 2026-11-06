@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using KeyWoo.Core;
 
 namespace KeyWoo.Windows;
@@ -14,15 +15,17 @@ internal static class KeyBurstDrawing {
     private const double GlyphEmSize = 64;
     private const int MaximumGlyphs = KeyBurstDynamics.MaximumKeys;
     private const int GlyphCacheLimit = 128;
+    private const int GlowRadius = 7;
+    private const int GlowPasses = 3;
+    private const int GlowPadding = GlowRadius * GlowPasses + 2;
     private const double FragmentDuration = 0.26;
     private const double MinimumOpacity = 0.002;
 
     private static readonly Typeface KeyTypeface = new(new FontFamily("Segoe UI, Segoe UI Symbol"),
         FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
-    // Draw runs on the UI dispatcher. Freeze geometry so the same outline can
-    // serve every font size, rotation, and color without formatting per frame.
-    private static readonly Dictionary<string, Geometry> GlyphGeometry = new(StringComparer.Ordinal);
-    private static readonly Pen GlyphInk = Stroke(Color.FromArgb(194, 0, 0, 0), 2.4);
+    // One vector face and one soft alpha mask per label, shared by all sizes and colors.
+    private static readonly Dictionary<string, GlyphShape> Glyphs = new(StringComparer.Ordinal);
+    private static readonly Pen GlyphInk = Stroke(Color.FromArgb(148, 0, 0, 0), 1.6);
     private static readonly Pen FragmentInk = Stroke(Color.FromArgb(56, 0, 0, 0), 2.4);
     private static readonly Pen FragmentHighlight = Stroke(Colors.White, 0.7);
     private static readonly KeyPalette[] Palettes = [
@@ -153,7 +156,7 @@ internal static class KeyBurstDrawing {
     private static void DrawGlyph(DrawingContext context, KeyBurstGlyph key, KeyPlacement placement,
                                   double opacity, double glow) {
         if (opacity <= MinimumOpacity || string.IsNullOrEmpty(key.Label)) return;
-        var geometry = GeometryFor(key.Label);
+        var shape = ShapeFor(key.Label);
         double fontSize = Math.Min(placement.Edge * 0.64, placement.Edge * 1.55 / key.Label.Length);
         double scale = fontSize * placement.Scale / GlyphEmSize;
         var transform = Matrix.Identity;
@@ -164,30 +167,91 @@ internal static class KeyBurstDrawing {
         var palette = PaletteFor(key);
         context.PushOpacity(opacity);
         context.PushTransform(new MatrixTransform(transform));
-        // Several thin, translucent strokes soften the outline without a
-        // bitmap blur or a colored backdrop on the layered window.
-        context.PushOpacity(Math.Min(1, 0.68 + glow * 0.46));
-        context.DrawGeometry(null, palette.OuterGlow, geometry);
-        context.DrawGeometry(null, palette.MiddleGlow, geometry);
-        context.DrawGeometry(null, palette.InnerGlow, geometry);
-        context.Pop();
-        context.DrawGeometry(null, GlyphInk, geometry);
-        context.DrawGeometry(palette.Face, null, geometry);
+        if (shape.Glow is { } mask) {
+            context.PushOpacity(0.42 + glow * 0.24);
+            context.PushOpacityMask(mask);
+            context.DrawRectangle(palette.Face, null, shape.GlowBounds);
+            context.Pop();
+            context.Pop();
+        }
+        context.DrawGeometry(null, GlyphInk, shape.Face);
+        context.DrawGeometry(palette.Face, null, shape.Face);
         context.PushOpacity(0.12 + glow * 0.10);
-        context.DrawGeometry(Brushes.White, null, geometry);
+        context.DrawGeometry(Brushes.White, null, shape.Face);
         context.Pop();
         context.Pop();
         context.Pop();
     }
 
-    private static Geometry GeometryFor(string label) {
-        if (GlyphGeometry.TryGetValue(label, out var existing)) return existing;
+    private static GlyphShape ShapeFor(string label) {
+        if (Glyphs.TryGetValue(label, out var existing)) return existing;
         var text = new FormattedText(label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
             KeyTypeface, GlyphEmSize, Brushes.White, 1);
         var geometry = text.BuildGeometry(new Point(-text.WidthIncludingTrailingWhitespace / 2, -text.Height / 2));
         geometry.Freeze();
-        if (GlyphGeometry.Count < GlyphCacheLimit) GlyphGeometry.Add(label, geometry);
-        return geometry;
+        // Keep cache misses beyond the known keyboard vocabulary inexpensive.
+        if (Glyphs.Count >= GlyphCacheLimit) return new(geometry, null, Rect.Empty);
+        var shape = BuildGlow(geometry);
+        Glyphs.Add(label, shape);
+        return shape;
+    }
+
+    private static GlyphShape BuildGlow(Geometry face) {
+        var bounds = face.Bounds;
+        if (bounds.IsEmpty) return new(face, null, Rect.Empty);
+        double left = Math.Floor(bounds.Left) - GlowPadding;
+        double top = Math.Floor(bounds.Top) - GlowPadding;
+        int width = (int)(Math.Ceiling(bounds.Right) + GlowPadding - left);
+        int height = (int)(Math.Ceiling(bounds.Bottom) + GlowPadding - top);
+        if (width > 256 || height > 256) return new(face, null, Rect.Empty);
+
+        var visual = new DrawingVisual();
+        using (var draw = visual.RenderOpen()) {
+            draw.PushTransform(new TranslateTransform(-left, -top));
+            draw.DrawGeometry(Brushes.White, null, face);
+            draw.Pop();
+        }
+        var source = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        source.Render(visual);
+        var pixels = new byte[width * height * 4];
+        source.CopyPixels(pixels, width * 4, 0);
+        var alpha = new byte[width * height];
+        var scratch = new byte[alpha.Length];
+        for (int i = 0; i < alpha.Length; i++) alpha[i] = pixels[i * 4 + 3];
+
+        // Three separable box passes approximate a Gaussian. This runs once
+        // when caching the label and works in software-rendered windows too.
+        for (int pass = 0; pass < GlowPasses; pass++) {
+            BlurAlpha(alpha, scratch, height, width, width, 1);
+            BlurAlpha(scratch, alpha, width, height, 1, width);
+        }
+        for (int i = 0; i < alpha.Length; i++) {
+            int offset = i * 4;
+            pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = pixels[offset + 3] = alpha[i];
+        }
+        var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Pbgra32, null, pixels, width * 4);
+        bitmap.Freeze();
+        var mask = new ImageBrush(bitmap) { Stretch = Stretch.Fill };
+        mask.Freeze();
+        return new(face, mask, new Rect(left, top, width, height));
+    }
+
+    private static void BlurAlpha(byte[] source, byte[] target, int lines, int length, int lineStep, int pixelStep) {
+        const int diameter = GlowRadius * 2 + 1;
+        for (int line = 0; line < lines; line++) {
+            int start = line * lineStep;
+            int sum = 0;
+            for (int pixel = 0; pixel <= GlowRadius && pixel < length; pixel++) {
+                sum += source[start + pixel * pixelStep];
+            }
+            for (int pixel = 0; pixel < length; pixel++) {
+                target[start + pixel * pixelStep] = (byte)((sum + diameter / 2) / diameter);
+                int leaving = pixel - GlowRadius;
+                int entering = pixel + GlowRadius + 1;
+                if (leaving >= 0) sum -= source[start + leaving * pixelStep];
+                if (entering < length) sum += source[start + entering * pixelStep];
+            }
+        }
     }
 
     private static RowMetrics RowAt(int count, double newestTime, double time, double baseline, bool reduceMotion) {
@@ -238,12 +302,10 @@ internal static class KeyBurstDrawing {
 
     private readonly record struct RowMetrics(double Edge, double Gap, double Baseline);
     private readonly record struct KeyPlacement(Point Center, double Edge, double Angle, double Scale, double Opacity);
+    private readonly record struct GlyphShape(Geometry Face, ImageBrush? Glow, Rect GlowBounds);
 
     private sealed class KeyPalette(Color color) {
         public SolidColorBrush Face { get; } = Fill(color);
-        public Pen OuterGlow { get; } = Stroke(Color.FromArgb(18, color.R, color.G, color.B), 24);
-        public Pen MiddleGlow { get; } = Stroke(Color.FromArgb(28, color.R, color.G, color.B), 15);
-        public Pen InnerGlow { get; } = Stroke(Color.FromArgb(45, color.R, color.G, color.B), 8);
         public Pen Fragment { get; } = Stroke(Color.FromArgb(240, color.R, color.G, color.B), 1.35);
     }
 }
