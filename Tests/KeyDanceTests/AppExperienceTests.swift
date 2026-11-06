@@ -89,12 +89,15 @@ struct AppExperienceTests {
         let (model, _, root) = try fixture(defaults)
         defer { model.shutdown(); try? FileManager.default.removeItem(at: root); AppLocalization.language = .simplifiedChinese }
         #expect(model.language == .simplifiedChinese && model.appearance == .system && model.experienceMode == .music)
-        #expect(model.keyboardSoundStyle == .red && model.keyboardVolume == 0.5)
+        #expect(model.keyboardSoundStyle == .red && model.keyboardVolume == 0.5 && model.keyboardSoundQuality == .original)
         let oldMusicVolume = model.musicVolume, oldImpact = model.hitVolume
         model.language = .english
         model.appearance = .dark
         model.experienceMode = .keyboardSounds
+        #expect(model.canChooseKeyboardSoundQuality)
+        model.keyboardSoundQuality = .hiFi
         model.keyboardSoundStyle = .mahjong
+        #expect(!model.canChooseKeyboardSoundQuality && model.keyboardAudio.quality == .hiFi)
         model.keyboardVolume = 0.27
         #expect(AppLocalization.appName == "KeyWoo")
         #expect(defaults.string(forKey: "appLanguage") == "en")
@@ -102,11 +105,17 @@ struct AppExperienceTests {
         #expect(defaults.string(forKey: "appAppearance") == "dark")
         #expect(defaults.string(forKey: "experienceMode") == "keyboardSounds")
         #expect(defaults.string(forKey: "keyboardSoundStyle") == "mahjong")
+        #expect(defaults.string(forKey: "keyboardSoundQuality") == "hiFi")
         #expect(defaults.double(forKey: "keyboardVolume") == 0.27)
         #expect(model.musicVolume == oldMusicVolume && model.hitVolume == oldImpact)
         #expect(!model.keyboardAudio.isRunning && !model.audio.isEnabled)
         model.language = .system
         #expect(defaults.object(forKey: "AppleLanguages") == nil)
+        let (restored, _, restoredRoot) = try fixture(defaults)
+        defer { restored.shutdown(); try? FileManager.default.removeItem(at: restoredRoot) }
+        restored.keyboardSoundStyle = .red
+        #expect(restored.canChooseKeyboardSoundQuality && restored.keyboardSoundQuality == .hiFi)
+        #expect(restored.keyboardAudio.quality == .hiFi)
     }
 
     @Test @MainActor func keyboardModeCountsEveryKeyWithoutPlayingMusicAndDeduplicatesHeldKeys() throws {

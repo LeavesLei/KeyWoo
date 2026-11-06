@@ -21,6 +21,70 @@ public sealed class AudioTests {
         Assert.Equal(bank.Packs.Keys.Order(),bank.Presets.Select(p=>p.Id).Order());
     }
     [Fact] public void SameMixerActuallyChangesStyleAndStopsOldRelease(){var m=new SampleMixer(Bank.Value){Style="blue"};m.Physical(A,true);var first=new float[12000];m.Read(first);m.Style="mahjong";m.Physical(A,false);m.Read(new float[24000]);Assert.Equal(0,m.Snapshot.Releases);m.Physical(A,true);var second=new float[12000];m.Read(second);Assert.False(first.SequenceEqual(second));}
+    [Fact]
+    public void RecordedVersionsStayAlignedAndSwitchPcmWithoutReplacingOriginal() {
+        var bank=Bank.Value;
+        var recorded=bank.Presets.Where(p=>p.Category!=SoundCategory.Synthesized).Select(p=>p.Id).Order();
+        Assert.Equal(recorded,bank.HiFiPacks.Keys.Order());
+        var mixer=new SampleMixer(bank);
+        float[] Render() {
+            mixer.Preview(0,true,0);
+            var pcm=new float[48000];
+            mixer.Read(pcm);
+            return pcm;
+        }
+        foreach(var (id,hiFi) in bank.HiFiPacks) {
+            Assert.Equal(bank.Packs[id].Clips.Select(c=>c.Frames),hiFi.Clips.Select(c=>c.Frames));
+            mixer.Style=id;
+            var original=Render();
+            mixer.HiFiEnabled=true;
+            Assert.False(original.SequenceEqual(Render()),id);
+            mixer.HiFiEnabled=false;
+            Assert.Equal(original,Render());
+        }
+    }
+    [Fact]
+    public void SwitchingQualityKeepsHeldReleaseAndCancelsOnlyThePreview() {
+        float[] RenderRelease(bool switchWhileHeld) {
+            var mixer=new SampleMixer(Bank.Value){Style="panda"};
+            mixer.Physical(A,true);
+            mixer.Read(new float[96000]);
+            if(switchWhileHeld) {
+                mixer.Preview(0,true,0);
+                mixer.HiFiEnabled=true;
+            }
+            mixer.Physical(A,false);
+            var pcm=new float[48000];
+            mixer.Read(pcm);
+            Assert.Equal(1,mixer.Snapshot.Attacks);
+            Assert.Equal(1,mixer.Snapshot.Releases);
+            return pcm;
+        }
+        var original=RenderRelease(false);
+        Assert.Contains(original,v=>Math.Abs(v)>0.00001f);
+        Assert.Equal(original,RenderRelease(true));
+    }
+    [Fact]
+    public void StreetBeatHasDistinctPressOnlyVoicesAndRetainsPcmInHiFiMode() {
+        var bank=Bank.Value;
+        string id=SampleBank.StreetBeatPreset;
+        Assert.Equal(SoundCategory.Synthesized,bank.Presets.Single(p=>p.Id==id).Category);
+        Assert.False(bank.HiFiPacks.ContainsKey(id));
+        var pack=bank.Packs[id];
+        var roleClips=new HashSet<SampleClip>();
+        foreach(int key in new[]{0,49,36,56,51,48}) {
+            Assert.True(roleClips.Add(Assert.IsType<SampleClip>(pack.Get(key,true,0))));
+            Assert.Null(pack.Get(key,false,0));
+        }
+        float[] Render(bool hiFi) {
+            var mixer=new SampleMixer(bank){Style=id,HiFiEnabled=hiFi};
+            mixer.Preview(49,true,0);
+            var pcm=new float[48000];
+            mixer.Read(pcm);
+            return pcm;
+        }
+        Assert.Equal(Render(false),Render(true));
+    }
     [Fact] public void PauseIsExactlySilentAndResumeDoesNotReplayQueuedKeys(){var m=new SampleMixer(Bank.Value);m.Physical(A,true);m.Enabled=false;var pcm=new float[96000];m.Read(pcm);Assert.All(pcm,v=>Assert.Equal(0,v));m.Enabled=true;m.Read(pcm);Assert.All(pcm,v=>Assert.Equal(0,v));}
     [Theory]
     [InlineData(4f)]

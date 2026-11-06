@@ -5,6 +5,12 @@ import CryptoKit
 import Foundation
 import Darwin
 
+enum KeyboardSoundQuality: String, CaseIterable, Identifiable, Sendable {
+    case original, hiFi
+    var id: String { rawValue }
+    var title: String { L(self == .original ? "原音" : "Hi-Fi 高保真") }
+}
+
 enum KeyboardSoundCategory: String, CaseIterable, Identifiable, Sendable {
     case recorded, fun
     var id: String { rawValue }
@@ -14,12 +20,12 @@ enum KeyboardSoundCategory: String, CaseIterable, Identifiable, Sendable {
 enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
     case red, blue, brown, black, oreo, purple, topre, panda, mahjong
     case bluePBT, brownABS, blackABS
-    case typewriter, bubble, woodblock, paper, raindrop, brick, arcade, laser
+    case typewriter, bubble, woodblock, paper, raindrop, brick, arcade, laser, streetBeat
     case macbookPro, hermes, mahjongTiles, woodDesk
     var id: String { rawValue }
     var category: KeyboardSoundCategory {
         switch self {
-        case .mahjong, .typewriter, .bubble, .woodblock, .paper, .raindrop, .brick, .arcade, .laser,
+        case .mahjong, .typewriter, .bubble, .woodblock, .paper, .raindrop, .brick, .arcade, .laser, .streetBeat,
              .hermes, .mahjongTiles, .woodDesk: return .fun
         default: return .recorded
         }
@@ -46,6 +52,7 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .brick: return L("积木")
         case .arcade: return L("街机")
         case .laser: return L("激光")
+        case .streetBeat: return L("街舞节拍")
         case .macbookPro: return L("MacBook Pro 键盘")
         case .hermes: return L("Hermes 打字机")
         case .mahjongTiles: return L("麻将牌实录")
@@ -74,6 +81,7 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .brick: return L("塑料积木卡扣，短而扎实")
         case .arcade: return L("复古像素短音，不自动播放旋律")
         case .laser: return L("轻巧科幻扫频，快速收尾")
+        case .streetBeat: return L("低音底鼓、紧实军鼓和清脆踩镲")
         case .macbookPro: return L("短行程轻触，带自然回弹")
         case .hermes: return L("金属字锤、空格与行尾铃")
         case .mahjongTiles: return L("真实牌面轻碰，大键更扎实")
@@ -93,6 +101,7 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .bubble, .raindrop: return [L("轻盈"), L("合成")]
         case .woodblock, .paper: return [L("自然拟音"), L("合成")]
         case .arcade, .laser: return [L("电子"), L("合成")]
+        case .streetBeat: return [L("嘻哈"), L("合成")]
         }
     }
     var symbol: String {
@@ -114,6 +123,7 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .brick: return "cube.fill"
         case .arcade: return "gamecontroller.fill"
         case .laser: return "bolt.fill"
+        case .streetBeat: return "music.note"
         case .macbookPro: return "laptopcomputer"
         }
     }
@@ -123,6 +133,7 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         default: return category == .recorded
         }
     }
+    var usesNativeFoley: Bool { !isRecorded && self != .streetBeat }
     var sourceLabel: String { L(isRecorded ? "真实录音" : "合成拟音") }
     var sourceTitle: String {
         switch self {
@@ -149,6 +160,8 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .hermes: return L("Hermes Precisa 305 实录。空格用原机空格声，回车用原机行尾铃，其余键轮换真实字锤声。")
         case .mahjongTiles, .woodDesk: return L("从实物录音选取独立短音。大键用另一组真实敲击，松开时静音。")
         case .mahjong: return L("程序合成的瓷牌拟音，不是实物录音。")
+        case .streetBeat:
+            return L("原创嘻哈鼓组。空格是底鼓，回车是军鼓，Shift 是拍手，退格是鼓边，Tab 是开镲，字母是闭镲。按下触发，松开静音。")
         default:
             return isRecorded ? L("原始键位录音，部分键位复用相近声音；可清楚分离的回弹跟随松开，其余保留完整敲击。") :
                 L("原创程序合成；普通键与大键分别设计，包含按下、松开和三种细微变化，不是实物录音。")
@@ -209,9 +222,11 @@ private final class KeyboardSoundBank: @unchecked Sendable {
     }
     private(set) var clips: [Clip] = []
     private(set) var loudness: [KeyboardSoundStyle: KeyboardLoudness.Profile] = [:]
+    private(set) var hiFiLoudness: [KeyboardSoundStyle: KeyboardLoudness.Profile] = [:]
     private var mappings: [KeyboardSoundStyle: [UInt16: Pair]] = [:]
     private var fallbacks: [KeyboardSoundStyle: Pair] = [:]
     private var synthesizedOffsets: [KeyboardSoundStyle: Int] = [:]
+    private var hiFiDeltas: [KeyboardSoundStyle: Int] = [:]
     private(set) var failures: Set<KeyboardSoundStyle> = []
     private(set) var information: [KeyboardSoundStyle: KeyboardRecordingInfo] = [:]
     private struct Pair: Decodable { let down: [Int]; let up: [Int] }
@@ -221,15 +236,21 @@ private final class KeyboardSoundBank: @unchecked Sendable {
         let clips: [Entry], keys: [String: Pair], fallback: Pair
     }
     private struct Manifest: Decodable { let schema: Int, sampleRate: Double; let packs: [String: Pack] }
+    private struct HiFiPack: Decodable { let file: String, sha256: String, originalSHA256: String }
+    private struct HiFiManifest: Decodable { let schema: Int, sampleRate: Double; let packs: [String: HiFiPack] }
     private enum LoadingFailure: Error { case missing, invalid }
-    func index(style: KeyboardSoundStyle, key: UInt16, released: Bool, variant: Int) -> Int {
+    func supportsHiFi(for style: KeyboardSoundStyle) -> Bool { hiFiDeltas[style] != nil }
+    func index(style: KeyboardSoundStyle, key: UInt16, released: Bool, variant: Int,
+               quality: KeyboardSoundQuality = .original) -> Int {
         if let offset = synthesizedOffsets[style] {
             let family = KeyboardSoundKeyFamily.forKeyCode(key)
             return offset + (family.rawValue * 2 + (released ? 1 : 0)) * Self.variants + variant % Self.variants
         }
         guard let pair = mappings[style]?[key] ?? fallbacks[style] else { return -1 }
         let indices = released ? pair.up : pair.down
-        return indices.isEmpty ? -1 : indices[variant % indices.count]
+        guard !indices.isEmpty else { return -1 }
+        let delta = quality == .hiFi ? hiFiDeltas[style, default: 0] : 0
+        return indices[variant % indices.count] + delta
     }
     private func variantCount(style: KeyboardSoundStyle, key: UInt16) -> Int {
         if synthesizedOffsets[style] != nil { return Self.variants }
@@ -260,7 +281,7 @@ private final class KeyboardSoundBank: @unchecked Sendable {
     }
     init(resourceURL: URL? = nil) {
         var result: [Clip] = []
-        for style in KeyboardSoundStyle.allCases where !style.isRecorded {
+        for style in KeyboardSoundStyle.allCases where style.usesNativeFoley {
             synthesizedOffsets[style] = result.count
             for family in KeyboardSoundKeyFamily.allCases {
                 for released in [false, true] {
@@ -276,11 +297,17 @@ private final class KeyboardSoundBank: @unchecked Sendable {
             }
         }
         let root = resourceURL ?? Self.resources()
-        let manifest = root.flatMap { try? Data(contentsOf: $0.appendingPathComponent("manifest.json")) }
-            .flatMap { try? JSONDecoder().decode(Manifest.self, from: $0) }
-        for style in KeyboardSoundStyle.allCases where style.isRecorded {
+        func read<T: Decodable>(_ name: String, as type: T.Type) -> T? {
+            root.flatMap { try? Data(contentsOf: $0.appendingPathComponent(name)) }
+                .flatMap { try? JSONDecoder().decode(type, from: $0) }
+        }
+        let manifest = read("manifest.json", as: Manifest.self)
+        let streetBeatManifest = read("street-beat-manifest.json", as: Manifest.self)
+        let hiFiManifest = read("hifi-manifest.json", as: HiFiManifest.self)
+        for style in KeyboardSoundStyle.allCases where synthesizedOffsets[style] == nil {
             do {
-                guard let root, let manifest, manifest.schema == 1, manifest.sampleRate == Self.rate,
+                let styleManifest = style == .streetBeat ? streetBeatManifest : manifest
+                guard let root, let manifest = styleManifest, manifest.schema == 1, manifest.sampleRate == Self.rate,
                       let pack = manifest.packs[style.rawValue] else { throw LoadingFailure.missing }
                 let offset = result.count
                 let loaded = try Self.load(pack: pack, style: style, root: root)
@@ -288,27 +315,41 @@ private final class KeyboardSoundBank: @unchecked Sendable {
                 func translated(_ pair: Pair) -> Pair { Pair(down: pair.down.map { $0 + offset }, up: pair.up.map { $0 + offset }) }
                 mappings[style] = Dictionary(uniqueKeysWithValues: pack.keys.map { (UInt16($0.key)!, translated($0.value)) })
                 fallbacks[style] = translated(pack.fallback)
-                information[style] = KeyboardRecordingInfo(clipCount: loaded.count, mappedKeyCount: pack.keys.count,
-                    separateReleaseKeyCount: pack.keys.values.filter { !$0.up.isEmpty }.count, sha256: pack.sha256)
+                if style.isRecorded {
+                    information[style] = KeyboardRecordingInfo(clipCount: loaded.count, mappedKeyCount: pack.keys.count,
+                        separateReleaseKeyCount: pack.keys.values.filter { !$0.up.isEmpty }.count, sha256: pack.sha256)
+                    // Companions share clip boundaries and mapping with the verified original.
+                    // An optional missing, stale or corrupt companion never disables Original.
+                    if let hiFiManifest, hiFiManifest.schema == 1, hiFiManifest.sampleRate == Self.rate,
+                       let companion = hiFiManifest.packs[style.rawValue],
+                       companion.originalSHA256 == pack.sha256,
+                       companion.file == "\(style.rawValue)/samples-hifi.wav",
+                       let polished = try? Self.loadClips(pack: pack, root: root, path: companion.file, sha256: companion.sha256) {
+                        hiFiDeltas[style] = result.count - offset
+                        result.append(contentsOf: polished)
+                    }
+                }
             } catch { failures.insert(style) }
         }
         clips = result
-        prepareLoudness()
+        loudness = prepareLoudness(quality: .original)
+        hiFiLoudness = prepareLoudness(quality: .hiFi)
     }
     deinit { for clip in clips { clip.samples.deallocate() } }
 
     /// The bank is shared and prepared once before starting any output device.
     /// One gain covers every contact of a preset, preserving key size, release
     /// balance, stereo imaging and the source WAVs. No analysis in the callback.
-    private func prepareLoudness() {
+    private func prepareLoudness(quality: KeyboardSoundQuality) -> [KeyboardSoundStyle: KeyboardLoudness.Profile] {
         var measurements: [Int: KeyboardLoudness.Measurement] = [:]
-        for style in KeyboardSoundStyle.allCases where !failures.contains(style) {
+        var profiles: [KeyboardSoundStyle: KeyboardLoudness.Profile] = [:]
+        for style in KeyboardSoundStyle.allCases where !failures.contains(style) && (quality == .original || supportsHiFi(for: style)) {
             var energy = 0.0, peak = 0.0, styleClips = Set<Int>()
             for (key, weight) in KeyboardLoudness.calibrationKeys {
                 let count = variantCount(style: style, key: key)
                 for variant in 0..<count {
                     for released in [false, true] {
-                        let id = index(style: style, key: key, released: released, variant: variant)
+                        let id = index(style: style, key: key, released: released, variant: variant, quality: quality)
                         guard clips.indices.contains(id) else { continue }
                         styleClips.insert(id)
                         if measurements[id] == nil {
@@ -326,7 +367,7 @@ private final class KeyboardSoundBank: @unchecked Sendable {
             for key: UInt16 in 0..<128 {
                 for variant in 0..<variantCount(style: style, key: key) {
                     for released in [false, true] {
-                        let id = index(style: style, key: key, released: released, variant: variant)
+                        let id = index(style: style, key: key, released: released, variant: variant, quality: quality)
                         if clips.indices.contains(id) { styleClips.insert(id) }
                     }
                 }
@@ -336,9 +377,10 @@ private final class KeyboardSoundBank: @unchecked Sendable {
                 for sample in 0..<(clip.frames * clip.channels) { peak = max(peak, Double(abs(clip.samples[sample]))) }
             }
             let profile = KeyboardLoudness.profile(energy: energy, peak: peak)
-            loudness[style] = profile
+            profiles[style] = profile
             for id in styleClips { clips[id].normalizationGain = profile.gain }
         }
+        return profiles
     }
 
     /// Export the exact precomputed synthesis cache for other platform clients.
@@ -350,8 +392,8 @@ private final class KeyboardSoundBank: @unchecked Sendable {
         let format = AVAudioFormat(standardFormatWithSampleRate: Self.rate, channels: 2)!
         var fileSettings = format.settings
         fileSettings[AVLinearPCMIsNonInterleaved] = false
-        for style in KeyboardSoundStyle.allCases where !style.isRecorded {
-            let offset = synthesizedOffsets[style]!
+        for style in KeyboardSoundStyle.allCases {
+            guard let offset = synthesizedOffsets[style] else { continue }
             let selected = Array(clips[offset..<(offset + KeyboardSoundKeyFamily.allCases.count * 2 * Self.variants)])
             let total = selected.reduce(0) { $0 + $1.frames }
             let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(total))!
@@ -404,10 +446,14 @@ private final class KeyboardSoundBank: @unchecked Sendable {
         guard (pack.fallback.down + pack.fallback.up).allSatisfy({ pack.clips.indices.contains($0) }),
               pack.fallback.up.isEmpty || pack.fallback.up.count == pack.fallback.down.count || (style == .panda && pack.fallback.up.count == 1),
               pack.clips.allSatisfy({ $0.startFrame >= 0 && $0.frames > 0 && $0.frames < 48_000 && $0.startFrame <= pack.frames - $0.frames }) else { throw LoadingFailure.invalid }
-        let url = root.appendingPathComponent(pack.file)
+        return try loadClips(pack: pack, root: root, path: pack.file, sha256: pack.sha256)
+    }
+
+    private static func loadClips(pack: Pack, root: URL, path: String, sha256: String) throws -> [Clip] {
+        let url = root.appendingPathComponent(path)
         let data = try Data(contentsOf: url)
         guard data.count < 25_000_000,
-              SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == pack.sha256 else { throw LoadingFailure.invalid }
+              SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == sha256 else { throw LoadingFailure.invalid }
         let file = try AVAudioFile(forReading: url)
         guard file.length == AVAudioFramePosition(pack.frames), file.processingFormat.sampleRate == rate,
               file.processingFormat.channelCount == 2,
@@ -896,10 +942,13 @@ final class KeyboardSoundEngine: ObservableObject {
             if style != oldValue {
                 releaseAll()
                 if bank.failures.contains(style) {
-                    stop(); errorMessage = L("键盘录音资源缺失或损坏，请重新安装应用。")
+                    stop(); errorMessage = L("键盘音效资源缺失或损坏，请重新安装应用。")
                 } else { errorMessage = nil }
             }
         }
+    }
+    var quality: KeyboardSoundQuality = .original {
+        didSet { if quality != oldValue { cancelPreview() } }
     }
     var volume: Double = 0.55 { didSet { core.setVolume(volume) } }
     @Published private(set) var errorMessage: String?
@@ -911,13 +960,16 @@ final class KeyboardSoundEngine: ObservableObject {
     private var engine: AVAudioEngine?
     private var observer: NSObjectProtocol?
     private var meterTimer: Timer?
-    private var held: [UInt16: Int] = [:]
+    private var held: [UInt16: (variant: Int, quality: KeyboardSoundQuality)] = [:]
     private var variantCounter = 0
     private var previewTask: Task<Void, Never>?
     var heldKeyCount: Int { held.count }
     var diagnostics: KeyboardSoundSnapshot { core.snapshot() }
     func recordingInfo(for style: KeyboardSoundStyle) -> KeyboardRecordingInfo? { bank.information[style] }
-    func loudnessProfile(for style: KeyboardSoundStyle) -> KeyboardLoudness.Profile? { bank.loudness[style] }
+    func supportsHiFi(for style: KeyboardSoundStyle) -> Bool { bank.supportsHiFi(for: style) }
+    func loudnessProfile(for style: KeyboardSoundStyle, quality: KeyboardSoundQuality = .original) -> KeyboardLoudness.Profile? {
+        (quality == .hiFi ? bank.hiFiLoudness[style] : nil) ?? bank.loudness[style]
+    }
     func hasIndependentRelease(keyCode: UInt16) -> Bool { bank.index(style: style, key: keyCode, released: true, variant: 0) >= 0 }
     static let sampleRate = KeyboardSoundBank.rate
     static let maximumVoices = KeyboardSoundRenderCore.maximumVoices
@@ -945,7 +997,7 @@ final class KeyboardSoundEngine: ObservableObject {
     func start() {
         guard !isRunning else { return }
         guard !bank.failures.contains(style) else {
-            errorMessage = L("键盘录音资源缺失或损坏，请重新安装应用。")
+            errorMessage = L("键盘音效资源缺失或损坏，请重新安装应用。")
             return
         }
         errorMessage = nil
@@ -981,12 +1033,13 @@ final class KeyboardSoundEngine: ObservableObject {
         guard isRunning, held[keyCode] == nil else { return }
         cancelPreview()
         let variant = variantCounter
-        variantCounter &+= 1; held[keyCode] = variant
-        enqueue(keyCode: keyCode, released: false, variant: variant, preview: false)
+        variantCounter &+= 1; held[keyCode] = (variant, quality)
+        enqueue(keyCode: keyCode, released: false, variant: variant, quality: quality, preview: false)
     }
     func noteOff(keyCode: UInt16) {
-        guard isRunning, let variant = held.removeValue(forKey: keyCode) else { return }
-        enqueue(keyCode: keyCode, released: true, variant: variant, preview: false)
+        // A held key releases with the same recording as its original attack.
+        guard isRunning, let press = held.removeValue(forKey: keyCode) else { return }
+        enqueue(keyCode: keyCode, released: true, variant: press.variant, quality: press.quality, preview: false)
     }
     /// Focus/mode reset is a brief fade, not a synthetic set of key-up sounds.
     func releaseAll() {
@@ -1003,13 +1056,25 @@ final class KeyboardSoundEngine: ObservableObject {
     func previewSequence() {
         cancelPreview()
         guard isRunning else { return }
+        let hits: [(milliseconds: Int, keys: [UInt16])]
+        if style == .streetBeat {
+            // One bar at 96 BPM, with swung sixteenths and layered backbeats.
+            hits = [(0, [49, 0]), (177, [0]), (313, [0]), (489, [0]),
+                    (625, [36, 56, 0]), (802, [0]), (938, [49, 0]), (1114, [51]),
+                    (1250, [49, 0]), (1427, [0]), (1563, [0]), (1739, [0]),
+                    (1875, [36, 56, 0]), (2052, [0]), (2188, [48])]
+        } else {
+            hits = [(0, [0]), (140, [1]), (280, [2]), (540, [49]), (850, [36]), (1150, [51])]
+        }
         previewTask = Task { @MainActor [weak self] in
-            let keys: [UInt16] = [0, 1, 2, 49, 36, 51]
-            let waits: [UInt64] = [0, 140_000_000, 140_000_000, 260_000_000, 310_000_000, 300_000_000]
-            for index in keys.indices {
-                if waits[index] > 0 { try? await Task.sleep(nanoseconds: waits[index]) }
+            let clock = ContinuousClock()
+            let start = clock.now
+            for (index, hit) in hits.enumerated() {
+                if hit.milliseconds > 0 {
+                    try? await clock.sleep(until: start.advanced(by: .milliseconds(hit.milliseconds)))
+                }
                 guard !Task.isCancelled, let self, self.isRunning else { return }
-                self.previewOne(keyCode: keys[index])
+                for key in hit.keys { self.previewOne(keyCode: key, variant: index) }
             }
         }
     }
@@ -1017,16 +1082,16 @@ final class KeyboardSoundEngine: ObservableObject {
         previewTask?.cancel(); previewTask = nil
         core.invalidatePreviews()
     }
-    private func previewOne(keyCode: UInt16) {
+    private func previewOne(keyCode: UInt16, variant: Int? = nil) {
         guard isRunning else { return }
-        let variant = variantCounter
-        variantCounter &+= 1
-        enqueue(keyCode: keyCode, released: false, variant: variant, preview: true)
-        enqueue(keyCode: keyCode, released: true, variant: variant, preview: true)
+        let selected = variant ?? variantCounter
+        if variant == nil { variantCounter &+= 1 }
+        enqueue(keyCode: keyCode, released: false, variant: selected, quality: quality, preview: true)
+        enqueue(keyCode: keyCode, released: true, variant: selected, quality: quality, preview: true)
     }
-    private func enqueue(keyCode: UInt16, released: Bool, variant: Int, preview: Bool) {
+    private func enqueue(keyCode: UInt16, released: Bool, variant: Int, quality: KeyboardSoundQuality, preview: Bool) {
         let family = KeyboardSoundKeyFamily.forKeyCode(keyCode)
-        let clip = bank.index(style: style, key: keyCode, released: released, variant: variant)
+        let clip = bank.index(style: style, key: keyCode, released: released, variant: variant, quality: quality)
         // Very narrow mechanical placement; wide stereo would make rapid text
         // entry tiring. Large keys remain centered.
         let pan: Float = !style.isRecorded && family == .ordinary ? Float(Int(keyCode) % 7 - 3) * 0.025 : 0

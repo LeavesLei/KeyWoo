@@ -82,6 +82,7 @@ public sealed class MainWindow : Window {
             if(!bank.Packs.ContainsKey(settings.Preset))settings.Preset=SampleBank.DefaultPreset;
             refreshSoundCatalog?.Invoke();
             audio=new AudioOutput(bank);audio.Mixer.Style=settings.Preset;audio.Mixer.Volume=(float)settings.Volume;
+            audio.Mixer.HiFiEnabled=settings.HiFiEnabled;
             audio.Mixer.Enabled=enabled;
             audio.Failed+=message=>Dispatcher.InvokeAsync(()=>ShowAudioError(message));
             audio.Recovered+=ClearAudioError;audio.Start();
@@ -128,6 +129,28 @@ public sealed class MainWindow : Window {
     private UIElement Sounds() {
         var panel=Panel();var grid=new UniformGrid{Columns=3,Margin=new Thickness(0,0,0,12)};
         var category=new ComboBox{DisplayMemberPath=nameof(SoundGroup.Label),Width=250,HorizontalAlignment=HorizontalAlignment.Left,Margin=new Thickness(0,0,0,12)};
+        var versionRow=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,0,0,12)};
+        string versionTitle=T("录音版本","Recording version");
+        var versionLabel=Text(versionTitle,13,true);
+        versionLabel.VerticalAlignment=VerticalAlignment.Center;
+        versionLabel.Margin=new Thickness(0,0,12,0);
+        versionRow.Children.Add(versionLabel);
+        var version=new ComboBox {
+            ItemsSource=new KeyValuePair<bool,string>[]{new(false,T("原音","Original")),new(true,T("Hi-Fi 高保真","Hi-Fi"))},
+            DisplayMemberPath="Value",SelectedValuePath="Key",SelectedValue=settings.HiFiEnabled,Width=150
+        };
+        AutomationProperties.SetAutomationId(version,"recording-version");
+        AutomationProperties.SetName(version,versionTitle);
+        version.SelectionChanged+=async(_,_)=>{
+            if(building||version.SelectedValue is not bool hiFi||settings.HiFiEnabled==hiFi)return;
+            settings.HiFiEnabled=hiFi;
+            if(audio is not null)audio.Mixer.HiFiEnabled=hiFi;
+            SaveSoon();
+            await PreviewSequence();
+        };
+        versionRow.Children.Add(version);
+        void UpdateVersionVisibility()=>versionRow.Visibility=soundBank?.HiFiPacks.ContainsKey(settings.Preset)==true
+            ?Visibility.Visible:Visibility.Collapsed;
         panel.Children.Add(category);
         void FillPresets() {
             grid.Children.Clear();
@@ -137,7 +160,12 @@ public sealed class MainWindow : Window {
                 string id=preset.Id;
                 var label=new StackPanel();label.Children.Add(Text(PresetName(preset),15));
                 label.Children.Add(Text(preset.Category==SoundCategory.Synthesized?T("合成拟音","Synthesized"):T("真实录音","Recorded"),11,true));
-                var button=MakeButton("",async(_,_)=>{settings.Preset=id;if(audio is not null)audio.Mixer.Style=id;UpdatePresets();SaveSoon();await PreviewSequence();});
+                var button=MakeButton("",async(_,_)=>{
+                    settings.Preset=id;
+                    if(audio is not null)audio.Mixer.Style=id;
+                    UpdatePresets();UpdateVersionVisibility();SaveSoon();
+                    await PreviewSequence();
+                });
                 button.Content=label;button.MinHeight=76;button.Margin=new Thickness(0,0,10,10);button.HorizontalContentAlignment=HorizontalAlignment.Left;
                 AutomationProperties.SetAutomationId(button,"preset-"+id);presetButtons[id]=button;grid.Children.Add(button);
             }
@@ -149,9 +177,11 @@ public sealed class MainWindow : Window {
                 .Select(g=>new SoundGroup(g.Key,$"{SoundCategoryName(g.Key)} · {g.Count()}",g.ToArray())).ToArray()??[];
             category.ItemsSource=groups;
             category.SelectedItem=groups.FirstOrDefault(g=>g.Presets.Any(p=>p.Id==settings.Preset))??groups.FirstOrDefault();
+            UpdateVersionVisibility();
         };
         refreshSoundCatalog();
         panel.Children.Add(grid);
+        panel.Children.Add(versionRow);
         panel.Children.Add(VolumeControl());
         var practicePanel=Panel();practicePanel.Children.Add(Text(T("试打","Try typing"),16));
         practice=new TextBox{AcceptsReturn=true,MinHeight=70,Margin=new Thickness(0,12,0,16),VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
@@ -227,14 +257,33 @@ public sealed class MainWindow : Window {
     };
     private string PresetName(SoundPreset preset)=>preset.Id switch {"topre"=>T("Topre 静电容","Topre"),"oreo"=>"Everglide Oreo","panda"=>"Holy Panda","purple"=>T("Everglide 水晶紫","Everglide Crystal Purple"),"red"=>T("Cherry 红轴 · ABS","Cherry Red · ABS"),"blue"=>T("Cherry 青轴 · ABS","Cherry Blue · ABS"),"brown"=>T("Cherry 茶轴 · PBT","Cherry Brown · PBT"),"black"=>T("Cherry 黑轴 · PBT","Cherry Black · PBT"),"bluePBT"=>T("Cherry 青轴 · PBT","Cherry Blue · PBT"),"brownABS"=>T("Cherry 茶轴 · ABS","Cherry Brown · ABS"),"blackABS"=>T("Cherry 黑轴 · ABS","Cherry Black · ABS"),"typewriter"=>T("打字机","Typewriter"),"bubble"=>T("泡泡","Bubble"),"woodblock"=>T("木鱼","Woodblock"),"paper"=>T("纸笺","Paper"),"raindrop"=>T("水滴","Raindrop"),"brick"=>T("积木","Brick"),"arcade"=>T("街机","Arcade"),"laser"=>T("激光","Laser"),"mahjong"=>T("麻将","Mahjong"),_=>Chinese?preset.TitleZh??preset.Title:preset.Title};
     private void UpdatePresets(){foreach(var (id,b) in presetButtons){b.BorderBrush=Brush(id==settings.Preset?"AccentBrush":"LineBrush");b.BorderThickness=new Thickness(id==settings.Preset?2:1);}}
-    private async Task PreviewSequence() {
+    // Match macOS for A/B comparison and the 96 BPM Street Beat demonstration.
+    private static readonly (int Time,int[] Keys)[] RecordingPreview =
+        [(0,[0]),(140,[1]),(280,[2]),(540,[49]),(850,[36]),(1150,[51])];
+    private static readonly (int Time,int[] Keys)[] StreetBeatPreview =
+        [(0,[49,0]),(177,[0]),(313,[0]),(489,[0]),(625,[36,56,0]),(802,[0]),(938,[49,0]),(1114,[51]),
+         (1250,[49,0]),(1427,[0]),(1563,[0]),(1739,[0]),(1875,[36,56,0]),(2052,[0]),(2188,[48])];
+
+    private Task PreviewSequence()=>PlayPreview(audio?.Mixer.Style==SampleBank.StreetBeatPreset?StreetBeatPreview:RecordingPreview);
+    private Task PreviewKey(int code)=>PlayPreview([(0,[code])],Environment.TickCount);
+    private async Task PlayPreview((int Time,int[] Keys)[] pattern,int take=0) {
         preview?.Cancel();preview?.Dispose();preview=new CancellationTokenSource();var token=preview.Token;
         if(!enabled||audio is null)return;
-        try{foreach(int code in new[]{0,1,2,49,36,51}){await PreviewKey(code,token);await Task.Delay(90,token);}}catch(OperationCanceledException){}
-    }
-    private async Task PreviewKey(int code,CancellationToken token=default) {
-        if(!enabled||audio is null)return;int variant=Environment.TickCount;
-        string style=audio.Mixer.Style;audio.Mixer.Preview(code,true,variant);await Task.Delay(70,token);if(!token.IsCancellationRequested&&audio.Mixer.Style==style)audio.Mixer.Preview(code,false,variant);
+        var mixer=audio.Mixer;
+        int generation=mixer.CancelPreview();
+        var clock=System.Diagnostics.Stopwatch.StartNew();
+        try {
+            foreach(var (time,keys) in pattern) {
+                await Task.Delay((int)Math.Max(0,time-clock.ElapsedMilliseconds),token);
+                if(token.IsCancellationRequested||!mixer.IsPreviewCurrent(generation))return;
+                foreach(int key in keys) {
+                    mixer.Preview(key,true,take,generation);
+                    // The mixer applies the same minimum 70 ms release delay to previews.
+                    mixer.Preview(key,false,take,generation);
+                }
+                take++;
+            }
+        } catch(OperationCanceledException){}
     }
     private UIElement Statistics() {
         var panel=Panel();panel.Children.Add(Text(T("指定时间段的逐键次数","Key counts over a chosen period"),18));
@@ -361,7 +410,7 @@ public sealed class MainWindow : Window {
         panel.Children.Add(flashes);
         panel.Children.Add(KeyBurstSlider(T("动画幅度","Motion intensity"),"key-burst-intensity",.4,1.5,
             settings.KeyBurstIntensity,value=>settings.KeyBurstIntensity=value));
-        panel.Children.Add(KeyBurstSlider(T("亮度","Brightness"),"key-burst-brightness",.25,1,
+        panel.Children.Add(KeyBurstSlider(T("特效透明度","Effect opacity"),"key-burst-opacity",.25,1,
             settings.KeyBurstBrightness,value=>settings.KeyBurstBrightness=value));
         var card=Card(panel);
         card.Margin=new Thickness(0,16,0,16);

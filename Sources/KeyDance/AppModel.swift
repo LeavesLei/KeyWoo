@@ -70,6 +70,15 @@ final class AppModel: ObservableObject {
             if started && isEnabled && isKeyboardSoundMode { keyboardAudio.start() }
         }
     }
+    @Published var keyboardSoundQuality: KeyboardSoundQuality {
+        didSet {
+            guard keyboardSoundQuality != oldValue else { return }
+            keyboardAudio.quality = keyboardSoundQuality
+            defaults.set(keyboardSoundQuality.rawValue, forKey: "keyboardSoundQuality")
+            if isKeyboardSoundMode && canChooseKeyboardSoundQuality { previewSound() }
+        }
+    }
+    var canChooseKeyboardSoundQuality: Bool { keyboardAudio.supportsHiFi(for: keyboardSoundStyle) }
     @Published var keyboardVolume: Double {
         didSet {
             let value = Self.validVolume(keyboardVolume, fallback: 0.5, maximum: KeyboardSoundEngine.maximumVolume)
@@ -92,6 +101,15 @@ final class AppModel: ObservableObject {
             if rhythmIntensity != value { rhythmIntensity = value }
             rhythmFeedback.intensity = value
             defaults.set(value, forKey: "rhythmIntensity")
+        }
+    }
+    static let rhythmOpacityRange = 0.25...1.0
+    @Published var rhythmOpacity: Double {
+        didSet {
+            let value = Self.validRhythmOpacity(rhythmOpacity)
+            if rhythmOpacity != value { rhythmOpacity = value }
+            rhythmFeedback.opacity = value
+            defaults.set(value, forKey: "rhythmOpacity")
         }
     }
     @Published var rhythmStyle: RhythmVisualStyle {
@@ -188,6 +206,7 @@ final class AppModel: ObservableObject {
         self.musicModeAvailable = musicModeAvailable
         rhythmEnabled = defaults.bool(forKey: "rhythmEnabled")
         rhythmIntensity = Self.validRhythmIntensity(defaults.object(forKey: "rhythmIntensity") == nil ? 1 : defaults.double(forKey: "rhythmIntensity"))
+        rhythmOpacity = Self.validRhythmOpacity((defaults.object(forKey: "rhythmOpacity") as? NSNumber)?.doubleValue ?? 1)
         rhythmClickThrough = defaults.bool(forKey: "rhythmClickThrough")
         rhythmStyle = RhythmVisualStyle(rawValue: defaults.string(forKey: "rhythmStyle") ?? "energy") ?? .energy
         rhythmFlashes = defaults.object(forKey: "rhythmFlashes") == nil ? true : defaults.bool(forKey: "rhythmFlashes")
@@ -195,6 +214,7 @@ final class AppModel: ObservableObject {
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appAppearance") ?? "system") ?? .system
         experienceMode = musicModeAvailable ? (AppExperienceMode(rawValue: defaults.string(forKey: "experienceMode") ?? "music") ?? .music) : .keyboardSounds
         keyboardSoundStyle = KeyboardSoundStyle(rawValue: defaults.string(forKey: "keyboardSoundStyle") ?? "red") ?? .red
+        keyboardSoundQuality = KeyboardSoundQuality(rawValue: defaults.string(forKey: "keyboardSoundQuality") ?? "") ?? .original
         keyboardVolume = Self.validVolume(defaults.object(forKey: "keyboardVolume") == nil ? 0.5 : defaults.double(forKey: "keyboardVolume"), fallback: 0.5, maximum: KeyboardSoundEngine.maximumVolume)
         let arguments = ProcessInfo.processInfo.arguments
         if let statistics {
@@ -229,8 +249,10 @@ final class AppModel: ObservableObject {
         AppLocalization.language = language
         defaults.set(language == .system ? nil : [language.rawValue], forKey: "AppleLanguages")
         self.keyboardAudio.style = keyboardSoundStyle
+        self.keyboardAudio.quality = keyboardSoundQuality
         self.keyboardAudio.volume = keyboardVolume
         rhythmFeedback.intensity = rhythmIntensity
+        rhythmFeedback.opacity = rhythmOpacity
         rhythmFeedback.visualStyle = rhythmStyle
         rhythmFeedback.flashesEnabled = rhythmFlashes
         audio.style = style
@@ -431,6 +453,11 @@ final class AppModel: ObservableObject {
 
     private static func validRhythmIntensity(_ value: Double) -> Double {
         value.isFinite ? min(1.5, max(0.4, value)) : 1
+    }
+
+    private static func validRhythmOpacity(_ value: Double) -> Double {
+        let range = rhythmOpacityRange
+        return value.isFinite ? min(range.upperBound, max(range.lowerBound, value)) : range.upperBound
     }
     var musicTracks: [MusicTrack] {
         MusicLibrary.builtInTracks + [MusicLibrary.generativeTrack].compactMap { $0 } + music.importedTracks.map { track in

@@ -5,9 +5,11 @@ import json
 import os
 from pathlib import Path
 import stat
+import struct
 import tempfile
 import unittest
 import warnings
+import wave
 import zipfile
 
 REPO = Path(__file__).resolve().parents[2]
@@ -74,6 +76,43 @@ class AssetScriptsTests(unittest.TestCase):
         for part in self.manifest['parts']:(self.output/part['file']).unlink()
         self.assertEqual(prepare.prepare(self.target,self.output)['status'],'verified')
         self.assertEqual(code.read_text(),'preserved code');self.assertEqual(license_file.read_text(),'preserved license')
+
+    def test_derived_sound_assets_preserve_verified_recording_and_repair_corruption(self):
+        relative = prepare.KEYBOARD_ROOT + "red/samples.wav"
+        original = self.source / relative
+        frames = 480
+        pcm = [0] * (frames * 2)
+        pcm[48:52] = [4000, 3500, -1500, -1600]
+        with wave.open(str(original), "wb") as audio:
+            audio.setparams((2, 2, 48000, frames, "NONE", "not compressed"))
+            audio.writeframes(struct.pack("<" + "h" * len(pcm), *pcm))
+        original_data = original.read_bytes()
+        original_sha = hashlib.sha256(original_data).hexdigest()
+        pack.pack(self.source, self.output, part_size=512)
+        prepare.prepare(self.target, self.output)
+        catalog = self.target / prepare.KEYBOARD_ROOT / "manifest.json"
+        catalog.write_text(json.dumps({"schema": 1, "sampleRate": 48000, "packs": {"red": {
+            "file": "red/samples.wav", "frames": frames, "sha256": original_sha,
+            "clips": [{"startFrame": 0, "frames": frames}]
+        }}}))
+        self.assertEqual(prepare.prepare_sound_variants(self.target, self.output), 4)
+        manifest = json.loads((self.target / prepare.HIFI_MANIFEST).read_text())
+        entry = manifest["packs"]["red"]
+        hifi_path = self.target / prepare.KEYBOARD_ROOT / entry["file"]
+        hifi_data = hifi_path.read_bytes()
+        self.assertEqual(entry["originalSHA256"], original_sha)
+        self.assertEqual(entry["sha256"], hashlib.sha256(hifi_data).hexdigest())
+        self.assertEqual((self.target / relative).read_bytes(), original_data)
+        self.assertNotEqual(hifi_data, original_data)
+        with wave.open(str(hifi_path), "rb") as audio:
+            self.assertEqual((audio.getnframes(), audio.getframerate(), audio.getnchannels()), (frames, 48000, 2))
+        self.assertEqual(prepare.prepare_sound_variants(self.target, self.output, check_only=True), 0)
+        self.assertEqual(pack.inventory(self.target), sorted(self.paths))
+        hifi_path.write_bytes(b"corrupt")
+        with self.assertRaisesRegex(prepare.AssetError, "mismatched Hi-Fi"):
+            prepare.prepare_sound_variants(self.target, self.output, check_only=True)
+        self.assertEqual(prepare.prepare_sound_variants(self.target, self.output), 1)
+        self.assertEqual(hifi_path.read_bytes(), hifi_data)
 
     def test_corrupt_part_fails_before_any_destination_replacement(self):
         existing=self.target/self.paths[0];existing.parent.mkdir(parents=True);existing.write_bytes(b'keep this failed-build source')

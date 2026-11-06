@@ -25,7 +25,7 @@ internal static class KeyBurstVerification {
             new(0x57,0x11), new(0x4F,0x18), new(0x4F,0x18)};
         for (int index = 0; index < keys.Length; index++) word.Press(keys[index], index * .06);
         var typing = Render(word, .5, Standard);
-        var dim = Render(word, .5, Standard with { Brightness = .5 });
+        var dim = Render(word, .5, Standard with { Brightness = .25 });
         var fade = Render(word, 2.8, Standard);
         Require(typing.Pixels > 100 && typing.Brightness > 0, "Typing must draw visible colored glyphs.");
         Require(dim.Brightness > 0 && dim.Brightness < typing.Brightness, "Brightness must affect the drawn frame.");

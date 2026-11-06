@@ -8,10 +8,12 @@ internal sealed class Settings {
     public string Language {get;set;}="system";
     public string Appearance {get;set;}="system";
     public string Preset {get;set;}=SampleBank.DefaultPreset;
+    public bool HiFiEnabled {get;set;}
     public double Volume {get;set;}=.5;
     public bool KeyBurstEnabled {get;set;}
     public bool KeyBurstFlashes {get;set;}=true;
     public double KeyBurstIntensity {get;set;}=1;
+    // Keep the original JSON key so existing opacity choices survive updates.
     public double KeyBurstBrightness {get;set;}=1;
     public bool MappingEnabled {get;set;}
     public List<InputRule> Rules {get;set;}=[];

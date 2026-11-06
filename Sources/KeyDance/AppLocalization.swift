@@ -102,6 +102,10 @@ enum AppLocalization {
     static let translations = commonTranslations.merging(FeatureTranslations.english) { _, newer in newer }
     private static let commonTranslations: [String: String] = [
         "音色": "Sounds",
+        "录音版本": "Recording version",
+        "原音": "Original",
+        "Hi-Fi 高保真": "Hi-Fi",
+        "原音保留录音原貌；Hi-Fi 减少低频杂音和尾部底噪。切换时可试听同一段按键。": "Original keeps the existing recording. Hi-Fi reduces low-end rumble and noise in the tails. Switch versions to preview the same keystrokes.",
         "统计说明": "About these counts",
         "试打": "Try typing",
         "更多设置": "More options",
@@ -246,7 +250,7 @@ enum AppLocalization {
         "五种普通键录音，空格、回车、退格分别采录；其余键复用普通键。": "Five standard-key recordings, plus separate Space, Return and Delete recordings. Other keys reuse the standard-key samples.",
         "原始键位录音，部分键位复用相近声音；可清楚分离的回弹跟随松开，其余保留完整敲击。": "Original key recordings, with some positions reusing related samples. Clear return sounds follow key release; other keys use the complete keystroke recording.",
         "程序合成的瓷牌拟音，不是实物录音。": "Synthesized tile sounds, not a recording of real tiles.",
-        "键盘录音资源缺失或损坏，请重新安装应用。": "Keyboard recordings are missing or damaged. Please reinstall the app.",
+        "键盘音效资源缺失或损坏，请重新安装应用。": "Keyboard sound files are missing or damaged. Please reinstall the app.",
         "全部暂停": "Pause all",
         "继续": "Resume",
         "暂停音乐": "Pause music",

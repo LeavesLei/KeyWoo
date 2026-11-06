@@ -60,6 +60,19 @@ struct RhythmSettingsCard: View {
                         .font(.system(size: 12)).monospacedDigit()
                         .foregroundStyle(Palette.muted).frame(width: 40, alignment: .trailing)
                 }
+                HStack(spacing: 12) {
+                    HStack(spacing: 2) {
+                        Text(L("特效透明度")).font(.system(size: 12)).foregroundStyle(Palette.muted)
+                        InfoHelpButton(title: "特效透明度", message: "三种律动样式共用。25% 最淡，100% 保持原始亮度。", identifier: "rhythm-opacity-help")
+                    }
+                    Slider(value: $model.rhythmOpacity, in: AppModel.rhythmOpacityRange, step: 0.01)
+                        .accessibilityLabel(L("特效透明度"))
+                        .accessibilityValue(Text(model.rhythmOpacity.formatted(.percent.precision(.fractionLength(0)))))
+                        .accessibilityIdentifier("rhythm-opacity")
+                    Text(model.rhythmOpacity.formatted(.percent.precision(.fractionLength(0))))
+                        .font(.system(size: 12)).monospacedDigit()
+                        .foregroundStyle(Palette.muted).frame(width: 40, alignment: .trailing)
+                }
                 HStack {
                     HStack(spacing: 2) {
                         Toggle(L("闪光效果"), isOn: $model.rhythmFlashes)

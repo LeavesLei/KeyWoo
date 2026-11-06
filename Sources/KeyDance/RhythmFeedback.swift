@@ -304,6 +304,7 @@ final class RhythmFeedbackModel: ObservableObject {
         }
     }
     @Published var flashesEnabled = true
+    @Published var opacity = 1.0
     @Published var intensity = 1.0 {
         didSet {
             let sanitized = intensity.isFinite ? min(1.5, max(0.4, intensity)) : 1

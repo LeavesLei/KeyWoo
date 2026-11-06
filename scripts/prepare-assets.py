@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify or restore KeyWoo's explicitly whitelisted binary application assets.
+"""Restore KeyWoo's verified binary assets and build derived sound presets.
 
 Python 3.9+, standard library only. No network access, extraction of executable
 code, or credentials. The committed manifest is the trust anchor; checksums
@@ -7,6 +7,7 @@ prove parts and files match it, not an independent publisher signature.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -16,6 +17,7 @@ import stat
 import sys
 import tempfile
 import unicodedata
+import wave
 import zipfile
 
 PART_LIMIT = 20 * 1024 * 1024
@@ -24,6 +26,11 @@ FILE_LIMIT = 128 * 1024 * 1024
 FILE_COUNT_LIMIT = 1024
 CHUNK = 1024 * 1024
 AUDIO_ROOTS = ("Sources/KeyDance/Resources/KeyboardSounds/", "Sources/KeyDance/Resources/Music/")
+KEYBOARD_ROOT = AUDIO_ROOTS[0]
+HIFI_MANIFEST = KEYBOARD_ROOT + "hifi-manifest.json"
+STREET_MANIFEST = KEYBOARD_ROOT + "street-beat-manifest.json"
+STREET_WAV = KEYBOARD_ROOT + "streetBeat/samples.wav"
+PACK_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 ICON = "Resources/KeyWooIconSource.png"
 ICONS = (ICON, "Resources/KeyWooIcon.png")
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -34,7 +41,14 @@ class AssetError(Exception):
     pass
 
 
-def checked_path(value):
+def is_derived_asset(value):
+    folded = value.casefold()
+    return folded in (HIFI_MANIFEST.casefold(), STREET_MANIFEST.casefold(), STREET_WAV.casefold()) or (
+        folded.startswith(KEYBOARD_ROOT.casefold()) and folded.endswith("/samples-hifi.wav")
+    )
+
+
+def checked_path(value, derived=False):
     if not isinstance(value, str) or not value or "\\" in value or ":" in value or any(ord(c) < 32 for c in value):
         raise AssetError("Invalid asset path")
     path = PurePosixPath(value)
@@ -45,7 +59,11 @@ def checked_path(value):
     for part in path.parts:
         if part.endswith((".", " ")) or part.split(".")[0].upper() in WINDOWS_RESERVED:
             raise AssetError("Ambiguous platform path: " + value)
-    if value not in ICONS and not (value.endswith(".wav") and any(value.startswith(prefix) for prefix in AUDIO_ROOTS)):
+    if derived and is_derived_asset(value):
+        return path
+    if derived or is_derived_asset(value) or (
+        value not in ICONS and not (value.endswith(".wav") and any(value.startswith(prefix) for prefix in AUDIO_ROOTS))
+    ):
         raise AssetError("Asset is outside the binary-data whitelist: " + value)
     return path
 
@@ -54,8 +72,8 @@ def is_link_or_reparse(info):
     return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
 
 
-def checked_target(root, relative, create_parents=False):
-    parts = checked_path(relative).parts
+def checked_target(root, relative, create_parents=False, derived=False):
+    parts = checked_path(relative, derived=derived).parts
     current = root
     for index, part in enumerate(parts):
         current = current / part
@@ -63,7 +81,7 @@ def checked_target(root, relative, create_parents=False):
             info = current.lstat()
         except FileNotFoundError:
             if create_parents and index < len(parts) - 1:
-                current.mkdir()
+                current.mkdir(exist_ok=True)
                 info = current.lstat()
             else:
                 continue
@@ -239,8 +257,8 @@ def stage_zip(archive_path, manifest, stage):
             os.chmod(target, 0o644)
 
 
-def replace_staged(root, relative, staged):
-    target = checked_target(root, relative, create_parents=True)
+def replace_staged(root, relative, staged, derived=False):
+    target = checked_target(root, relative, create_parents=True, derived=derived)
     # POSIX uses an anchored directory descriptor: a concurrently substituted
     # parent symlink cannot redirect the final replacement outside the root.
     if os.name == "posix" and os.open in os.supports_dir_fd:
@@ -255,7 +273,7 @@ def replace_staged(root, relative, staged):
     else:
         # Windows lstat rejects junctions/reparse points above. Recheck directly
         # before replacement; extraction never follows a link from the ZIP.
-        checked_target(root, relative)
+        checked_target(root, relative, derived=derived)
         os.replace(str(staged), str(target))
 
 
@@ -286,6 +304,126 @@ def prepare(root, assets, check_only=False):
     return dict(result, status="prepared", replaced=len(missing))
 
 
+def derived_matches(root, relative, digest):
+    target = checked_target(root, relative, derived=True)
+    try:
+        return file_digest(target)[1] == digest
+    except FileNotFoundError:
+        return False
+
+
+def install_derived(root, files, check_only):
+    changed = [
+        (relative, payload) for relative, payload in files.items()
+        if not derived_matches(root, relative, hashlib.sha256(payload).hexdigest())
+    ]
+    if not changed:
+        return 0
+    if check_only:
+        raise AssetError("Missing or mismatched generated assets: " + ", ".join(relative for relative, _ in changed))
+    # Each sidecar is written last, after its WAVs have been replaced.
+    with tempfile.TemporaryDirectory(prefix=".keywoo-generated-", dir=root) as temporary:
+        stage = Path(temporary)
+        for index, (_, payload) in enumerate(changed):
+            (stage / str(index)).write_bytes(payload)
+        for index, (relative, _) in enumerate(changed):
+            replace_staged(root, relative, stage / str(index), derived=True)
+    return len(changed)
+
+
+def load_generator(name):
+    path = Path(__file__).with_name(name + ".py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def prepare_hifi(root, catalog_data, archive_files, check_only):
+    try:
+        catalog = json.loads(catalog_data, object_pairs_hook=unique_json_object)
+        if catalog["schema"] != 1 or catalog["sampleRate"] != 48000 or not catalog["packs"]:
+            raise ValueError("Unsupported recording manifest")
+        packs = catalog["packs"]
+        companion = {}
+        for name, pack in packs.items():
+            if not PACK_ID_RE.fullmatch(name) or pack["file"] != name + "/samples.wav":
+                raise ValueError("Unexpected recording path")
+            original_sha = require_hash(pack["sha256"])
+            if archive_files.get(KEYBOARD_ROOT + pack["file"]) != original_sha:
+                raise ValueError("Recording differs from the binary asset manifest: " + name)
+            companion[name] = {"file": name + "/samples-hifi.wav", "originalSHA256": original_sha}
+    except (KeyError, TypeError, AttributeError, ValueError) as error:
+        raise AssetError("Invalid recording manifest: " + str(error)) from error
+
+    processor_sha = file_digest(Path(__file__).with_name("keyboard-hifi.py"))[1]
+    header = {
+        "schema": 1,
+        "sampleRate": 48000,
+        "sourceCatalogSHA256": hashlib.sha256(catalog_data).hexdigest(),
+        "processorSHA256": processor_sha,
+    }
+    target = checked_target(root, HIFI_MANIFEST, derived=True)
+    try:
+        with open_regular(target) as source:
+            existing_data = source.read(1024 * 1024 + 1)
+    except FileNotFoundError:
+        existing_data = b""
+    try:
+        existing = json.loads(existing_data, object_pairs_hook=unique_json_object) if len(existing_data) <= 1024 * 1024 else None
+    except (ValueError, AssetError):
+        existing = None
+    if isinstance(existing, dict) and all(existing.get(key) == value for key, value in header.items()):
+        saved_packs = existing.get("packs")
+        if isinstance(saved_packs, dict) and saved_packs.keys() == companion.keys() and all(
+            isinstance(saved_packs[name], dict)
+            and saved_packs[name].get("file") == entry["file"]
+            and saved_packs[name].get("originalSHA256") == entry["originalSHA256"]
+            and isinstance(saved_packs[name].get("sha256"), str)
+            and SHA_RE.fullmatch(saved_packs[name]["sha256"])
+            and derived_matches(root, KEYBOARD_ROOT + entry["file"], saved_packs[name]["sha256"])
+            for name, entry in companion.items()
+        ):
+            return 0
+    if check_only:
+        raise AssetError("Missing, outdated or mismatched Hi-Fi recordings")
+
+    generator = load_generator("keyboard-hifi")
+    files = {}
+    for name, pack in packs.items():
+        original = checked_target(root, KEYBOARD_ROOT + pack["file"])
+        with open_regular(original) as source:
+            payload = source.read(FILE_LIMIT + 1)
+        if hashlib.sha256(payload).hexdigest() != companion[name]["originalSHA256"]:
+            raise AssetError("Recording changed during preparation: " + name)
+        try:
+            restored = generator.restore_wav(payload, pack)
+        except (ValueError, KeyError, TypeError, EOFError, wave.Error) as error:
+            raise AssetError("Unable to restore " + name + ": " + str(error)) from error
+        companion[name]["sha256"] = hashlib.sha256(restored).hexdigest()
+        files[KEYBOARD_ROOT + companion[name]["file"]] = restored
+    files[HIFI_MANIFEST] = (json.dumps(dict(header, packs=companion), indent=2, sort_keys=True) + "\n").encode()
+    return install_derived(root, files, check_only)
+
+
+def prepare_sound_variants(root, assets, check_only=False):
+    root = Path(root).resolve(strict=True)
+    catalog = checked_target(root, KEYBOARD_ROOT + "catalog-probe.wav").with_name("manifest.json")
+    try:
+        with open_regular(catalog) as source:
+            data = source.read(4 * 1024 * 1024 + 1)
+    except FileNotFoundError:
+        # Binary-only fixtures and custom asset collections have no sound catalogue.
+        return 0
+    if len(data) > 4 * 1024 * 1024:
+        raise AssetError("Recording manifest is too large")
+    manifest = load_manifest(checked_assets_directory(assets))
+    archive_files = {item["path"]: item["sha256"] for item in manifest["files"]}
+    restored = prepare_hifi(root, data, archive_files, check_only)
+    street = load_generator("generate-street-beat").generate_assets()
+    return restored + install_derived(root, street, check_only)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -294,7 +432,9 @@ def main():
     args = parser.parse_args()
     assets = args.assets_dir if args.assets_dir is not None else args.root / "assets"
     try:
-        print(json.dumps(prepare(args.root, assets, args.check_only), sort_keys=True))
+        result = prepare(args.root, assets, args.check_only)
+        result["generated"] = prepare_sound_variants(args.root, assets, args.check_only)
+        print(json.dumps(result, sort_keys=True))
         return 0
     except (AssetError, OSError, zipfile.BadZipFile, RuntimeError) as error:
         print("Asset preparation failed: " + str(error), file=sys.stderr)

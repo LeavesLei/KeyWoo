@@ -39,6 +39,11 @@ struct KeyDanceApp: App {
                     Picker(L("键盘音效"), selection: $model.keyboardSoundStyle) {
                         ForEach(KeyboardSoundStyle.allCases) { style in Text(style.title).tag(style) }
                     }
+                    if model.canChooseKeyboardSoundQuality {
+                        Picker(L("录音版本"), selection: $model.keyboardSoundQuality) {
+                            ForEach(KeyboardSoundQuality.allCases) { quality in Text(quality.title).tag(quality) }
+                        }
+                    }
                 } else {
                     Button(L(model.musicWantsPlayback ? "暂停音乐" : "播放音乐")) { model.toggleMusicPlayback() }.disabled(!model.isEnabled)
                     Button(L("加入本地音乐…")) { model.importMusic() }.keyboardShortcut("o")
@@ -155,6 +160,11 @@ struct MenuBarView: View {
                         if model.keyboardSoundStyle == style { Label(style.title, systemImage: "checkmark") }
                         else { Text(style.title) }
                     }
+                }
+            }
+            if model.canChooseKeyboardSoundQuality {
+                Picker(L("录音版本"), selection: $model.keyboardSoundQuality) {
+                    ForEach(KeyboardSoundQuality.allCases) { quality in Text(quality.title).tag(quality) }
                 }
             }
             Button(L("试听键盘音效")) { model.previewSound() }.disabled(!model.isEnabled)

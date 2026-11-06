@@ -18,7 +18,7 @@ struct KeyboardSoundSpaceView: View {
 
     private var styles: [KeyboardSoundStyle] {
         let order = ["macbookPro", "topre", "oreo", "panda", "purple", "red", "blue", "brown", "black",
-                     "mahjongTiles", "hermes", "woodDesk", "mahjong"]
+                     "streetBeat", "mahjongTiles", "hermes", "woodDesk", "mahjong"]
         return KeyboardSoundStyle.allCases.filter { $0.category == category }.sorted {
             let first = order.firstIndex(of: $0.rawValue) ?? order.count
             let second = order.firstIndex(of: $1.rawValue) ?? order.count
@@ -83,6 +83,21 @@ struct KeyboardSoundSpaceView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.muted)
                     .accessibilityIdentifier("keyboard-sound-preview-status")
+            }
+            if model.canChooseKeyboardSoundQuality {
+                HStack(spacing: 8) {
+                    Text(L("录音版本"))
+                        .font(.system(size: 12, weight: .medium))
+                    InfoHelpButton(title: "录音版本", message: "原音保留录音原貌；Hi-Fi 减少低频杂音和尾部底噪。切换时可试听同一段按键。", identifier: "keyboard-sound-quality-help")
+                    Spacer(minLength: 4)
+                    Picker(L("录音版本"), selection: $model.keyboardSoundQuality) {
+                        ForEach(KeyboardSoundQuality.allCases) { quality in Text(quality.title).tag(quality) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 165)
+                    .accessibilityIdentifier("keyboard-sound-quality")
+                }
             }
             Divider()
             volume

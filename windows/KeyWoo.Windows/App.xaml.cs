@@ -10,16 +10,20 @@ public partial class App : System.Windows.Application {
             try {
                 var bank=new SampleBank(Path.Combine(AppContext.BaseDirectory,"Assets","KeyboardSounds"));
                 var hashes=new Dictionary<string,string>();
+                var hiFiHashes=new Dictionary<string,string>();
+                if(!bank.Packs.ContainsKey(SampleBank.StreetBeatPreset))throw new InvalidDataException("Missing Street Beat kit");
                 foreach(var preset in bank.Presets) {
-                    var mixer=new SampleMixer(bank){Style=preset.Id,Volume=1};
-                    mixer.Physical(new PhysicalKey(0x41,0x1E),true);var pcm=new float[48000];mixer.Read(pcm);
-                    if(!pcm.Any(v=>Math.Abs(v)>.0001f)||pcm.Any(v=>!float.IsFinite(v)))throw new InvalidDataException("Silent/non-finite preset: "+preset.Id);
-                    byte[] bytes=new byte[pcm.Length*sizeof(float)];Buffer.BlockCopy(pcm,0,bytes,0,bytes.Length);
-                    hashes[preset.Id]=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+                    string original=RenderPreset(bank,preset.Id,false);
+                    hashes.Add(preset.Id,original);
+                    if(preset.Category==SoundCategory.Synthesized)continue;
+                    if(!bank.HiFiPacks.ContainsKey(preset.Id))throw new InvalidDataException("Missing verified Hi-Fi recording: "+preset.Id);
+                    string restored=RenderPreset(bank,preset.Id,true);
+                    if(restored==original)throw new InvalidDataException("Hi-Fi playback matches Original: "+preset.Id);
+                    hiFiHashes.Add(preset.Id,restored);
                 }
                 if(hashes.Values.Distinct().Count()!=hashes.Count)throw new InvalidDataException("Duplicate preset PCM");
                 var keyBurst=KeyBurstVerification.Run(e.Args[1]);
-                File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=true,presets=hashes,keyBurst,deviceTested=false},new JsonSerializerOptions{WriteIndented=true}));Shutdown(0);
+                File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=true,presets=hashes,hiFiPresets=hiFiHashes,keyBurst,deviceTested=false},new JsonSerializerOptions{WriteIndented=true}));Shutdown(0);
             } catch(Exception ex){File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=false,error=ex.ToString()}));Shutdown(1);}
             return;
         }
@@ -29,6 +33,17 @@ public partial class App : System.Windows.Application {
             Shutdown();return;
         }
         var window=new MainWindow();MainWindow=window;window.Show();
+    }
+    private static string RenderPreset(SampleBank bank,string id,bool hiFi) {
+        var mixer=new SampleMixer(bank){Style=id,HiFiEnabled=hiFi,Volume=1};
+        mixer.Physical(new PhysicalKey(0x41,0x1E),true);
+        var pcm=new float[48000];
+        mixer.Read(pcm);
+        if(!pcm.Any(v=>Math.Abs(v)>.0001f)||pcm.Any(v=>!float.IsFinite(v)))
+            throw new InvalidDataException($"Silent/non-finite {(hiFi?"Hi-Fi":"Original")} preset: {id}");
+        byte[] bytes=new byte[pcm.Length*sizeof(float)];
+        Buffer.BlockCopy(pcm,0,bytes,0,bytes.Length);
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
     }
     protected override void OnExit(ExitEventArgs e){instance?.Dispose();base.OnExit(e);}
 }

@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main, 'codex/**']
-    paths: ['windows/**', 'assets/**', 'release-version.json', 'scripts/prepare-assets.py', 'Sources/KeyDance/Resources/KeyboardSounds/**', 'docs/**', 'THIRD-PARTY-NOTICES.md', '.github/workflows/windows.yml']
+    paths: ['windows/**', 'assets/**', 'release-version.json', 'scripts/prepare-assets.py', 'scripts/keyboard-hifi.py', 'scripts/generate-street-beat.py', 'Sources/KeyDance/Resources/KeyboardSounds/**', 'docs/**', 'THIRD-PARTY-NOTICES.md', '.github/workflows/windows.yml']
   pull_request:
-    paths: ['windows/**', 'assets/**', 'release-version.json', 'scripts/prepare-assets.py', 'Sources/KeyDance/Resources/KeyboardSounds/**', '.github/workflows/windows.yml']
+    paths: ['windows/**', 'assets/**', 'release-version.json', 'scripts/prepare-assets.py', 'scripts/keyboard-hifi.py', 'scripts/generate-street-beat.py', 'Sources/KeyDance/Resources/KeyboardSounds/**', '.github/workflows/windows.yml']
 permissions:
   contents: read
 concurrency:

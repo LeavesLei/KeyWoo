@@ -17,7 +17,7 @@ if ((Test-Path $data) -or (Test-Path $registration) -or (Test-Path $shortcut)) {
 New-Item -ItemType Directory $data | Out-Null
 $settings = Join-Path $data 'settings.json'
 $statistics = Join-Path $data 'statistics.json'
-'{"Schema":1,"Platform":"windows","Preset":"panda","Volume":0.73}' | Set-Content -Encoding utf8 $settings
+'{"Schema":1,"Platform":"windows","Preset":"panda","HiFiEnabled":true,"Volume":0.73}' | Set-Content -Encoding utf8 $settings
 '{"installerTestSentinel":true,"count":7}' | Set-Content -Encoding utf8 $statistics
 $expected = @{}; foreach ($file in @($settings, $statistics)) { $expected[$file] = (Get-FileHash $file -Algorithm SHA256).Hash }
 $payload = @(Get-ChildItem $SourceDirectory -File -Recurse | ForEach-Object {
@@ -51,9 +51,11 @@ try {
     $report = Join-Path $ReportDirectory 'installed-assets.json'
     Run-Checked (Join-Path $install 'KeyWoo.exe') @('--verify-assets',("`"$report`""))
     $assets = Get-Content -Raw $report | ConvertFrom-Json
-    if (-not $assets.passed -or @($assets.presets.PSObject.Properties).Count -ne 24) { throw 'Installed app asset self-check failed.' }
+    if (-not $assets.passed -or @($assets.presets.PSObject.Properties).Count -ne 25 -or @($assets.hiFiPresets.PSObject.Properties).Count -ne 15) { throw 'Installed app asset self-check failed.' }
     if (-not $assets.keyBurst.Passed) { throw 'Installed Key Burst drawing and overlay self-check failed.' }
+    $result.installedKeyBurstVerified=[bool]$assets.keyBurst.Passed
     $result.installedPresetCount=@($assets.presets.PSObject.Properties).Count
+    $result.installedHiFiPresetCount=@($assets.hiFiPresets.PSObject.Properties).Count
     Run-Checked (Join-Path $install 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/LOG=`"$(Join-Path $ReportDirectory 'uninstall.log')`""))
     if ((Test-Path (Join-Path $install 'KeyWoo.exe')) -or (Test-Path $registration) -or (Test-Path $shortcut)) { throw 'Uninstaller left the application or registration behind.' }
     Assert-DataPreserved

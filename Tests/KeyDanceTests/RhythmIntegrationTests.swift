@@ -145,24 +145,34 @@ struct RhythmIntegrationTests {
         #expect(!model.rhythmClickThrough, "Reset provides a way to recover an unclickable widget.")
     }
 
-    @Test @MainActor func visualPreferencesRestoreAndIntensityIsValidated() throws {
+    @Test @MainActor func visualPreferencesRestoreAndSliderBoundsAreValidated() throws {
         let defaults = RhythmDefaults(["rhythmIntensity": Double.nan])
         let (model, root) = try fixture(defaults)
         defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
         #expect(model.rhythmIntensity == 1)
+        #expect(model.rhythmOpacity == 1 && model.rhythmFeedback.opacity == 1)
         model.rhythmEnabled = true
         model.rhythmClickThrough = true
         model.rhythmIntensity = 1.3
+        model.rhythmOpacity = 0.55
         let (restored, restoredRoot) = try fixture(defaults)
         defer { restored.shutdown(); try? FileManager.default.removeItem(at: restoredRoot) }
         #expect(restored.rhythmEnabled && restored.rhythmClickThrough)
         #expect(restored.rhythmIntensity == 1.3 && restored.rhythmFeedback.intensity == 1.3)
+        #expect(restored.rhythmOpacity == 0.55 && restored.rhythmFeedback.opacity == 0.55)
         model.rhythmIntensity = 20
         #expect(model.rhythmIntensity == 1.5)
         model.rhythmIntensity = -3
         #expect(model.rhythmIntensity == 0.4)
         model.rhythmIntensity = .infinity
         #expect(model.rhythmIntensity == 1)
+        model.rhythmOpacity = 0
+        #expect(model.rhythmOpacity == 0.25 && model.rhythmFeedback.opacity == 0.25)
+        #expect(defaults.double(forKey: "rhythmOpacity") == 0.25)
+        model.rhythmOpacity = 1.5
+        #expect(model.rhythmOpacity == 1 && model.rhythmFeedback.opacity == 1)
+        model.rhythmOpacity = .nan
+        #expect(model.rhythmOpacity == 1 && defaults.double(forKey: "rhythmOpacity") == 1)
     }
 
     @Test @MainActor func visualStyleRestoresSafelyWithoutChangingAudioOrInputState() throws {

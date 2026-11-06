@@ -14,7 +14,7 @@
 
 ## 键阵爆破
 
-在「设置 → 桌面律动」开启「键阵爆破」。右下角会短暂显示发光的物理键位字符。空格让它们散成碎光，回车轻轻收束，停手后逐个淡出。可调亮度、动画幅度和闪光效果。演示不发声、不计数，全部暂停或锁屏会清除字符并隐藏悬浮窗。
+在「设置 → 桌面律动」开启「键阵爆破」。右下角会短暂显示发光的物理键位字符。空格让它们散成碎光，回车轻轻收束，停手后逐个淡出。特效透明度可调 25%–100%，也可调整动画幅度和闪光效果。演示不发声、不计数，全部暂停或锁屏会清除字符并隐藏悬浮窗。
 
 ## 按键映射
 
@@ -34,7 +34,9 @@ At hook startup and unlock, already-held keys retain their existing Windows stat
 
 声音使用 Windows 默认输出。系统切换输出后，程序会重新连接；设备出错时最多自动重试三次，仍失败可在设置点「重新连接声音」。重连清理旧声音队列，避免恢复时集中播放之前的按键。此行为已编译检查，真实设备断连与恢复仍需要 Windows 硬件验收。
 
-真实录音、合成缓存、映射和许可证通过项目文件链接同一份 `Sources/KeyDance/Resources/KeyboardSounds/`。键盘与拟音实录从 `manifest.json` 加载，合成音效从 `synthetic-manifest.json` 加载。原作者许可、来源和共享键位说明随 `Assets/KeyboardSounds/THIRD-PARTY-NOTICES.md` 分发，NAudio 和自包含 .NET 运行时的许可位于 `Licenses`。
+选中有 Hi-Fi 版本的实录音色后，可在「录音版本」切换原音和 Hi-Fi 高保真。首次使用默认为原音，之后会记住选择。街舞节拍位于「趣味合成」，按空格、回车、Shift、退格和 Tab 可分别触发底鼓、军鼓、拍手、鼓边和开镲，普通键触发闭镲。
+
+真实录音、合成缓存、映射和许可证通过项目文件链接同一份 `Sources/KeyDance/Resources/KeyboardSounds/`。键盘与拟音实录从 `manifest.json` 加载，Hi-Fi 副本及其校验值记录在 `hifi-manifest.json`，合成音效和街舞节拍分别从 `synthetic-manifest.json` 与 `street-beat-manifest.json` 加载。原作者许可、来源和共享键位说明随 `Assets/KeyboardSounds/THIRD-PARTY-NOTICES.md` 分发，NAudio 和自包含 .NET 运行时的许可位于 `Licenses`。
 
 ## 开发与发布
 
@@ -48,7 +50,7 @@ dotnet test windows/KeyWoo.Tests/KeyWoo.Tests.csproj -c Release
 ./windows/build.ps1 -VerifyInstaller
 ```
 
-`build.ps1` 运行纯 CPU 测试，自包含发布到新的 staging 目录，启动最终 EXE 的 `--verify-assets` 路径验证音色 PCM、键阵爆破离屏帧和原生悬浮窗。再逐文件核对 ZIP 并编译当前用户安装器。自检无需键盘钩子或声卡。输出 ZIP、安装 EXE、SHA-256 manifest 和自检结果到 `windows/artifacts/`。
+`build.ps1` 运行纯 CPU 测试，自包含发布到新的 staging 目录，启动最终 EXE 的 `--verify-assets` 路径验证 25 套音色及 15 套实录的 Hi-Fi 版本，并检查键阵爆破离屏帧与原生悬浮窗。再逐文件核对 ZIP 并编译当前用户安装器。自检无需键盘钩子或声卡。输出 ZIP、安装 EXE、SHA-256 manifest 和自检结果到 `windows/artifacts/`。
 
 GitHub Actions 使用 `-VerifyInstaller`：在临时 Windows runner 上安装到独立路径，检查开始菜单与当前用户卸载注册，重复安装验证升级，运行安装后的资源自检，再卸载并检查设置和统计未被删除。验证脚本拒绝在已有 KeyWoo 配置/安装的环境运行，也拒绝直接在非 GitHub Actions 的个人电脑上执行。CI runner 不等于实体声卡或键盘验收。
 

@@ -294,6 +294,7 @@ private struct RhythmOverlayView: View {
             RhythmFrameCanvas(dynamics: feedback.dynamics, time: frameTime,
                               intensity: feedback.intensity, reducedMotion: reduceMotion,
                               style: feedback.visualStyle, flashesEnabled: feedback.flashesEnabled)
+                .opacity(feedback.opacity)
         }
         .frame(width: 340, height: 224)
         .allowsHitTesting(false)

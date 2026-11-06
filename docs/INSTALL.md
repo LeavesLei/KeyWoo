@@ -4,7 +4,7 @@
 
 ## 选择下载包
 
-打开 v1.0.0 发布页，展开 **Assets** 并选择对应的安装包。[KeyWoo v1.0.0](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.0)
+打开 v1.0.2 发布页，展开 **Assets** 并选择对应的安装包。[KeyWoo v1.0.2](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.2)
 
 | 电脑 | 下载 |
 | --- | --- |
