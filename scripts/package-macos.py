@@ -86,6 +86,8 @@ def package(app, output):
         run("ditto", app, stage / "KeyWoo.app")
         (stage / "Applications").symlink_to("/Applications")
         shutil.copytree(app / "Contents/Resources/Documentation", stage / "Documentation")
+        notice = stage / "Documentation/THIRD-PARTY-NOTICES.md"
+        notice.write_text(notice.read_text().replace("../KeyboardSounds/", "../KeyWoo.app/Contents/Resources/KeyboardSounds/"))
         (stage / "Install.txt").write_text(
             "键舞 / KeyWoo " + version["version"] + "\n\n"
             "将 KeyWoo.app 拖入 Applications，然后从启动台打开。\n"

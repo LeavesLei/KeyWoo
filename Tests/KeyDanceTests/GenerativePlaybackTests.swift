@@ -36,6 +36,9 @@ private final class GenerativeWorkerFixture {
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }
         return try String(contentsOf: url, encoding: .utf8).split(separator: "\n").map(String.init)
     }
+    var firstWorkerHasBlockedRequest: Bool {
+        FileManager.default.fileExists(atPath: directory.appendingPathComponent("blocked-request.txt").path)
+    }
 
     private static let script = #"""
 import json, os, signal, struct, sys, time
@@ -46,6 +49,7 @@ if cfg['ignore_termination']:
     signal.signal(signal.SIGTERM, lambda *_: None)
 with (root / 'launches.txt').open('a') as f:
     f.write(str(os.getpid()) + '\n')
+first_worker = len((root / 'launches.txt').read_text().splitlines()) == 1
 
 def send(data):
     sizes = [1, 2, 7, 1023, 17, 4093, 5, 64, 8191]
@@ -73,6 +77,12 @@ for line in sys.stdin.buffer:
         break
     with (root / 'requests.jsonl').open('a') as f:
         f.write(json.dumps(request) + '\n')
+    if cfg['mode'] == 'block_first_worker' and first_worker:
+        # A restart test needs one old request in flight, not artificial delay
+        # on every packet from the replacement worker. SIGTERM ends this gate.
+        (root / 'blocked-request.txt').write_text(str(os.getpid()))
+        while True:
+            time.sleep(0.01)
     time.sleep(cfg['delay'])
     if cfg['mode'] == 'wrong_header':
         send(header({'frames': 1920, 'bytes': 999999999, 'rate': 48000}))
@@ -267,19 +277,31 @@ struct GenerativePlaybackTests {
     }
 
     @Test func immediateStopAndRestartCannotLetOldWorkerSilenceTheNewSession() async throws {
-        let f = try GenerativeWorkerFixture(delay: 0.08)
+        // The old worker must be blocked after receiving its request. A fixed
+        // delay on all 15 replacement packets made this a CI scheduling test;
+        // fragmentation and slow producers have separate coverage above.
+        let f = try GenerativeWorkerFixture(fragmented: false, mode: "block_first_worker")
         defer { f.cleanUp() }
         #expect(f.player.play())
-        let inFlight = try await eventually { f.player.diagnostics.requestCount == 1 }
-        try #require(inFlight)
+        let inFlight = try await eventually { f.firstWorkerHasBlockedRequest || f.player.failureMessage != nil }
+        try #require(f.player.failureMessage == nil, "Old mock worker failed: \(f.player.failureMessage ?? "none")")
+        try #require(inFlight && f.firstWorkerHasBlockedRequest, "Old mock worker never received its blocked request")
         let old = f.player.diagnostics
+        #expect(old.requestCount == 1 && old.completionCount == 0)
         f.player.stop()
         #expect(f.player.play())
         let target = fullPacketWatermark(f.player)
-        let filled = try await eventually { f.player.diagnostics.ready && f.player.diagnostics.bufferedFrames == target }
-        try #require(filled)
-        #expect(f.player.diagnostics.generationID > old.generationID)
-        #expect(f.player.diagnostics.workerPID != old.workerPID)
+        let finished = try await eventually {
+            let state = f.player.diagnostics
+            return f.player.failureMessage != nil || (state.ready && state.bufferedFrames == target)
+        }
+        let replacement = f.player.diagnostics
+        try #require(f.player.failureMessage == nil, "Replacement mock worker failed: \(f.player.failureMessage ?? "none")")
+        try #require(finished && replacement.ready && replacement.bufferedFrames == target,
+                     "Replacement did not fill: ready=\(replacement.ready), frames=\(replacement.bufferedFrames)/\(target), requests=\(replacement.requestCount), completions=\(replacement.completionCount)")
+        #expect(replacement.generationID > old.generationID)
+        #expect(replacement.workerPID != old.workerPID)
+        #expect(f.player.isPlaying)
         let pcm = f.player.renderForVerification(frames: 1_920)
         #expect(pcm.contains { $0 != 0 })
         #expect(f.player.diagnostics.playedFrames == 1_920)
