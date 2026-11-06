@@ -50,6 +50,7 @@ try {
     if ($app.ExitCode -ne 0 -or -not (Test-Path $report)) { throw 'Packaged executable failed its no-device asset/PCM self-check.' }
     $result = Get-Content -Raw $report | ConvertFrom-Json
     if (-not $result.passed -or @($result.presets.PSObject.Properties).Count -ne 24) { throw 'Packaged asset self-check did not pass for all 24 sounds.' }
+    if (-not $result.keyBurst.Passed) { throw 'Packaged Key Burst drawing and overlay self-check failed.' }
     foreach ($license in @('Licenses/NAudio-LICENSE.txt','Licenses/Microsoft.NETCore.App/THIRD-PARTY-NOTICES.TXT','Assets/KeyboardSounds/THIRD-PARTY-NOTICES.md','Assets/KeyboardSounds/Mechvibes-LICENSE','Assets/KeyboardSounds/kbsim-LICENSE.md')) {
         if (-not (Test-Path (Join-Path $staging $license))) { throw "Missing distributed license: $license" }
     }
@@ -94,7 +95,7 @@ try {
         archive=[IO.Path]::GetFileName($zip); sha256=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant();
         installer=[IO.Path]::GetFileName($installer); installerSha256=(Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant();
         installerTested=[bool]$VerifyInstaller;
-        archiveContentsVerified=$true; packagedPresetCount=@($result.presets.PSObject.Properties).Count;
+        archiveContentsVerified=$true; packagedPresetCount=@($result.presets.PSObject.Properties).Count; keyBurstVerified=[bool]$result.keyBurst.Passed;
         devicePlaybackTested=$false; hardwareKeyboardTested=$false; files=$files
     } | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $artifacts "KeyWoo-$Version-win-x64-manifest.json")
     Write-Output "Ready: $zip"

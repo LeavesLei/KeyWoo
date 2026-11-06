@@ -19,6 +19,7 @@ public sealed class MainWindow : Window {
     private readonly Settings settings;
     private readonly StatisticsStore statistics;
     private readonly KeyboardHook hook=new();
+    private readonly KeyBurstOverlay keyBurst=new();
     private readonly ConcurrentQueue<(PhysicalKey Key,DateTimeOffset At)> presses=new();
     private readonly DispatcherTimer updateTimer,saveTimer;
     private readonly Forms.NotifyIcon tray=new();
@@ -30,7 +31,7 @@ public sealed class MainWindow : Window {
     private SampleBank? soundBank;
     private Action? refreshSoundCatalog;
     private CancellationTokenSource? preview;
-    private bool enabled=true,building,closing,started,resumeAfterUnlock;
+    private bool enabled=true,building,closing,started,resumeAfterUnlock,sessionLocked;
     private int queuedPresses,flushing;
     private long droppedCounts;
     private DateTimeOffset lastFlush=DateTimeOffset.MinValue;
@@ -39,6 +40,7 @@ public sealed class MainWindow : Window {
     private string? audioError;
     private TextBlock status=new(),error=new(),session=new();
     private Button pause=new();
+    private Button? keyBurstPreview;
     private CheckBox mappingCheck=new();
     private DataGrid statsGrid=new(),ruleGrid=new();
     private DatePicker fromDate=new(),toDate=new();
@@ -55,7 +57,10 @@ public sealed class MainWindow : Window {
         Width=1050;Height=780;MinWidth=820;MinHeight=650;
         WindowStartupLocation=WindowStartupLocation.CenterScreen;
         hook.Pressed+=(key,at)=>{if(Interlocked.Increment(ref queuedPresses)<=8192)presses.Enqueue((key,at));else {Interlocked.Decrement(ref queuedPresses);Interlocked.Increment(ref droppedCounts);}};
-        hook.Sound+=(key,down)=>audio?.Mixer.Physical(key,down);
+        hook.Sound+=(key,down)=>{
+            audio?.Mixer.Physical(key,down);
+            if(down)keyBurst.Enqueue(key);
+        };
         hook.Failed+=message=>Dispatcher.InvokeAsync(()=>{settings.MappingEnabled=false;mappingCheck.IsChecked=false;ShowError(message);SaveSoon();});
         updateTimer=new DispatcherTimer(TimeSpan.FromMilliseconds(100),DispatcherPriority.Background,(_,_)=>Refresh(),Dispatcher);
         saveTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(450)};
@@ -309,6 +314,7 @@ public sealed class MainWindow : Window {
         panel.Children.Add(Text(T("外观","Appearance"),16));
         var appearance=new ComboBox{ItemsSource=new KeyValuePair<string,string>[]{new("system",T("跟随系统","System")),new("light",T("浅色","Light")),new("dark",T("深色","Dark"))},DisplayMemberPath="Value",SelectedValuePath="Key",SelectedValue=settings.Appearance,Width=230,HorizontalAlignment=HorizontalAlignment.Left};
         appearance.SelectionChanged+=(_,_)=>{if(building)return;settings.Appearance=(string)appearance.SelectedValue;SaveSoon();Dispatcher.InvokeAsync(Build);};panel.Children.Add(appearance);
+        panel.Children.Add(KeyBurstSettings());
         panel.Children.Add(Text(T("关闭窗口后继续在托盘运行；从托盘菜单退出。所有设置仅影响本应用。","Closing the window keeps KeyWoo in the tray. Use the tray menu to quit. Appearance settings affect this app only."),12,true));
         panel.Children.Add(MakeButton(T("打开本地数据文件夹","Open local data folder"),(_,_)=>{Directory.CreateDirectory(Settings.DataDirectory);OpenFile(Settings.DataDirectory);}));
         panel.Children.Add(MakeButton(T("重新连接声音","Reconnect audio"),(_,_)=>{
@@ -318,6 +324,60 @@ public sealed class MainWindow : Window {
         panel.Children.Add(Text(T("声音跟随系统默认输出；切换耳机后会自动重连。","Sound follows the default Windows output and reconnects when it changes."),12,true));
         panel.Children.Add(Text("KeyWoo " + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3)??"1.0.0"),12,true));
         panel.Children.Add(Text(T("Windows 键盘音效版 · 不包含音乐生成。蓝牙设备自身的播放延迟仍取决于系统与耳机。","Windows keyboard sound edition · No music generation. Bluetooth playback latency also depends on Windows and your headphones."),12,true));return panel;
+    }
+    private Border KeyBurstSettings() {
+        var panel=new StackPanel();
+        var header=new DockPanel{Margin=new Thickness(0,0,0,8)};
+        keyBurstPreview=MakeButton(T("演示","Demo"),(_,_)=>keyBurst.Preview());
+        AutomationProperties.SetAutomationId(keyBurstPreview,"key-burst-preview");
+        DockPanel.SetDock(keyBurstPreview,Dock.Right);
+        header.Children.Add(keyBurstPreview);
+        header.Children.Add(Text(T("桌面律动","Desktop animation"),16));
+        panel.Children.Add(header);
+
+        var show=new CheckBox{Content=T("键阵爆破","Key Burst"),IsChecked=settings.KeyBurstEnabled};
+        AutomationProperties.SetAutomationId(show,"key-burst-enabled");
+        show.Click+=(_,_)=>{
+            settings.KeyBurstEnabled=show.IsChecked==true;
+            UpdateKeyBurst();
+            SaveSoon();
+        };
+        panel.Children.Add(show);
+        panel.Children.Add(Text(T("键位会短暂发光，空格打散成碎光，回车轻轻收束。演示不发声，也不计入统计。",
+            "Key labels glow briefly. Space scatters them into sparks and Return draws them together. The demo is silent and does not count keystrokes."),12,true));
+        var flashes=new CheckBox{Content=T("闪光效果","Flashes"),IsChecked=settings.KeyBurstFlashes,Margin=new Thickness(0,8,0,0)};
+        AutomationProperties.SetAutomationId(flashes,"key-burst-flashes");
+        flashes.Click+=(_,_)=>{
+            settings.KeyBurstFlashes=flashes.IsChecked==true;
+            UpdateKeyBurst();
+            SaveSoon();
+        };
+        panel.Children.Add(flashes);
+        panel.Children.Add(KeyBurstSlider(T("动画幅度","Motion intensity"),"key-burst-intensity",.4,1.5,
+            settings.KeyBurstIntensity,value=>settings.KeyBurstIntensity=value));
+        panel.Children.Add(KeyBurstSlider(T("亮度","Brightness"),"key-burst-brightness",.25,1,
+            settings.KeyBurstBrightness,value=>settings.KeyBurstBrightness=value));
+        var card=Card(panel);
+        card.Margin=new Thickness(0,16,0,16);
+        return card;
+    }
+    private DockPanel KeyBurstSlider(string title,string id,double minimum,double maximum,double value,Action<double> save) {
+        var row=new DockPanel{Margin=new Thickness(0,8,0,0)};
+        var label=Text(title,12);label.Width=112;
+        DockPanel.SetDock(label,Dock.Left);row.Children.Add(label);
+        var percent=Text(value.ToString("P0"),12,true);percent.Width=56;
+        DockPanel.SetDock(percent,Dock.Right);row.Children.Add(percent);
+        var slider=new Slider{Minimum=minimum,Maximum=maximum,Value=value,SmallChange=.05,LargeChange=.1,Margin=new Thickness(0,0,8,0)};
+        AutomationProperties.SetAutomationId(slider,id);
+        AutomationProperties.SetName(slider,title);
+        slider.ValueChanged+=(_,_)=>{
+            save(slider.Value);
+            percent.Text=slider.Value.ToString("P0");
+            UpdateKeyBurst();
+            SaveSoon();
+        };
+        row.Children.Add(slider);
+        return row;
     }
     private void ApplyTheme() {
         bool dark=settings.Appearance=="dark";
@@ -337,8 +397,25 @@ public sealed class MainWindow : Window {
         if(Interlocked.Read(ref droppedCounts)>0)ShowError(T("输入事件过多，部分次数未保存。","The input queue overflowed; some counts were not saved."));
         if(statistics.Error is not null)ShowError(statistics.Error);
     }
-    private async void ToggleEnabled(){enabled=!enabled;preview?.Cancel();if(audio is not null)audio.Mixer.Enabled=enabled;await ConfigureHook();UpdatePause();}
-    private void UpdatePause(){pause.Content=enabled?T("全部暂停","Pause all"):T("继续","Resume");status.Text=enabled?T("所有应用","All applications"):T("已暂停","Paused");}
+    private async void ToggleEnabled(){
+        if(sessionLocked&&!enabled)return;
+        enabled=!enabled;
+        preview?.Cancel();
+        if(audio is not null)audio.Mixer.Enabled=enabled;
+        UpdatePause();
+        await ConfigureHook();
+    }
+    private void UpdatePause(){
+        pause.Content=enabled?T("全部暂停","Pause all"):T("继续","Resume");
+        status.Text=enabled?T("所有应用","All applications"):T("已暂停","Paused");
+        UpdateKeyBurst();
+    }
+    private void UpdateKeyBurst(){
+        bool suspended=!enabled||sessionLocked||closing;
+        keyBurst.SetSuspended(suspended);
+        keyBurst.Configure(settings.KeyBurstEnabled,settings.KeyBurstFlashes,settings.KeyBurstIntensity,settings.KeyBurstBrightness);
+        if(keyBurstPreview is not null)keyBurstPreview.IsEnabled=!suspended;
+    }
     private void SaveSoon(){saveTimer.Stop();saveTimer.Start();}
     private void ShowError(string message){currentError=message;error.Text=message;error.Visibility=Visibility.Visible;}
     private void ShowAudioError(string message){audioError=T("声音连接中断：","Audio disconnected: ")+message;ShowError(audioError);}
@@ -353,13 +430,22 @@ public sealed class MainWindow : Window {
     }
     private void TrayOpen(object? sender,EventArgs e){Show();WindowState=WindowState.Normal;Activate();}
     private void SessionChanged(object sender,SessionSwitchEventArgs e)=>Dispatcher.InvokeAsync(()=>{
-        if(e.Reason==SessionSwitchReason.SessionLock){resumeAfterUnlock=enabled;if(enabled)ToggleEnabled();_=hook.SuspendSessionAsync();}
-        else if(e.Reason==SessionSwitchReason.SessionUnlock&&resumeAfterUnlock){resumeAfterUnlock=false;if(!enabled)ToggleEnabled();}
+        if(e.Reason==SessionSwitchReason.SessionLock&&!sessionLocked){
+            sessionLocked=true;
+            resumeAfterUnlock=enabled;
+            if(enabled)ToggleEnabled();else UpdateKeyBurst();
+            if(started)_=hook.SuspendSessionAsync();
+        } else if(e.Reason==SessionSwitchReason.SessionUnlock&&sessionLocked){
+            sessionLocked=false;
+            bool resume=resumeAfterUnlock;
+            resumeAfterUnlock=false;
+            if(resume&&!enabled)ToggleEnabled();else UpdateKeyBurst();
+        }
     });
     private void PreferencesChanged(object sender,UserPreferenceChangedEventArgs e){if(settings.Appearance=="system")Dispatcher.InvokeAsync(Build);}
     private void ExitNow() {
         if(closing)return;closing=true;preview?.Cancel();updateTimer.Stop();saveTimer.Stop();
-        hook.Dispose();audio?.Dispose();
+        keyBurst.Dispose();hook.Dispose();audio?.Dispose();
         while(presses.TryDequeue(out var item))statistics.Record(item.Key,item.At);
         try{statistics.FlushAsync().GetAwaiter().GetResult();settings.SaveAsync().GetAwaiter().GetResult();}catch{}
         SystemEvents.SessionSwitch-=SessionChanged;SystemEvents.UserPreferenceChanged-=PreferencesChanged;tray.Visible=false;tray.Dispose();trayIcon?.Dispose();System.Windows.Application.Current.Shutdown();

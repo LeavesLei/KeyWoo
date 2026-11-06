@@ -9,6 +9,10 @@ internal sealed class Settings {
     public string Appearance {get;set;}="system";
     public string Preset {get;set;}=SampleBank.DefaultPreset;
     public double Volume {get;set;}=.5;
+    public bool KeyBurstEnabled {get;set;}
+    public bool KeyBurstFlashes {get;set;}=true;
+    public double KeyBurstIntensity {get;set;}=1;
+    public double KeyBurstBrightness {get;set;}=1;
     public bool MappingEnabled {get;set;}
     public List<InputRule> Rules {get;set;}=[];
     public static string DataDirectory=>Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"KeyWoo");
@@ -20,6 +24,8 @@ internal sealed class Settings {
             var s=JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath))??new();
             if(s.Schema!=1||s.Platform!="windows")throw new JsonException("Unsupported settings schema/platform");
             s.Volume=double.IsFinite(s.Volume)?Math.Clamp(s.Volume,0,SampleMixer.MaximumVolume):.5;
+            s.KeyBurstIntensity=double.IsFinite(s.KeyBurstIntensity)?Math.Clamp(s.KeyBurstIntensity,.4,1.5):1;
+            s.KeyBurstBrightness=double.IsFinite(s.KeyBurstBrightness)?Math.Clamp(s.KeyBurstBrightness,.25,1):1;
             if(string.IsNullOrWhiteSpace(s.Preset))s.Preset=SampleBank.DefaultPreset;
             if(s.Language is not ("system" or "zh" or "en"))s.Language="system";
             if(s.Appearance is not ("system" or "light" or "dark"))s.Appearance="system";

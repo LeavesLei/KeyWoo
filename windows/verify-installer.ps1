@@ -52,6 +52,7 @@ try {
     Run-Checked (Join-Path $install 'KeyWoo.exe') @('--verify-assets',("`"$report`""))
     $assets = Get-Content -Raw $report | ConvertFrom-Json
     if (-not $assets.passed -or @($assets.presets.PSObject.Properties).Count -ne 24) { throw 'Installed app asset self-check failed.' }
+    if (-not $assets.keyBurst.Passed) { throw 'Installed Key Burst drawing and overlay self-check failed.' }
     $result.installedPresetCount=@($assets.presets.PSObject.Properties).Count
     Run-Checked (Join-Path $install 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/LOG=`"$(Join-Path $ReportDirectory 'uninstall.log')`""))
     if ((Test-Path (Join-Path $install 'KeyWoo.exe')) -or (Test-Path $registration) -or (Test-Path $shortcut)) { throw 'Uninstaller left the application or registration behind.' }
