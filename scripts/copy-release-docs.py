@@ -3,13 +3,18 @@
 import argparse
 from pathlib import Path
 import re
+import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ("README.md", "THIRD-PARTY-NOTICES.md", "docs/INSTALL.md", "docs/PRIVACY.md", "docs/RELEASE-v1.0.md")
+FILES = ("README.md", "README.en.md", "THIRD-PARTY-NOTICES.md", "docs/INSTALL.md",
+         "docs/INSTALL.en.md", "docs/PRIVACY.md", "docs/RELEASE-v1.0.md")
+LOGO = "docs/assets/keywoo-icon.png"
 
 
 def copy_docs(destination):
-    destination.mkdir(parents=True, exist_ok=True)
+    logo = destination / LOGO
+    logo.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / LOGO, logo)
     for name in FILES:
         target = destination / name
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -20,14 +25,14 @@ def copy_docs(destination):
             label, link = match.groups()
             if ":" in link or link.startswith("#"):
                 return match.group(0)
-            if (target.parent / link).exists():
+            if (target.parent / link.partition("#")[0]).exists():
                 return match.group(0)
             source = (Path(name).parent / link).as_posix()
             if source.startswith("Sources/KeyDance/Resources/KeyboardSounds/"):
                 relative = "../KeyboardSounds/" + source.split("KeyboardSounds/", 1)[1]
                 if (target.parent / relative).exists():
                     return "[" + label + "](" + relative + ")"
-            # Development-only references remain available in the private source.
+            # Development-only references remain available in the source repository.
             return "[" + label + "](https://github.com/LeavesLei/KeyWoo/blob/v1.0.0/" + source + ")"
         target.write_text(re.sub(r"\[([^\]]+)\]\(([^)]+)\)", replace, target.read_text()))
 

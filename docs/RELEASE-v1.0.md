@@ -22,8 +22,8 @@
 | --- | --- |
 | Mac | macOS 14+，Apple silicon；DMG / ZIP |
 | Windows | Windows 11 x64；当前用户安装器 / 便携 ZIP |
-| 下载权限 | `LeavesLei/KeyWoo` 私有仓库中已获邀请的账号 |
-| Mac 签名 | 固定本地签名，尚未 Developer ID 公证 |
+| 下载 | [GitHub v1.0.0 发布页](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.0) |
+| Mac 签名 | 固定本地签名，尚未通过 Apple 公证 |
 | Windows 签名 | 尚未 Authenticode 签名 |
 
 实体 Windows 键盘、声卡与桌面交互验收尚未完成。即使 Windows CI 构建、核心测试和最终 EXE 资源自检通过，也不代表实体设备延迟、音质或所有键盘兼容性已经通过。最终各包的构建结果、版本和 SHA-256 应随该次 GitHub Release 一并列出；本说明不代替结果记录。

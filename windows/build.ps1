@@ -29,6 +29,7 @@ try {
     & dotnet publish windows/KeyWoo.Windows/KeyWoo.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true "-p:Version=$Version" "-p:ApplicationIcon=$icon" -o $staging
     if ($LASTEXITCODE -ne 0) { throw 'Windows publish failed.' }
     Copy-Item (Join-Path $repo 'README.md') (Join-Path $staging 'README.md')
+    Copy-Item (Join-Path $repo 'README.en.md') (Join-Path $staging 'README.en.md')
     $notices = Get-Content -Raw (Join-Path $repo 'THIRD-PARTY-NOTICES.md')
     $notices = $notices.Replace('Sources/KeyDance/Resources/KeyboardSounds/','Assets/KeyboardSounds/').Replace('windows/licenses/NAudio-LICENSE.txt','Licenses/NAudio-LICENSE.txt').Replace('Sources/KeyDance/Resources/AI/NOTICE.md',"https://github.com/LeavesLei/KeyWoo/blob/$sourceCommit/Sources/KeyDance/Resources/AI/NOTICE.md")
     $notices | Set-Content -Encoding utf8 (Join-Path $staging 'THIRD-PARTY-NOTICES.md')
@@ -37,9 +38,12 @@ try {
     Copy-Item (Join-Path $PSScriptRoot 'README.md') (Join-Path $developerDocs 'README.md')
     $documentation = Join-Path $staging 'docs'
     New-Item -ItemType Directory -Force $documentation | Out-Null
-    foreach ($document in @('INSTALL.md','PRIVACY.md','RELEASE-v1.0.md')) {
+    foreach ($document in @('INSTALL.md','INSTALL.en.md','PRIVACY.md','RELEASE-v1.0.md')) {
         Copy-Item (Join-Path $repo "docs/$document") (Join-Path $documentation $document)
     }
+    $docAssets = Join-Path $documentation 'assets'
+    New-Item -ItemType Directory -Force $docAssets | Out-Null
+    Copy-Item (Join-Path $repo 'docs/assets/keywoo-icon.png') $docAssets
     Copy-Item (Join-Path $repo 'release-version.json') (Join-Path $staging 'release-version.json')
     $report = Join-Path $artifacts ((Split-Path -Leaf $staging) + '-assets.json')
     $app = Start-Process -FilePath (Join-Path $staging 'KeyWoo.exe') -ArgumentList @('--verify-assets', ('"' + $report + '"')) -Wait -PassThru
