@@ -4,7 +4,7 @@
 
 <h1 align="center">键舞 · KeyWoo</h1>
 
-<p align="center">给日常打字加上机械键盘的声音。</p>
+<p align="center"> By Codex ｜ 打字模拟机械键盘的声音（适合静音轴，带有线耳机延迟更低，效果更佳）</p>
 
 <p align="center">
   <strong>简体中文</strong> · <a href="README.en.md">English</a>
