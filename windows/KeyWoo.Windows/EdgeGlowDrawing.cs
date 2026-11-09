@@ -199,8 +199,8 @@ internal static class EdgeGlowDrawing {
         context.Pop();
     }
     private static void AddStop(GradientBrush brush,Color color,double opacity,double position) => brush.GradientStops.Add(new(Color.FromArgb((byte)Math.Round(Math.Clamp(opacity,0,1)*255),color.R,color.G,color.B),position));
-    private static Color Hsv(double hue,double saturation) {
-        double h = (hue-Math.Floor(hue))*6, x = 1-saturation*(1-Math.Abs(h%2-1)), low = 1-saturation;
+    internal static Color Hsv(double hue,double saturation) {
+        double h = (hue-Math.Floor(hue))*6, x = 1-saturation*Math.Abs(h%2-1), low = 1-saturation;
         var rgb = (int)h switch {0 => (1.0,x,low),1 => (x,1.0,low),2 => (low,1.0,x),3 => (low,x,1.0),4 => (x,low,1.0),_ => (1.0,low,x)};
         return Color.FromRgb((byte)Math.Round(rgb.Item1*255),(byte)Math.Round(rgb.Item2*255),(byte)Math.Round(rgb.Item3*255));
     }

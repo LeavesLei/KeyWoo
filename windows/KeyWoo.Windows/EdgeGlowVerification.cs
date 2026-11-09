@@ -15,7 +15,7 @@ internal static class EdgeGlowVerification {
     private const int Width = 1200, Height = 144;
     internal sealed record Result(bool Passed, bool MusicRenderingPassed, bool TypingRenderingPassed,
         bool SilencePassed, bool OpacityPassed, bool ReducedMotionPassed, bool WindowLifecyclePassed,
-        bool CaptureDecoderPassed, bool CaptureOptInPassed, bool DeviceCaptureTested);
+        bool CaptureDecoderPassed, bool CaptureOptInPassed, bool GradientContinuityPassed, bool DeviceCaptureTested);
     private readonly record struct Frame(RenderTargetBitmap Bitmap,byte[] Bytes,int Left,int Middle,int Right,long Light);
 
     internal static Result Run(string report) {
@@ -39,12 +39,13 @@ internal static class EdgeGlowVerification {
         Frame keyFrame = Render(typing,quiet,1.12,options);
         Require(keyFrame.Light > 0 && keyFrame.Middle > 0,"Typing must add its own bottom glow and Space ripple.");
         Require(Render(typing,quiet,15,options).Light == 0,"Typing must fade to a fully clear frame.");
+        VerifyPalette();
         VerifyDecoder();
         VerifyOptIn();
         VerifyWindow(music);
         Save(musicFrame.Bitmap,Path.ChangeExtension(report,".edge-glow-music.png"));
         Save(keyFrame.Bitmap,Path.ChangeExtension(report,".edge-glow-typing.png"));
-        return new(true,true,true,true,true,true,true,true,true,false);
+        return new(true,true,true,true,true,true,true,true,true,true,false);
     }
 
     private static Frame Render(EdgeGlowDynamics dynamics,AudioSpectrum spectrum,double time,KeyBurstVisualOptions options) {
@@ -63,6 +64,19 @@ internal static class EdgeGlowVerification {
             light+=bytes[index]+bytes[index+1]+bytes[index+2];
         }
         return new(bitmap,bytes,left,middle,right,light);
+    }
+
+    private static void VerifyPalette() {
+        Color cyan=EdgeGlowDrawing.Hsv(.5,.75);
+        Color blue=EdgeGlowDrawing.Hsv(2.0/3,.75);
+        Require(cyan.R==64&&cyan.G==255&&cyan.B==255,"The midpoint must be cyan, with equal green and blue channels.");
+        Require(blue.R==64&&blue.G==64&&blue.B==255,"The blue sector boundary must retain full blue without a magenta seam.");
+        foreach(double boundary in new[]{.5,2.0/3,5.0/6}) {
+            Color before=EdgeGlowDrawing.Hsv(boundary-.00001,.75);
+            Color after=EdgeGlowDrawing.Hsv(boundary+.00001,.75);
+            Require(Math.Abs(before.R-after.R)<=1&&Math.Abs(before.G-after.G)<=1&&Math.Abs(before.B-after.B)<=1,
+                "Adjacent gradient samples must stay continuous across a hue-sector boundary.");
+        }
     }
 
     private static void VerifyDecoder() {
