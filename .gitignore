@@ -20,6 +20,8 @@ PROGRESS.md
 VERIFICATION.md
 打开*.command
 Sources/KeyDance/Resources/**/*.wav
+Sources/KeyDance/Resources/KeyboardSounds/hifi-manifest.json
+Sources/KeyDance/Resources/KeyboardSounds/street-beat-manifest.json
 Resources/KeyWooIconSource.png
 Resources/KeyWooIcon.png
 :-

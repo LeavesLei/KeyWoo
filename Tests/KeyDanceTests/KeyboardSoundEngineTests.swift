@@ -228,6 +228,45 @@ struct KeyboardSoundEngineTests {
         e.stop()
     }
 
+    @Test func allVerifiedHiFiPacksPreserveKeyRolesAndPlayAlternatePCM() throws {
+        for style in KeyboardSoundStyle.allCases {
+            let original = engine(style)
+            let polished = engine(style)
+            polished.quality = .hiFi
+            defer { original.stop(); polished.stop() }
+            #expect(polished.supportsHiFi(for: style) == style.isRecorded)
+            let dry = try #require(original.loudnessProfile(for: style))
+            let clean = try #require(polished.loudnessProfile(for: style, quality: .hiFi))
+            let comparison = (clean.measuredRMS * Double(clean.gain)) / (dry.measuredRMS * Double(dry.gain))
+            #expect((0.85...1.18).contains(comparison), "Playback levels should stay comparable when switching versions.")
+            for key: UInt16 in [0, 49, 36, 51, 48, 56] {
+                #expect(original.hasIndependentRelease(keyCode: key) == polished.hasIndependentRelease(keyCode: key))
+                original.noteOn(keyCode: key); polished.noteOn(keyCode: key)
+                let a = original.renderForVerification(frames: 96)
+                let b = polished.renderForVerification(frames: 96)
+                #expect(energy(b) > 1e-8)
+                original.noteOff(keyCode: key); polished.noteOff(keyCode: key)
+                let cleanTail = polished.renderForVerification(frames: 24_000)
+                let dryTail = original.renderForVerification(frames: 24_000)
+                #expect(cleanTail.suffix(4_800).allSatisfy { $0 == 0 })
+                #expect((a == b && dryTail == cleanTail) != style.isRecorded)
+            }
+        }
+    }
+
+    @Test func changingRecordingQualityKeepsHeldKeyAndItsOriginalRelease() {
+        let reference = engine(.blue), switched = engine(.blue)
+        defer { reference.stop(); switched.stop() }
+        reference.noteOn(keyCode: 0); switched.noteOn(keyCode: 0)
+        #expect(reference.renderForVerification(frames: 4_800) == switched.renderForVerification(frames: 4_800))
+        switched.quality = .hiFi
+        #expect(switched.isRunning && switched.heldKeyCount == 1)
+        reference.noteOff(keyCode: 0); switched.noteOff(keyCode: 0)
+        #expect(reference.renderForVerification(frames: 8_192) == switched.renderForVerification(frames: 8_192))
+        reference.noteOn(keyCode: 0); switched.noteOn(keyCode: 0)
+        #expect(reference.renderForVerification(frames: 4_800) != switched.renderForVerification(frames: 4_800))
+    }
+
     @Test func missingOrCorruptRecordingFailsClosedButExplicitSyntheticPresetStillWorks() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("keyboard-assets-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -561,9 +600,9 @@ struct KeyboardSynthesisExportTests {
         let object = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("synthetic-manifest.json")))
         let manifest = try #require(object as? [String: Any])
         let packs = try #require(manifest["packs"] as? [String: [String: Any]])
-        #expect(packs.count == KeyboardSoundStyle.allCases.filter { !$0.isRecorded }.count)
+        #expect(packs.count == KeyboardSoundStyle.allCases.filter(\.usesNativeFoley).count)
         var hashes = Set<String>()
-        for style in KeyboardSoundStyle.allCases where !style.isRecorded {
+        for style in KeyboardSoundStyle.allCases where style.usesNativeFoley {
             let pack = try #require(packs[style.rawValue])
             let entries = try #require(pack["clips"] as? [[String: Any]])
             #expect(entries.count == 36)

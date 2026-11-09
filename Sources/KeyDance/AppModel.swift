@@ -27,6 +27,7 @@ final class AppModel: ObservableObject {
     let music: LocalMusicStore
     let rhythmFeedback = RhythmFeedbackModel()
     private var rhythmOverlay: RhythmOverlayController?
+    let systemAudioRhythm = SystemAudioRhythmModel()
     private var rhythmDemoTask: Task<Void, Never>?
     private let defaults: UserDefaults
     private let startsKeyboardMonitor: Bool
@@ -70,6 +71,15 @@ final class AppModel: ObservableObject {
             if started && isEnabled && isKeyboardSoundMode { keyboardAudio.start() }
         }
     }
+    @Published var keyboardSoundQuality: KeyboardSoundQuality {
+        didSet {
+            guard keyboardSoundQuality != oldValue else { return }
+            keyboardAudio.quality = keyboardSoundQuality
+            defaults.set(keyboardSoundQuality.rawValue, forKey: "keyboardSoundQuality")
+            if isKeyboardSoundMode && canChooseKeyboardSoundQuality { previewSound() }
+        }
+    }
+    var canChooseKeyboardSoundQuality: Bool { keyboardAudio.supportsHiFi(for: keyboardSoundStyle) }
     @Published var keyboardVolume: Double {
         didSet {
             let value = Self.validVolume(keyboardVolume, fallback: 0.5, maximum: KeyboardSoundEngine.maximumVolume)
@@ -94,10 +104,27 @@ final class AppModel: ObservableObject {
             defaults.set(value, forKey: "rhythmIntensity")
         }
     }
+    static let rhythmOpacityRange = 0.25...1.0
+    @Published var rhythmOpacity: Double {
+        didSet {
+            let value = Self.validRhythmOpacity(rhythmOpacity)
+            if rhythmOpacity != value { rhythmOpacity = value }
+            rhythmFeedback.opacity = value
+            defaults.set(value, forKey: "rhythmOpacity")
+        }
+    }
     @Published var rhythmStyle: RhythmVisualStyle {
         didSet {
             defaults.set(rhythmStyle.rawValue, forKey: "rhythmStyle")
             rhythmFeedback.visualStyle = rhythmStyle
+            rhythmOverlay?.setVisualStyle(rhythmStyle)
+            synchronizeSystemAudioRhythm()
+        }
+    }
+    @Published var rhythmFollowsAudio: Bool {
+        didSet {
+            defaults.set(rhythmFollowsAudio, forKey: "rhythmFollowsAudio")
+            synchronizeSystemAudioRhythm()
         }
     }
     @Published var rhythmFlashes: Bool {
@@ -188,13 +215,16 @@ final class AppModel: ObservableObject {
         self.musicModeAvailable = musicModeAvailable
         rhythmEnabled = defaults.bool(forKey: "rhythmEnabled")
         rhythmIntensity = Self.validRhythmIntensity(defaults.object(forKey: "rhythmIntensity") == nil ? 1 : defaults.double(forKey: "rhythmIntensity"))
+        rhythmOpacity = Self.validRhythmOpacity((defaults.object(forKey: "rhythmOpacity") as? NSNumber)?.doubleValue ?? 1)
         rhythmClickThrough = defaults.bool(forKey: "rhythmClickThrough")
         rhythmStyle = RhythmVisualStyle(rawValue: defaults.string(forKey: "rhythmStyle") ?? "energy") ?? .energy
         rhythmFlashes = defaults.object(forKey: "rhythmFlashes") == nil ? true : defaults.bool(forKey: "rhythmFlashes")
+        rhythmFollowsAudio = defaults.bool(forKey: "rhythmFollowsAudio")
         language = AppLanguage(rawValue: defaults.string(forKey: "appLanguage") ?? "zh-Hans") ?? .simplifiedChinese
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appAppearance") ?? "system") ?? .system
         experienceMode = musicModeAvailable ? (AppExperienceMode(rawValue: defaults.string(forKey: "experienceMode") ?? "music") ?? .music) : .keyboardSounds
         keyboardSoundStyle = KeyboardSoundStyle(rawValue: defaults.string(forKey: "keyboardSoundStyle") ?? "red") ?? .red
+        keyboardSoundQuality = KeyboardSoundQuality(rawValue: defaults.string(forKey: "keyboardSoundQuality") ?? "") ?? .original
         keyboardVolume = Self.validVolume(defaults.object(forKey: "keyboardVolume") == nil ? 0.5 : defaults.double(forKey: "keyboardVolume"), fallback: 0.5, maximum: KeyboardSoundEngine.maximumVolume)
         let arguments = ProcessInfo.processInfo.arguments
         if let statistics {
@@ -229,10 +259,14 @@ final class AppModel: ObservableObject {
         AppLocalization.language = language
         defaults.set(language == .system ? nil : [language.rawValue], forKey: "AppleLanguages")
         self.keyboardAudio.style = keyboardSoundStyle
+        self.keyboardAudio.quality = keyboardSoundQuality
         self.keyboardAudio.volume = keyboardVolume
         rhythmFeedback.intensity = rhythmIntensity
+        rhythmFeedback.opacity = rhythmOpacity
         rhythmFeedback.visualStyle = rhythmStyle
         rhythmFeedback.flashesEnabled = rhythmFlashes
+        systemAudioRhythm.onSpectrum = { [weak self] spectrum in self?.rhythmFeedback.setMusicSpectrum(spectrum) }
+        systemAudioRhythm.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subscriptions)
         audio.style = style
         audio.hitVolume = hitVolume
         audio.musicVolume = musicVolume
@@ -310,6 +344,7 @@ final class AppModel: ObservableObject {
         if startsKeyboardMonitor { monitor.start() }
     }
     func shutdown() {
+        systemAudioRhythm.setEnabled(false)
         cancelRhythmFeedback()
         rhythmOverlay?.hide()
         remapping.stop(); statistics.flush(); monitor.stop(); audio.stop(); keyboardAudio.stop()
@@ -417,6 +452,7 @@ final class AppModel: ObservableObject {
     }
 
     private func synchronizeRhythmOverlay() {
+        synchronizeSystemAudioRhythm()
         // Device-free tests never instantiate AppKit windows.
         guard started, startsKeyboardMonitor else { return }
         guard rhythmEnabled && isEnabled else { rhythmOverlay?.hide(); return }
@@ -425,12 +461,23 @@ final class AppModel: ObservableObject {
                 self?.rhythmEnabled = false
             }
         }
+        rhythmOverlay?.setVisualStyle(rhythmStyle)
         rhythmOverlay?.setClickThrough(rhythmClickThrough)
         rhythmOverlay?.show()
     }
 
+    private func synchronizeSystemAudioRhythm() {
+        systemAudioRhythm.setEnabled(started && startsKeyboardMonitor && isEnabled && rhythmEnabled
+            && rhythmStyle == .edgeGlow && rhythmFollowsAudio)
+    }
+
     private static func validRhythmIntensity(_ value: Double) -> Double {
         value.isFinite ? min(1.5, max(0.4, value)) : 1
+    }
+
+    private static func validRhythmOpacity(_ value: Double) -> Double {
+        let range = rhythmOpacityRange
+        return value.isFinite ? min(range.upperBound, max(range.lowerBound, value)) : range.upperBound
     }
     var musicTracks: [MusicTrack] {
         MusicLibrary.builtInTracks + [MusicLibrary.generativeTrack].compactMap { $0 } + music.importedTracks.map { track in

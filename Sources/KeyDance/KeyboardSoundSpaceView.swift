@@ -18,7 +18,7 @@ struct KeyboardSoundSpaceView: View {
 
     private var styles: [KeyboardSoundStyle] {
         let order = ["macbookPro", "topre", "oreo", "panda", "purple", "red", "blue", "brown", "black",
-                     "mahjongTiles", "hermes", "woodDesk", "mahjong"]
+                     "streetBeat", "mahjongTiles", "hermes", "woodDesk", "mahjong"]
         return KeyboardSoundStyle.allCases.filter { $0.category == category }.sorted {
             let first = order.firstIndex(of: $0.rawValue) ?? order.count
             let second = order.firstIndex(of: $1.rawValue) ?? order.count
@@ -84,6 +84,21 @@ struct KeyboardSoundSpaceView: View {
                     .foregroundStyle(Palette.muted)
                     .accessibilityIdentifier("keyboard-sound-preview-status")
             }
+            if model.canChooseKeyboardSoundQuality {
+                HStack(spacing: 8) {
+                    Text(L("录音版本"))
+                        .font(.system(size: 12, weight: .medium))
+                    InfoHelpButton(title: "录音版本", message: "原音保留录音原貌；Hi-Fi 减少低频杂音和尾部底噪。切换时可试听同一段按键。", identifier: "keyboard-sound-quality-help")
+                    Spacer(minLength: 4)
+                    Picker(L("录音版本"), selection: $model.keyboardSoundQuality) {
+                        ForEach(KeyboardSoundQuality.allCases) { quality in Text(quality.title).tag(quality) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 165)
+                    .accessibilityIdentifier("keyboard-sound-quality")
+                }
+            }
             Divider()
             volume
         }
@@ -139,23 +154,27 @@ struct KeyboardSoundSpaceView: View {
     }
 
     private var volume: some View {
-        let percent = model.keyboardVolume.formatted(.percent.precision(.fractionLength(0)).locale(AppLocalization.locale))
+        let percent = ControlScale.keyboardVolume.displayValue(for: model.keyboardVolume)
+            .formatted(.percent.precision(.fractionLength(0...2)).locale(AppLocalization.locale))
         return HStack(spacing: 12) {
             HStack(spacing: 2) {
                 Label(L("音量"), systemImage: model.keyboardVolume > 0 ? "speaker.wave.2" : "speaker.slash")
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.muted)
-                InfoHelpButton(title: "音量", message: "不同音色已做音量平衡。100% 为标准音量，最高可调到 1600%；右侧重置按钮可恢复到 100%。调到 0 只会静音，按键仍会统计。", identifier: "sound-volume-help")
+                InfoHelpButton(title: "音量", message: "音量从 0% 到 100% 均匀调节，不同音色已做音量平衡。右侧按钮恢复推荐音量（6.25%）。调到 0% 只会静音，按键仍会统计。", identifier: "sound-volume-help")
             }
-            Slider(value: volumePosition, in: 0...1)
-                .accessibilityLabel(L("音效音量"))
-                .accessibilityValue(Text(percent))
-                .accessibilityIdentifier("keyboard-sound-volume")
+            VStack(spacing: 1) {
+                Slider(value: volumePosition, in: ControlScale.keyboardVolume.displayRange, step: ControlScale.displayStep)
+                    .accessibilityLabel(L("音效音量"))
+                    .accessibilityValue(Text(percent))
+                    .accessibilityIdentifier("keyboard-sound-volume")
+                ControlScaleLabels(values: [0, 0.25, 0.5, 0.75, 1])
+            }
             Text(percent)
                 .font(.system(size: 12, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(Palette.muted)
-                .frame(width: 52, alignment: .trailing)
+                .frame(width: 60, alignment: .trailing)
             Button {
                 model.keyboardVolume = 1
             } label: {
@@ -169,26 +188,17 @@ struct KeyboardSoundSpaceView: View {
             .buttonStyle(.plain)
             .foregroundStyle(Palette.muted)
             .disabled(abs(model.keyboardVolume - 1) < 0.0001)
-            .help(L("恢复到 100% 音量"))
-            .accessibilityLabel(L("恢复到 100% 音量"))
+            .help(L("恢复推荐音量（6.25%）"))
+            .accessibilityLabel(L("恢复推荐音量（6.25%）"))
             .accessibilityIdentifier("keyboard-sound-volume-reset")
         }
     }
 
     private var volumePosition: Binding<Double> {
-        // Reserve most of the slider for precise adjustments through 400%.
-        let standardMaximum = 4.0
-        let boostStart = 0.75
-        let boostRange = KeyboardSoundEngine.maximumVolume - standardMaximum
-        return Binding {
-            let volume = model.keyboardVolume
-            return volume <= standardMaximum
-                ? boostStart * volume / standardMaximum
-                : boostStart + (1 - boostStart) * (volume - standardMaximum) / boostRange
+        Binding {
+            ControlScale.keyboardVolume.displayValue(for: model.keyboardVolume)
         } set: { position in
-            model.keyboardVolume = position <= boostStart
-                ? standardMaximum * position / boostStart
-                : standardMaximum + boostRange * (position - boostStart) / (1 - boostStart)
+            model.keyboardVolume = ControlScale.keyboardVolume.storedValue(for: position)
         }
     }
 

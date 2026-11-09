@@ -8,10 +8,14 @@ internal sealed class Settings {
     public string Language {get;set;}="system";
     public string Appearance {get;set;}="system";
     public string Preset {get;set;}=SampleBank.DefaultPreset;
+    public bool HiFiEnabled {get;set;}
     public double Volume {get;set;}=.5;
+    public string DesktopStyle {get;set;}="burst";
+    public bool FollowSystemAudio {get;set;}
     public bool KeyBurstEnabled {get;set;}
     public bool KeyBurstFlashes {get;set;}=true;
     public double KeyBurstIntensity {get;set;}=1;
+    // Keep the original JSON key so existing opacity choices survive updates.
     public double KeyBurstBrightness {get;set;}=1;
     public bool MappingEnabled {get;set;}
     public List<InputRule> Rules {get;set;}=[];
@@ -26,6 +30,7 @@ internal sealed class Settings {
             s.Volume=double.IsFinite(s.Volume)?Math.Clamp(s.Volume,0,SampleMixer.MaximumVolume):.5;
             s.KeyBurstIntensity=double.IsFinite(s.KeyBurstIntensity)?Math.Clamp(s.KeyBurstIntensity,.4,1.5):1;
             s.KeyBurstBrightness=double.IsFinite(s.KeyBurstBrightness)?Math.Clamp(s.KeyBurstBrightness,.25,1):1;
+            if(s.DesktopStyle is not ("burst" or "edgeGlow"))s.DesktopStyle="burst";
             if(string.IsNullOrWhiteSpace(s.Preset))s.Preset=SampleBank.DefaultPreset;
             if(s.Language is not ("system" or "zh" or "en"))s.Language="system";
             if(s.Appearance is not ("system" or "light" or "dark"))s.Appearance="system";

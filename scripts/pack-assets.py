@@ -37,6 +37,8 @@ def inventory(root):
             for name in names:
                 if name.endswith(".wav"):
                     relative = (Path(parent) / name).relative_to(root).as_posix()
+                    if safety.is_derived_asset(relative):
+                        continue
                     safety.checked_target(root, relative)
                     paths.append(relative)
     for icon in safety.ICONS:

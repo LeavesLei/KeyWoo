@@ -20,6 +20,10 @@ public sealed class MainWindow : Window {
     private readonly StatisticsStore statistics;
     private readonly KeyboardHook hook=new();
     private readonly KeyBurstOverlay keyBurst=new();
+    private readonly SystemAudioRhythm systemAudio=new();
+    private bool powerSuspended;
+    private TextBlock? systemAudioStatus;
+    private Button? systemAudioRetry;
     private readonly ConcurrentQueue<(PhysicalKey Key,DateTimeOffset At)> presses=new();
     private readonly DispatcherTimer updateTimer,saveTimer;
     private readonly Forms.NotifyIcon tray=new();
@@ -53,6 +57,7 @@ public sealed class MainWindow : Window {
     private Brush Brush(string key)=>(Brush)System.Windows.Application.Current.Resources[key];
     public MainWindow() {
         settings=Settings.Load(out var loadError);
+        systemAudio.StateChanged+=UpdateSystemAudioState;
         statistics=new(Path.Combine(Settings.DataDirectory,"statistics.json"));
         Width=1050;Height=780;MinWidth=820;MinHeight=650;
         WindowStartupLocation=WindowStartupLocation.CenterScreen;
@@ -70,6 +75,7 @@ public sealed class MainWindow : Window {
         Loaded+=async(_,_)=>{if(!started){started=true;await StartAsync();}};
         Closing+=(_,e)=>{if(!closing){e.Cancel=true;Hide();}};
         SystemEvents.SessionSwitch+=SessionChanged;
+        SystemEvents.PowerModeChanged+=PowerChanged;
         SystemEvents.UserPreferenceChanged+=PreferencesChanged;
         System.Windows.Application.Current.SessionEnding+=(_,_)=>ExitNow();
     }
@@ -82,6 +88,7 @@ public sealed class MainWindow : Window {
             if(!bank.Packs.ContainsKey(settings.Preset))settings.Preset=SampleBank.DefaultPreset;
             refreshSoundCatalog?.Invoke();
             audio=new AudioOutput(bank);audio.Mixer.Style=settings.Preset;audio.Mixer.Volume=(float)settings.Volume;
+            audio.Mixer.HiFiEnabled=settings.HiFiEnabled;
             audio.Mixer.Enabled=enabled;
             audio.Failed+=message=>Dispatcher.InvokeAsync(()=>ShowAudioError(message));
             audio.Recovered+=ClearAudioError;audio.Start();
@@ -128,6 +135,28 @@ public sealed class MainWindow : Window {
     private UIElement Sounds() {
         var panel=Panel();var grid=new UniformGrid{Columns=3,Margin=new Thickness(0,0,0,12)};
         var category=new ComboBox{DisplayMemberPath=nameof(SoundGroup.Label),Width=250,HorizontalAlignment=HorizontalAlignment.Left,Margin=new Thickness(0,0,0,12)};
+        var versionRow=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,0,0,12)};
+        string versionTitle=T("录音版本","Recording version");
+        var versionLabel=Text(versionTitle,13,true);
+        versionLabel.VerticalAlignment=VerticalAlignment.Center;
+        versionLabel.Margin=new Thickness(0,0,12,0);
+        versionRow.Children.Add(versionLabel);
+        var version=new ComboBox {
+            ItemsSource=new KeyValuePair<bool,string>[]{new(false,T("原音","Original")),new(true,T("Hi-Fi 高保真","Hi-Fi"))},
+            DisplayMemberPath="Value",SelectedValuePath="Key",SelectedValue=settings.HiFiEnabled,Width=150
+        };
+        AutomationProperties.SetAutomationId(version,"recording-version");
+        AutomationProperties.SetName(version,versionTitle);
+        version.SelectionChanged+=async(_,_)=>{
+            if(building||version.SelectedValue is not bool hiFi||settings.HiFiEnabled==hiFi)return;
+            settings.HiFiEnabled=hiFi;
+            if(audio is not null)audio.Mixer.HiFiEnabled=hiFi;
+            SaveSoon();
+            await PreviewSequence();
+        };
+        versionRow.Children.Add(version);
+        void UpdateVersionVisibility()=>versionRow.Visibility=soundBank?.HiFiPacks.ContainsKey(settings.Preset)==true
+            ?Visibility.Visible:Visibility.Collapsed;
         panel.Children.Add(category);
         void FillPresets() {
             grid.Children.Clear();
@@ -137,7 +166,12 @@ public sealed class MainWindow : Window {
                 string id=preset.Id;
                 var label=new StackPanel();label.Children.Add(Text(PresetName(preset),15));
                 label.Children.Add(Text(preset.Category==SoundCategory.Synthesized?T("合成拟音","Synthesized"):T("真实录音","Recorded"),11,true));
-                var button=MakeButton("",async(_,_)=>{settings.Preset=id;if(audio is not null)audio.Mixer.Style=id;UpdatePresets();SaveSoon();await PreviewSequence();});
+                var button=MakeButton("",async(_,_)=>{
+                    settings.Preset=id;
+                    if(audio is not null)audio.Mixer.Style=id;
+                    UpdatePresets();UpdateVersionVisibility();SaveSoon();
+                    await PreviewSequence();
+                });
                 button.Content=label;button.MinHeight=76;button.Margin=new Thickness(0,0,10,10);button.HorizontalContentAlignment=HorizontalAlignment.Left;
                 AutomationProperties.SetAutomationId(button,"preset-"+id);presetButtons[id]=button;grid.Children.Add(button);
             }
@@ -149,9 +183,11 @@ public sealed class MainWindow : Window {
                 .Select(g=>new SoundGroup(g.Key,$"{SoundCategoryName(g.Key)} · {g.Count()}",g.ToArray())).ToArray()??[];
             category.ItemsSource=groups;
             category.SelectedItem=groups.FirstOrDefault(g=>g.Presets.Any(p=>p.Id==settings.Preset))??groups.FirstOrDefault();
+            UpdateVersionVisibility();
         };
         refreshSoundCatalog();
         panel.Children.Add(grid);
+        panel.Children.Add(versionRow);
         panel.Children.Add(VolumeControl());
         var practicePanel=Panel();practicePanel.Children.Add(Text(T("试打","Try typing"),16));
         practice=new TextBox{AcceptsReturn=true,MinHeight=70,Margin=new Thickness(0,12,0,16),VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
@@ -170,53 +206,45 @@ public sealed class MainWindow : Window {
     }
 
     private DockPanel VolumeControl() {
-        const double standardGain = 4;
-        const double standardTrack = .75;
-        const double extraTrack = 1 - standardTrack;
-        const double extraGain = SampleMixer.MaximumVolume - standardGain;
-
         var panel = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
         var previewButton = MakeButton(T("试听", "Preview"), async (_, _) => await PreviewSequence());
         DockPanel.SetDock(previewButton, Dock.Right);
         panel.Children.Add(previewButton);
-
+        var restore = MakeButton(T("推荐", "Recommended"), (_, _) => { });
+        restore.ToolTip = T("恢复推荐音量（6.25%）", "Restore recommended volume (6.25%)");
+        AutomationProperties.SetAutomationId(restore,"keyboard-volume-reset");
+        DockPanel.SetDock(restore,Dock.Right);
+        panel.Children.Add(restore);
         string title = T("音量", "Volume");
-        var valueLabel = Text(settings.Volume.ToString("P0"), 13, true);
-        valueLabel.Width = 64;
+        string Percent(double stored) => ControlScale.KeyboardVolume.DisplayValue(stored).ToString("0.##%",CultureInfo.CurrentCulture);
+        var valueLabel = Text(Percent(settings.Volume), 13, true);
+        valueLabel.Width = 72;
         valueLabel.VerticalAlignment = VerticalAlignment.Center;
         DockPanel.SetDock(valueLabel, Dock.Right);
         panel.Children.Add(valueLabel);
-
         var label = Text(title);
         label.Width = 72;
         label.VerticalAlignment = VerticalAlignment.Center;
+        label.ToolTip = T("0% 到 100% 均匀调节；0% 静音并保留统计。", "A linear 0–100% scale. Zero mutes audio and keeps statistics active.");
         DockPanel.SetDock(label, Dock.Left);
         panel.Children.Add(label);
-
-        // Reserve most of the track for the established gain range.
         var slider = new Slider {
-            Minimum = 0,
-            Maximum = 1,
-            SmallChange = .01,
-            LargeChange = .05,
-            Value = settings.Volume <= standardGain
-                ? settings.Volume / standardGain * standardTrack
-                : standardTrack + (settings.Volume - standardGain) / extraGain * extraTrack,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 18, 0)
+            Minimum = 0, Maximum = 1, SmallChange = .01, LargeChange = .05,
+            Value = ControlScale.KeyboardVolume.DisplayValue(settings.Volume),
+            TickPlacement = TickPlacement.BottomRight, TickFrequency = .25,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 18, 0)
         };
         AutomationProperties.SetAutomationId(slider, "keyboard-volume");
         AutomationProperties.SetName(slider, $"{title} {valueLabel.Text}");
         slider.ValueChanged += (_, _) => {
             if (building) return;
-            settings.Volume = slider.Value <= standardTrack
-                ? slider.Value / standardTrack * standardGain
-                : standardGain + (slider.Value - standardTrack) / extraTrack * extraGain;
-            valueLabel.Text = settings.Volume.ToString("P0");
+            settings.Volume = ControlScale.KeyboardVolume.StoredValue(slider.Value);
+            valueLabel.Text = Percent(settings.Volume);
             AutomationProperties.SetName(slider, $"{title} {valueLabel.Text}");
             if (audio is not null) audio.Mixer.Volume = (float)settings.Volume;
             SaveSoon();
         };
+        restore.Click+=(_,_)=>slider.Value=ControlScale.KeyboardVolume.DisplayValue(1);
         panel.Children.Add(slider);
         return panel;
     }
@@ -227,14 +255,33 @@ public sealed class MainWindow : Window {
     };
     private string PresetName(SoundPreset preset)=>preset.Id switch {"topre"=>T("Topre 静电容","Topre"),"oreo"=>"Everglide Oreo","panda"=>"Holy Panda","purple"=>T("Everglide 水晶紫","Everglide Crystal Purple"),"red"=>T("Cherry 红轴 · ABS","Cherry Red · ABS"),"blue"=>T("Cherry 青轴 · ABS","Cherry Blue · ABS"),"brown"=>T("Cherry 茶轴 · PBT","Cherry Brown · PBT"),"black"=>T("Cherry 黑轴 · PBT","Cherry Black · PBT"),"bluePBT"=>T("Cherry 青轴 · PBT","Cherry Blue · PBT"),"brownABS"=>T("Cherry 茶轴 · ABS","Cherry Brown · ABS"),"blackABS"=>T("Cherry 黑轴 · ABS","Cherry Black · ABS"),"typewriter"=>T("打字机","Typewriter"),"bubble"=>T("泡泡","Bubble"),"woodblock"=>T("木鱼","Woodblock"),"paper"=>T("纸笺","Paper"),"raindrop"=>T("水滴","Raindrop"),"brick"=>T("积木","Brick"),"arcade"=>T("街机","Arcade"),"laser"=>T("激光","Laser"),"mahjong"=>T("麻将","Mahjong"),_=>Chinese?preset.TitleZh??preset.Title:preset.Title};
     private void UpdatePresets(){foreach(var (id,b) in presetButtons){b.BorderBrush=Brush(id==settings.Preset?"AccentBrush":"LineBrush");b.BorderThickness=new Thickness(id==settings.Preset?2:1);}}
-    private async Task PreviewSequence() {
+    // Match macOS for A/B comparison and the 96 BPM Street Beat demonstration.
+    private static readonly (int Time,int[] Keys)[] RecordingPreview =
+        [(0,[0]),(140,[1]),(280,[2]),(540,[49]),(850,[36]),(1150,[51])];
+    private static readonly (int Time,int[] Keys)[] StreetBeatPreview =
+        [(0,[49,0]),(177,[0]),(313,[0]),(489,[0]),(625,[36,56,0]),(802,[0]),(938,[49,0]),(1114,[51]),
+         (1250,[49,0]),(1427,[0]),(1563,[0]),(1739,[0]),(1875,[36,56,0]),(2052,[0]),(2188,[48])];
+
+    private Task PreviewSequence()=>PlayPreview(audio?.Mixer.Style==SampleBank.StreetBeatPreset?StreetBeatPreview:RecordingPreview);
+    private Task PreviewKey(int code)=>PlayPreview([(0,[code])],Environment.TickCount);
+    private async Task PlayPreview((int Time,int[] Keys)[] pattern,int take=0) {
         preview?.Cancel();preview?.Dispose();preview=new CancellationTokenSource();var token=preview.Token;
         if(!enabled||audio is null)return;
-        try{foreach(int code in new[]{0,1,2,49,36,51}){await PreviewKey(code,token);await Task.Delay(90,token);}}catch(OperationCanceledException){}
-    }
-    private async Task PreviewKey(int code,CancellationToken token=default) {
-        if(!enabled||audio is null)return;int variant=Environment.TickCount;
-        string style=audio.Mixer.Style;audio.Mixer.Preview(code,true,variant);await Task.Delay(70,token);if(!token.IsCancellationRequested&&audio.Mixer.Style==style)audio.Mixer.Preview(code,false,variant);
+        var mixer=audio.Mixer;
+        int generation=mixer.CancelPreview();
+        var clock=System.Diagnostics.Stopwatch.StartNew();
+        try {
+            foreach(var (time,keys) in pattern) {
+                await Task.Delay((int)Math.Max(0,time-clock.ElapsedMilliseconds),token);
+                if(token.IsCancellationRequested||!mixer.IsPreviewCurrent(generation))return;
+                foreach(int key in keys) {
+                    mixer.Preview(key,true,take,generation);
+                    // The mixer applies the same minimum 70 ms release delay to previews.
+                    mixer.Preview(key,false,take,generation);
+                }
+                take++;
+            }
+        } catch(OperationCanceledException){}
     }
     private UIElement Statistics() {
         var panel=Panel();panel.Children.Add(Text(T("指定时间段的逐键次数","Key counts over a chosen period"),18));
@@ -340,50 +387,84 @@ public sealed class MainWindow : Window {
         header.Children.Add(keyBurstPreview);
         header.Children.Add(Text(T("桌面律动","Desktop animation"),16));
         panel.Children.Add(header);
-
-        var show=new CheckBox{Content=T("键阵爆破","Key Burst"),IsChecked=settings.KeyBurstEnabled};
+        var show=new CheckBox{Content=T("桌面律动","Desktop animation"),IsChecked=settings.KeyBurstEnabled};
         AutomationProperties.SetAutomationId(show,"key-burst-enabled");
-        show.Click+=(_,_)=>{
-            settings.KeyBurstEnabled=show.IsChecked==true;
-            UpdateKeyBurst();
-            SaveSoon();
-        };
+        show.Click+=(_,_)=>{settings.KeyBurstEnabled=show.IsChecked==true;UpdateKeyBurst();SaveSoon();};
         panel.Children.Add(show);
-        panel.Children.Add(Text(T("其他应用中的键位也会短暂发光。空格打散成碎光，回车轻轻收束。演示不发声、不计数。",
-            "Key labels glow briefly across apps. Space scatters them into sparks and Return draws them together. The demo is silent and does not count keystrokes."),12,true));
+        var selector=new ComboBox {
+            ItemsSource=new KeyValuePair<string,string>[] {new("burst",T("键阵爆破","Key Burst")),new("edgeGlow",T("底部泛光","Bottom glow"))},
+            DisplayMemberPath="Value",SelectedValuePath="Key",SelectedValue=settings.DesktopStyle,Margin=new Thickness(0,8,0,8),
+            HorizontalAlignment=HorizontalAlignment.Left,Width=220
+        };
+        AutomationProperties.SetAutomationId(selector,"desktop-animation-style");
+        AutomationProperties.SetName(selector,T("显示样式","Display style"));
+        panel.Children.Add(selector);
+        var description=Text("",12,true);
+        panel.Children.Add(description);
+        var audioPanel=new StackPanel{Margin=new Thickness(0,8,0,0)};
+        var follow=new CheckBox{Content=T("跟随电脑声音","Follow computer audio"),IsChecked=settings.FollowSystemAudio};
+        AutomationProperties.SetAutomationId(follow,"rhythm-follow-audio");
+        follow.ToolTip=T("分析默认播放设备的混合声音，包含键舞自己的音效。低音推动左侧柔光，中高音带动右侧波形。只在本机即时分析，不使用麦克风，不保存录音。",
+            "Analyzes the default output-device mix, including KeyWoo sounds. Bass shapes the left glow; mids and treble shape the right wave. Analysis stays in memory, with no microphone or saved recording.");
+        follow.Click+=(_,_)=>{settings.FollowSystemAudio=follow.IsChecked==true;UpdateKeyBurst();SaveSoon();};
+        audioPanel.Children.Add(follow);
+        var audioStateRow=new DockPanel();
+        systemAudioRetry=MakeButton(T("重试","Retry"),(_,_)=>systemAudio.Retry());
+        AutomationProperties.SetAutomationId(systemAudioRetry,"rhythm-audio-retry");
+        DockPanel.SetDock(systemAudioRetry,Dock.Right);
+        audioStateRow.Children.Add(systemAudioRetry);
+        systemAudioStatus=Text("",12,true);
+        audioStateRow.Children.Add(systemAudioStatus);
+        audioPanel.Children.Add(audioStateRow);
+        panel.Children.Add(audioPanel);
+        void UpdateStyleDescription() {
+            bool edge=settings.DesktopStyle=="edgeGlow";
+            description.Text=edge?T("光沿鼠标所在显示器的下缘亮起，停手后渐隐。鼠标可以直接穿过。","Light follows the bottom edge of the display under your pointer and fades after typing. Clicks pass through.")
+                :T("按键化成发光字符，空格打散成碎光，回车轻轻收束。演示不发声、不计数。","Key labels glow briefly. Space scatters them into sparks and Return draws them together. The demo is silent and does not count keystrokes.");
+            audioPanel.Visibility=edge?Visibility.Visible:Visibility.Collapsed;
+        }
+        selector.SelectionChanged+=(_,_)=>{
+            if(building||selector.SelectedValue is not string style)return;
+            settings.DesktopStyle=style;UpdateStyleDescription();UpdateKeyBurst();SaveSoon();
+        };
+        UpdateStyleDescription();
         var flashes=new CheckBox{Content=T("闪光效果","Flashes"),IsChecked=settings.KeyBurstFlashes,Margin=new Thickness(0,8,0,0)};
         AutomationProperties.SetAutomationId(flashes,"key-burst-flashes");
-        flashes.Click+=(_,_)=>{
-            settings.KeyBurstFlashes=flashes.IsChecked==true;
-            UpdateKeyBurst();
-            SaveSoon();
-        };
+        flashes.Click+=(_,_)=>{settings.KeyBurstFlashes=flashes.IsChecked==true;UpdateKeyBurst();SaveSoon();};
         panel.Children.Add(flashes);
-        panel.Children.Add(KeyBurstSlider(T("动画幅度","Motion intensity"),"key-burst-intensity",.4,1.5,
-            settings.KeyBurstIntensity,value=>settings.KeyBurstIntensity=value));
-        panel.Children.Add(KeyBurstSlider(T("亮度","Brightness"),"key-burst-brightness",.25,1,
+        panel.Children.Add(KeyBurstSlider(T("动画幅度","Motion intensity"),"key-burst-intensity",.25,1,
+            ControlScale.RhythmIntensity.DisplayValue(settings.KeyBurstIntensity),value=>settings.KeyBurstIntensity=ControlScale.RhythmIntensity.StoredValue(value)));
+        panel.Children.Add(KeyBurstSlider(T("特效透明度","Effect opacity"),"key-burst-opacity",.25,1,
             settings.KeyBurstBrightness,value=>settings.KeyBurstBrightness=value));
-        var card=Card(panel);
-        card.Margin=new Thickness(0,16,0,16);
-        return card;
+        UpdateSystemAudioState();
+        var card=Card(panel);card.Margin=new Thickness(0,16,0,16);return card;
     }
     private DockPanel KeyBurstSlider(string title,string id,double minimum,double maximum,double value,Action<double> save) {
         var row=new DockPanel{Margin=new Thickness(0,8,0,0)};
         var label=Text(title,12);label.Width=112;
         DockPanel.SetDock(label,Dock.Left);row.Children.Add(label);
-        var percent=Text(value.ToString("P0"),12,true);percent.Width=56;
+        var percent=Text(value.ToString("0.##%"),12,true);percent.Width=64;
         DockPanel.SetDock(percent,Dock.Right);row.Children.Add(percent);
-        var slider=new Slider{Minimum=minimum,Maximum=maximum,Value=value,SmallChange=.05,LargeChange=.1,Margin=new Thickness(0,0,8,0)};
-        AutomationProperties.SetAutomationId(slider,id);
-        AutomationProperties.SetName(slider,title);
+        var slider=new Slider{Minimum=minimum,Maximum=maximum,Value=value,SmallChange=.01,LargeChange=.05,
+            TickPlacement=TickPlacement.BottomRight,TickFrequency=.25,Margin=new Thickness(0,0,8,0)};
+        AutomationProperties.SetAutomationId(slider,id);AutomationProperties.SetName(slider,title);
         slider.ValueChanged+=(_,_)=>{
-            save(slider.Value);
-            percent.Text=slider.Value.ToString("P0");
-            UpdateKeyBurst();
-            SaveSoon();
+            save(slider.Value);percent.Text=slider.Value.ToString("0.##%");UpdateKeyBurst();SaveSoon();
         };
-        row.Children.Add(slider);
-        return row;
+        row.Children.Add(slider);return row;
+    }
+    private void UpdateSystemAudioState() {
+        keyBurst.SetAudioSource(systemAudio.Snapshot,systemAudio.State==SystemAudioState.Running);
+        if(systemAudioStatus is not null) {
+            systemAudioStatus.Visibility=settings.FollowSystemAudio?Visibility.Visible:Visibility.Collapsed;
+            systemAudioStatus.Text=systemAudio.State switch {
+                SystemAudioState.Starting=>T("正在连接电脑声音…","Connecting to computer audio…"),
+                SystemAudioState.Running=>T("已连接电脑声音 · 没有声音时自然淡出","Connected to computer audio · Fades during silence"),
+                SystemAudioState.Failed=>T("暂时无法读取电脑声音，请检查播放设备。","Computer audio is unavailable. Check your output device."),
+                _=>T("继续运行后，将跟随电脑声音。","Resuming will reconnect computer audio.")
+            };
+        }
+        if(systemAudioRetry is not null)systemAudioRetry.Visibility=systemAudio.State==SystemAudioState.Failed?Visibility.Visible:Visibility.Collapsed;
     }
     private void ApplyTheme() {
         bool dark=settings.Appearance=="dark";
@@ -417,9 +498,10 @@ public sealed class MainWindow : Window {
         UpdateKeyBurst();
     }
     private void UpdateKeyBurst(){
-        bool suspended=!enabled||sessionLocked||closing;
+        bool suspended=!enabled||sessionLocked||powerSuspended||closing;
         keyBurst.SetSuspended(suspended);
-        keyBurst.Configure(settings.KeyBurstEnabled,settings.KeyBurstFlashes,settings.KeyBurstIntensity,settings.KeyBurstBrightness);
+        keyBurst.Configure(settings.KeyBurstEnabled,settings.KeyBurstFlashes,settings.KeyBurstIntensity,settings.KeyBurstBrightness,settings.DesktopStyle);
+        systemAudio.SetEnabled(started&&!suspended&&settings.KeyBurstEnabled&&settings.DesktopStyle=="edgeGlow"&&settings.FollowSystemAudio);
         if(keyBurstPreview is not null)keyBurstPreview.IsEnabled=!suspended;
     }
     private void SaveSoon(){saveTimer.Stop();saveTimer.Start();}
@@ -449,12 +531,20 @@ public sealed class MainWindow : Window {
             if(resume&&!enabled)ToggleEnabled();else UpdateKeyBurst();
         }
     });
+    private void PowerChanged(object sender,PowerModeChangedEventArgs e)=>Dispatcher.InvokeAsync(()=>{
+        if(closing)return;
+        if(e.Mode==PowerModes.Suspend){powerSuspended=true;UpdateKeyBurst();}
+        else if(e.Mode==PowerModes.Resume){
+            powerSuspended=false;UpdateKeyBurst();
+            try{audio?.Restart();}catch(Exception error){ShowAudioError(error.Message);}
+        }
+    });
     private void PreferencesChanged(object sender,UserPreferenceChangedEventArgs e){if(settings.Appearance=="system")Dispatcher.InvokeAsync(Build);}
     private void ExitNow() {
         if(closing)return;closing=true;preview?.Cancel();updateTimer.Stop();saveTimer.Stop();
-        keyBurst.Dispose();hook.Dispose();audio?.Dispose();
+        systemAudio.StateChanged-=UpdateSystemAudioState;systemAudio.Dispose();keyBurst.Dispose();hook.Dispose();audio?.Dispose();
         while(presses.TryDequeue(out var item))statistics.Record(item.Key,item.At);
         try{statistics.FlushAsync().GetAwaiter().GetResult();settings.SaveAsync().GetAwaiter().GetResult();}catch{}
-        SystemEvents.SessionSwitch-=SessionChanged;SystemEvents.UserPreferenceChanged-=PreferencesChanged;tray.Visible=false;tray.Dispose();trayIcon?.Dispose();System.Windows.Application.Current.Shutdown();
+        SystemEvents.SessionSwitch-=SessionChanged;SystemEvents.PowerModeChanged-=PowerChanged;SystemEvents.UserPreferenceChanged-=PreferencesChanged;tray.Visible=false;tray.Dispose();trayIcon?.Dispose();System.Windows.Application.Current.Shutdown();
     }
 }

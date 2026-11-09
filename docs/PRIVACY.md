@@ -16,6 +16,9 @@ KeyWoo 接收系统交给应用的物理键码、按下／松开状态和修饰�
 
 Mac「输入监控」用于跨应用音效和统计，「辅助功能」用于你启用的改键。两者由用户在系统设置中决定。系统安全输入、锁屏或其他受保护场景可能限制事件，应用不承诺在这些场景持续工作。Windows 使用当前桌面的键盘事件；系统保护桌面和更高权限窗口有额外限制。
 
+
+「跟随电脑声音」由你单独开启，用于让底部泛光随正在播放的声音变化。音频只在本机即时分析，不保存音频文件、不上传。Mac 使用系统音频捕获权限，并排除 KeyWoo 自己的声音；该功能需要 macOS 14.2 或更新。Windows 分析当前输出设备的混音，其中可能包含 KeyWoo 的键盘音效。关闭该选项、暂停或退出时停止分析。
+
 ## 数据位置与删除
 
 | 平台 | 数据位置 |
@@ -35,5 +38,8 @@ KeyWoo processes physical key identifiers and press/release/modifier states to p
 Statistics are stored locally as per-key totals in one-minute buckets. Settings and user-created mappings remain on the device. Routine use requires no account and uploads no typing data. Source links open in your browser; GitHub downloads and operating-system security checks are governed by their own policies.
 
 On macOS, Input Monitoring enables feedback across applications, while Accessibility is separately used for remapping. OS-protected input contexts may limit operation. On Windows, protected desktops and higher-privilege applications also impose limits.
+
+
+Follow computer audio is a separate opt-in for the bottom glow. Audio is analyzed live on your device without saving audio files or uploading it. On macOS 14.2 or later, it uses system audio capture permission and excludes KeyWoo itself. Windows analyzes the current output device mix, which can include KeyWoo keyboard sounds. Analysis stops when the option is turned off, KeyWoo is paused, or the app quits.
 
 Data locations are listed above. Quit KeyWoo before removing local data. CSV files are exported only when requested and are never automatically shared.
