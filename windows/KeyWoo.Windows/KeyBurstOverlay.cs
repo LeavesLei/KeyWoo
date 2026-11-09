@@ -47,6 +47,14 @@ internal sealed class KeyBurstOverlay : IDisposable
     private readonly Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
     private readonly CommandQueue<QueuedPress> presses = new(128);
     private readonly KeyBurstDynamics dynamics = new();
+    private readonly EdgeGlowDynamics edgeDynamics = new();
+    private readonly AudioSpectrumMotion spectrumMotion = new();
+    private Func<AudioSpectrum>? spectrumSource;
+    private string style = "burst";
+    private bool audioActive;
+    private double? lastFrame;
+    private Size drawingSize = PanelSize;
+    private nint edgeMonitor;
     private readonly DispatcherTimer frames;
     private readonly Action wake;
     private readonly DrawingVisual visual = new();
@@ -74,13 +82,17 @@ internal sealed class KeyBurstOverlay : IDisposable
         frames.Tick += (_, _) => RenderFrame();
     }
 
-    public void Configure(bool enabled, bool flashes, double intensity, double brightness)
+    public void Configure(bool enabled, bool flashes, double intensity, double brightness, string style = "burst")
     {
         dispatcher.VerifyAccess();
         options = new(Clamp(intensity, .4, 1.5), Clamp(brightness, .25, 1), flashes, false);
-        if (this.enabled == enabled) return;
+        bool changed = this.enabled != enabled || this.style != style;
         this.enabled = enabled;
+        this.style = style == "edgeGlow" ? "edgeGlow" : "burst";
+        if (!changed) return;
+        placementDirty = true;
         Reset();
+        if (CanFollowAudio) RenderFrame();
     }
 
     public void SetSuspended(bool suspended)
@@ -89,6 +101,18 @@ internal sealed class KeyBurstOverlay : IDisposable
         if (this.suspended == suspended) return;
         this.suspended = suspended;
         Reset();
+        if (CanFollowAudio) RenderFrame();
+    }
+
+    private bool CanFollowAudio => enabled && !suspended && !disposed && style == "edgeGlow" && audioActive;
+
+    public void SetAudioSource(Func<AudioSpectrum> source, bool active) {
+        dispatcher.VerifyAccess();
+        spectrumSource = source;
+        if (audioActive == active) return;
+        audioActive = active;
+        spectrumMotion.Reset();
+        if (CanFollowAudio && !IsRendering) RenderFrame();
     }
 
     public void Enqueue(PhysicalKey key)
@@ -151,8 +175,10 @@ internal sealed class KeyBurstOverlay : IDisposable
             {
                 previewStart = null;
                 dynamics.Reset();
+                edgeDynamics.Reset();
             }
             dynamics.Press(press.Key, press.Time);
+            edgeDynamics.Press(press.Key, press.Time);
             received = true;
         }
         return received;
@@ -173,11 +199,12 @@ internal sealed class KeyBurstOverlay : IDisposable
             {
                 var stroke = Demo[previewIndex++];
                 dynamics.Press(stroke.Key, start + stroke.Offset);
+                edgeDynamics.Press(stroke.Key, start + stroke.Offset);
             }
             if (previewIndex == Demo.Length) previewStart = null;
         }
 
-        if (!previewStart.HasValue && !dynamics.IsVisible(now))
+        if (!previewStart.HasValue && !(style == "edgeGlow" ? edgeDynamics.IsVisible(now) || CanFollowAudio : dynamics.IsVisible(now)))
         {
             StopFrames();
             // Close the idle transition race. A press queued before rendering
@@ -186,6 +213,7 @@ internal sealed class KeyBurstOverlay : IDisposable
             return;
         }
 
+        if (style == "edgeGlow" && GetCursorPos(out var cursor) && MonitorFromPoint(cursor, 1) != edgeMonitor) placementDirty = true;
         if ((!shown || placementDirty || Handle == 0) && !TryPlaceWindow())
         {
             StopFrames();
@@ -196,8 +224,16 @@ internal sealed class KeyBurstOverlay : IDisposable
         using (var drawing = visual.RenderOpen())
         {
             drawing.PushTransform(fit);
-            KeyBurstDrawing.Draw(drawing, PanelSize, dynamics, now,
-                options with { ReduceMotion = !SystemParameters.ClientAreaAnimation });
+            var currentOptions = options with { ReduceMotion = !SystemParameters.ClientAreaAnimation };
+            if (style == "edgeGlow") {
+                double elapsed = lastFrame is double previous ? now - previous : 1.0 / 60;
+                var target = CanFollowAudio ? spectrumSource?.Invoke() ?? AudioSpectrum.Silent : AudioSpectrum.Silent;
+                var spectrum = spectrumMotion.Advance(target, elapsed);
+                EdgeGlowDrawing.Draw(drawing, drawingSize, edgeDynamics, spectrum, now, currentOptions);
+            } else {
+                KeyBurstDrawing.Draw(drawing, PanelSize, dynamics, now, currentOptions);
+            }
+            lastFrame = now;
             drawing.Pop();
         }
         if (!shown)
@@ -223,6 +259,9 @@ internal sealed class KeyBurstOverlay : IDisposable
         frames.Stop();
         Volatile.Write(ref rendering, 0);
         dynamics.Reset();
+        edgeDynamics.Reset();
+        spectrumMotion.Reset();
+        lastFrame = null;
         previewStart = null;
         previewIndex = 0;
         if (!shown) return;
@@ -236,7 +275,8 @@ internal sealed class KeyBurstOverlay : IDisposable
         // Follow the foreground display at the start of a row. Keep the panel
         // on that display while it is already animating.
         nint anchor = shown && Handle != 0 ? Handle : GetForegroundWindow();
-        nint monitor = MonitorFromWindow(anchor, 1); // MONITOR_DEFAULTTOPRIMARY
+        nint monitor = style == "edgeGlow" && GetCursorPos(out var point)
+            ? MonitorFromPoint(point, 1) : MonitorFromWindow(anchor, 1); // MONITOR_DEFAULTTOPRIMARY
         var info = new MonitorInfo { Size = (uint)Marshal.SizeOf<MonitorInfo>() };
         if (monitor == 0 || !GetMonitorInfo(monitor, ref info)) return false;
         var work = info.Work;
@@ -278,6 +318,15 @@ internal sealed class KeyBurstOverlay : IDisposable
 
         uint dpi = GetDpiForWindow(window);
         double deviceScale = dpi == 0 ? 1 : dpi / 96.0;
+        if (style == "edgeGlow") {
+            edgeMonitor = monitor;
+            fit.ScaleX = fit.ScaleY = 1;
+            drawingSize = new(availableWidth / deviceScale, Math.Min(144, availableHeight / deviceScale));
+            int edgePixels = Math.Min(availableHeight, (int)Math.Ceiling(drawingSize.Height * deviceScale));
+            placementDirty = false;
+            return SetWindowPos(window, -1, work.Left, work.Bottom - edgePixels, availableWidth, edgePixels, PositionNoActivate | PositionNoOwnerZOrder);
+        }
+        drawingSize = PanelSize;
         double scale = Math.Min(1, Math.Min(availableWidth / (PanelWidth * deviceScale),
                                            availableHeight / (PanelHeight * deviceScale)));
         fit.ScaleX = fit.ScaleY = scale;
@@ -314,6 +363,9 @@ internal sealed class KeyBurstOverlay : IDisposable
         double.IsFinite(value) ? Math.Clamp(value, min, max) : 1;
 
     [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint { public int X, Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct NativeRect { public int Left, Top, Right, Bottom; }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -323,6 +375,12 @@ internal sealed class KeyBurstOverlay : IDisposable
         public NativeRect Monitor, Work;
         public uint Flags;
     }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out NativePoint point);
+
+    [DllImport("user32.dll")]
+    private static extern nint MonitorFromPoint(NativePoint point, uint flags);
 
     [DllImport("user32.dll")]
     private static extern nint GetForegroundWindow();

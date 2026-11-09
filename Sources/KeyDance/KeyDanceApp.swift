@@ -55,8 +55,10 @@ struct KeyDanceApp: App {
                     ForEach(RhythmVisualStyle.allCases) { style in Text(style.title).tag(style) }
                 }
                 Button(L("演示律动")) { model.previewRhythm() }.disabled(!model.isEnabled || model.monitor.secureInputActive)
-                Toggle(L("鼠标穿透"), isOn: $model.rhythmClickThrough)
-                Button(L("重置律动位置")) { model.resetRhythmPosition() }
+                if model.rhythmStyle != .edgeGlow {
+                    Toggle(L("鼠标穿透"), isOn: $model.rhythmClickThrough)
+                    Button(L("重置律动位置")) { model.resetRhythmPosition() }
+                }
             }
         }
         MenuBarExtra {
@@ -142,8 +144,10 @@ struct MenuBarView: View {
             Picker(L("显示样式"), selection: $model.rhythmStyle) {
                 ForEach(RhythmVisualStyle.allCases) { style in Text(style.title).tag(style) }
             }
-            Toggle(L("鼠标穿透"), isOn: $model.rhythmClickThrough)
-            Button(L("重置律动位置")) { model.resetRhythmPosition() }
+            if model.rhythmStyle != .edgeGlow {
+                Toggle(L("鼠标穿透"), isOn: $model.rhythmClickThrough)
+                Button(L("重置律动位置")) { model.resetRhythmPosition() }
+            }
         }
         if model.musicModeAvailable { Menu(L("体验模式")) {
             ForEach(AppExperienceMode.allCases) { mode in

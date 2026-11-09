@@ -51,6 +51,7 @@ try {
     $result = Get-Content -Raw $report | ConvertFrom-Json
     if (-not $result.passed -or @($result.presets.PSObject.Properties).Count -ne 25 -or @($result.hiFiPresets.PSObject.Properties).Count -ne 15) { throw 'Packaged asset self-check did not pass for all 25 sounds and 15 recorded Hi-Fi variants.' }
     if (-not $result.keyBurst.Passed) { throw 'Packaged Key Burst drawing and overlay self-check failed.' }
+    if (-not $result.edgeGlow.Passed) { throw 'Packaged bottom glow, audio decoding and overlay self-check failed.' }
     foreach ($license in @('Licenses/NAudio-LICENSE.txt','Licenses/Microsoft.NETCore.App/THIRD-PARTY-NOTICES.TXT','Assets/KeyboardSounds/THIRD-PARTY-NOTICES.md','Assets/KeyboardSounds/Mechvibes-LICENSE','Assets/KeyboardSounds/kbsim-LICENSE.md')) {
         if (-not (Test-Path (Join-Path $staging $license))) { throw "Missing distributed license: $license" }
     }
@@ -97,6 +98,7 @@ try {
         installerTested=[bool]$VerifyInstaller;
         archiveContentsVerified=$true; packagedPresetCount=@($result.presets.PSObject.Properties).Count; keyBurstVerified=[bool]$result.keyBurst.Passed;
         packagedHiFiPresetCount=@($result.hiFiPresets.PSObject.Properties).Count;
+        edgeGlowVerified=[bool]$result.edgeGlow.Passed;
         devicePlaybackTested=$false; hardwareKeyboardTested=$false; files=$files
     } | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $artifacts "KeyWoo-$Version-win-x64-manifest.json")
     Write-Output "Ready: $zip"

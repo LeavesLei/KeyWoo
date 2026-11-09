@@ -10,46 +10,90 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
     private let onClose: () -> Void
     private var panel: RhythmPanel?
     private var clickThrough = false
+    private var visualStyle: RhythmVisualStyle
+    private var normalFrame: NSRect?
+    private var applyingGeometry = false
     private var screenObserver: NSObjectProtocol?
+    private var inputObservation: AnyCancellable?
+    private var lastRoutedHit: TimeInterval?
     private let size = NSSize(width: 340, height: 224)
+    private let edgeHeight: CGFloat = 144
     private let positionKey = "rhythmOverlayPosition"
 
     init(feedback: RhythmFeedbackModel, defaults: UserDefaults, onClose: @escaping () -> Void) {
         self.feedback = feedback
         self.defaults = defaults
         self.onClose = onClose
+        visualStyle = feedback.visualStyle
         super.init()
+        inputObservation = feedback.$dynamics.sink { [weak self] state in
+            guard let self, let hit = state.lastHit, hit != self.lastRoutedHit else { return }
+            self.lastRoutedHit = hit
+            if self.visualStyle == .edgeGlow, self.panel?.isVisible == true { self.positionAtScreenBottom() }
+        }
     }
 
     func show() {
         if panel == nil { createPanel() }
         guard let panel else { return }
-        constrainToScreen(panel)
+        if visualStyle == .edgeGlow { positionAtScreenBottom() }
+        else { constrainToScreen(panel) }
         panel.orderFrontRegardless()
     }
 
     func hide() {
         panel?.orderOut(nil)
         feedback.reset()
+        lastRoutedHit = nil
+    }
+
+    /// Geometry belongs to the controller, separate from the shared renderer.
+    func setVisualStyle(_ style: RhythmVisualStyle) {
+        guard style != visualStyle else { return }
+        let wasEdge = visualStyle == .edgeGlow
+        if !wasEdge, let panel { normalFrame = panel.frame }
+        visualStyle = style
+        guard let panel else { return }
+        // Ordinary style changes redraw through feedback; only entering or
+        // leaving the screen-edge mode requires native content/geometry changes.
+        guard wasEdge || style == .edgeGlow else { return }
+        if style == .edgeGlow {
+            panel.ignoresMouseEvents = true
+            panel.acceptsMouseMovedEvents = false
+        }
+        applyingGeometry = true
+        if style == .edgeGlow {
+            positionAtScreenBottom()
+        } else {
+            let restored = normalFrame ?? NSRect(origin: defaultOrigin(), size: size)
+            panel.setFrame(NSRect(origin: restored.origin, size: size), display: true)
+            constrainToScreen(panel)
+        }
+        applyingGeometry = false
+        panel.ignoresMouseEvents = style == .edgeGlow || clickThrough
+        panel.acceptsMouseMovedEvents = style != .edgeGlow
+        installContent()
+        if style != .edgeGlow { normalFrame = panel.frame; savePosition(panel) }
     }
 
     func setClickThrough(_ value: Bool) {
         clickThrough = value
-        panel?.ignoresMouseEvents = value
-        installContent()
+        panel?.ignoresMouseEvents = visualStyle == .edgeGlow || value
+        if visualStyle != .edgeGlow { installContent() }
     }
 
     func resetPosition() {
         defaults.removeObject(forKey: positionKey)
+        let restored = NSRect(origin: defaultOrigin(), size: size)
+        normalFrame = restored
         guard let panel else { return }
-        panel.setFrameOrigin(defaultOrigin())
-        savePosition(panel)
+        if visualStyle == .edgeGlow { positionAtScreenBottom() }
+        else { panel.setFrame(restored, display: true); savePosition(panel) }
     }
 
     private func createPanel() {
         let panel = RhythmPanel(contentRect: NSRect(origin: defaultOrigin(), size: size),
-                                styleMask: [.borderless, .nonactivatingPanel],
-                                backing: .buffered, defer: false)
+                                styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
@@ -57,34 +101,63 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
-        // Dragging is explicit in RhythmInteractionView; SwiftUI background dragging
-        // does not reliably receive events in a nonactivating transparent panel.
         panel.isMovableByWindowBackground = false
-        panel.acceptsMouseMovedEvents = true
-        panel.ignoresMouseEvents = clickThrough
+        panel.acceptsMouseMovedEvents = visualStyle != .edgeGlow
+        panel.ignoresMouseEvents = visualStyle == .edgeGlow || clickThrough
         panel.animationBehavior = .none
         panel.title = L("律动悬浮窗")
         panel.delegate = self
         self.panel = panel
         if let position = defaults.array(forKey: positionKey) as? [Double], position.count == 2,
            position.allSatisfy(\.isFinite) {
+            applyingGeometry = true
             panel.setFrameOrigin(NSPoint(x: position[0], y: position[1]))
+            applyingGeometry = false
         }
+        normalFrame = panel.frame
+        if visualStyle == .edgeGlow { positionAtScreenBottom() }
         installContent()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, let panel = self.panel else { return }
-                self.constrainToScreen(panel)
+                if self.visualStyle == .edgeGlow { self.positionAtScreenBottom() }
+                else { self.constrainToScreen(panel) }
             }
         }
     }
 
     private func installContent() {
         guard let panel else { return }
-        panel.contentView = RhythmInteractionView(
-            feedback: feedback, clickThrough: clickThrough, onClose: { [weak self] in self?.onClose() })
+        if visualStyle == .edgeGlow {
+            // No interaction wrapper: no 0.004-alpha hit backing, tracking area,
+            // close button, or hover chrome spans the user's desktop.
+            let host = NSHostingView(rootView: RhythmOverlayView(feedback: feedback))
+            host.frame = NSRect(origin: .zero, size: panel.frame.size)
+            host.autoresizingMask = [.width, .height]
+            panel.contentView = host
+        } else {
+            panel.contentView = RhythmInteractionView(
+                feedback: feedback, clickThrough: clickThrough, onClose: { [weak self] in self?.onClose() })
+        }
+    }
+
+    private func positionAtScreenBottom() {
+        guard let panel else { return }
+        let pointer = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { $0.frame.contains(pointer) }
+            ?? NSApplication.shared.keyWindow?.screen ?? NSScreen.main ?? NSScreen.screens.first
+        guard let screen else { return }
+        // The physical frame includes the Dock region; visibleFrame would float
+        // the glow above it. Keep the normal floating level and click-through.
+        let frame = NSRect(x: screen.frame.minX, y: screen.frame.minY,
+                           width: screen.frame.width, height: min(edgeHeight, screen.frame.height))
+        guard panel.frame != frame else { return }
+        let wasApplying = applyingGeometry
+        applyingGeometry = true
+        panel.setFrame(frame, display: true)
+        applyingGeometry = wasApplying
     }
 
     private func defaultOrigin() -> NSPoint {
@@ -105,11 +178,13 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
     }
 
     private func savePosition(_ panel: NSWindow) {
+        guard visualStyle != .edgeGlow, !applyingGeometry else { return }
         defaults.set([panel.frame.origin.x, panel.frame.origin.y], forKey: positionKey)
     }
 
     func windowDidMove(_ notification: Notification) {
-        guard let panel else { return }
+        guard let panel, visualStyle != .edgeGlow, !applyingGeometry else { return }
+        normalFrame = panel.frame
         savePosition(panel)
     }
 
@@ -284,7 +359,9 @@ private struct RhythmOverlayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: !feedback.isAnimating)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 60,
+                                paused: !feedback.isAnimating
+                                    && max(feedback.musicSpectrum.level, feedback.musicSpectrum.contour?.level ?? 0) < 0.001)) { timeline in
             // The frame date is a value input to the Canvas view. Reading uptime
             // only inside its drawing closure can leave SwiftUI caching one frame.
             // Convert this scheduled frame using a fresh clock pair, so sleep
@@ -293,10 +370,11 @@ private struct RhythmOverlayView: View {
                 - max(0, Date().timeIntervalSince(timeline.date))
             RhythmFrameCanvas(dynamics: feedback.dynamics, time: frameTime,
                               intensity: feedback.intensity, reducedMotion: reduceMotion,
-                              style: feedback.visualStyle, flashesEnabled: feedback.flashesEnabled)
+                              style: feedback.visualStyle, flashesEnabled: feedback.flashesEnabled,
+                              spectrum: feedback.musicSpectrum)
                 .opacity(feedback.opacity)
         }
-        .frame(width: 340, height: 224)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -309,11 +387,95 @@ private struct RhythmFrameCanvas: View {
     let reducedMotion: Bool
     let style: RhythmVisualStyle
     let flashesEnabled: Bool
+    let spectrum: AudioSpectrum
 
     var body: some View {
         Canvas { context, size in
             RhythmPainter.draw(context: &context, size: size, dynamics: dynamics,
-                               time: time, intensity: intensity, reducedMotion: reducedMotion, style: style, flashesEnabled: flashesEnabled)
+                               time: time, intensity: intensity, reducedMotion: reducedMotion, style: style, flashesEnabled: flashesEnabled, spectrum: spectrum)
+        }
+    }
+}
+
+/// Pure geometry for the music-only layer. Normalized horizontal bounds keep
+/// both regions outside a central dark gap, even during the strongest beat.
+enum EdgeMusicGeometry {
+    enum Profile: Equatable { case bass, detail }
+
+    struct Region: Equatable {
+        let centerX: Double
+        let radiusX: Double
+        let bodyHeight: Double
+        let bodyOpacity: Double
+        let crestX: Double
+        let crestRadiusX: Double
+        let crestHeight: Double
+        let crestOpacity: Double
+        let hue: Double
+        let profile: Profile
+        let shoulder: Double
+    }
+
+    static func regions(spectrum: AudioSpectrum, time: TimeInterval, intensity: Double,
+                        keyboardDrive: Double, reducedMotion: Bool, keyboardEnergy: Double? = nil) -> [Region] {
+        let low = spectrum.low, mid = spectrum.mid, high = spectrum.high
+        let level = max(spectrum.level, low * 0.55 + mid * 0.30 + high * 0.15)
+        let beat = spectrum.beat
+        // Static fixtures can omit the contour. Its live beat has already been
+        // perceptually mapped before smoothing; never exponentiate it again.
+        let shape = spectrum.contour ?? AudioContour(low: low, mid: mid, high: high,
+                                                     level: level, beat: pow(beat, 0.70))
+        let shapeLevel = max(shape.level, shape.low * 0.55 + shape.mid * 0.30 + shape.high * 0.15)
+        guard max(max(level, beat), max(shapeLevel, shape.beat)) > 0.001 else { return [] }
+        let gain = min(1.35, max(0.4, intensity))
+        // Live rendering supplies the continuous typing envelope. The fallback
+        // keeps standalone geometry callers independent of keyboard dynamics.
+        let engagement = min(1, max(0, keyboardEnergy ?? keyboardDrive))
+        let room = 1 - engagement * 0.65
+        let typingComfort = 1 - engagement * 0.28
+        // Anchors never follow beat or time. Each side gets its own spectral
+        // shape; total loudness must not overwrite the difference between them.
+        let transient = pow(beat, 0.70) * sqrt(level)
+        func band(low: Double, mid: Double, high: Double, left: Bool) -> Double {
+            // The normalized soft mapping leaves headroom in loud mixtures.
+            let right = (low * 0.08 + mid * 0.48 + high * 0.68) / 1.24
+            return left ? low * 0.86 + mid * 0.12 + high * 0.02
+                        : right * 1.20 / (1 + right * 0.20)
+        }
+        return (0..<2).map { side in
+            let left = side == 0
+            let rawBand = band(low: low, mid: mid, high: high, left: left)
+            let shapeBand = band(low: shape.low, mid: shape.mid, high: shape.high, left: left)
+            let rawBody = pow(max(0, (rawBand - 0.025) / 0.975), 1.22)
+            let body = pow(max(0, (shapeBand - 0.025) / 0.975), 1.22)
+            let center = left ? 0.16 : 0.84
+            let radius = reducedMotion ? (left ? 0.12 : 0.10)
+                                       : (left ? 0.105 + body * 0.048 : 0.090 + body * 0.037)
+            let steadyLight = 0.26 * pow(rawBody, 0.72)
+            let localBeat = transient * (0.22 + 0.78 * sqrt(rawBand))
+            let shapeBeat = shape.beat * sqrt(shapeLevel) * (0.22 + 0.78 * sqrt(shapeBand))
+            // Onsets lift the existing rounded contour vertically. No control
+            // point travels sideways. Continuous typing energy gently reduces
+            // the motion, without letting an individual key jerk its height.
+            let rawLift = (left ? 22 : 20) * shapeBeat * sqrt(gain)
+            // Enter the upper range with a continuous slope instead of hitting
+            // a flat cap and suddenly releasing all its velocity at once.
+            let excess = min(12, max(0, rawLift - 16))
+            let softLift = rawLift <= 16 ? rawLift : 16 + excess - excess * excess / 24
+            let beatLift = reducedMotion ? 0 : softLift * typingComfort
+            let shoulder = reducedMotion ? (left ? 0.48 : 0.46)
+                : (left ? 0.44 + shape.mid * 0.12 : 0.28 + 0.38 * shape.mid / (shape.mid + shape.high + 0.10))
+            return Region(centerX: center, radiusX: radius,
+                          bodyHeight: reducedMotion ? 24 : (left ? 14 + body * 42 : 12 + body * 36) + beatLift * 0.42,
+                          bodyOpacity: min(0.23, 0.22 * pow(rawBody, 0.80) * gain * room),
+                          crestX: center,
+                          crestRadiusX: reducedMotion ? (left ? 0.11 : 0.095)
+                              : (left ? 0.106 + body * 0.038 : 0.080 + body * 0.037),
+                          crestHeight: reducedMotion ? 19
+                              : (left ? 10 + body * 48 : 12 + body * 43) * sqrt(gain) + beatLift,
+                          crestOpacity: min(0.54, (steadyLight + localBeat * 0.26) * gain * room),
+                          hue: left ? 0.51 + mid * 0.035 : 0.72 + high * 0.045,
+                          profile: left ? .bass : .detail, shoulder: shoulder)
         }
     }
 }
@@ -326,7 +488,7 @@ enum RhythmPainter {
 
     static func draw(context: inout GraphicsContext, size: CGSize, dynamics: RhythmDynamics,
                      time: TimeInterval, intensity: Double, reducedMotion: Bool,
-                     style: RhythmVisualStyle = .energy, flashesEnabled: Bool = true) {
+                     style: RhythmVisualStyle = .energy, flashesEnabled: Bool = true, spectrum: AudioSpectrum = .silent) {
         switch style {
         case .energy:
             drawEnergy(context: &context, size: size, dynamics: dynamics, time: time, intensity: intensity,
@@ -338,6 +500,203 @@ enum RhythmPainter {
         case .burst:
             drawBurst(context: &context, size: size, dynamics: dynamics, time: time,
                       intensity: intensity, reducedMotion: reducedMotion, flashesEnabled: flashesEnabled)
+        case .edgeGlow:
+            drawEdgeGlow(context: &context, size: size, dynamics: dynamics, time: time,
+                         intensity: intensity, reducedMotion: reducedMotion, flashesEnabled: flashesEnabled, spectrum: spectrum)
+        }
+    }
+
+    /// A screen-bottom atmosphere made from only a few analytical color plumes.
+    /// Radial gradients are transformed into ellipses, so every upper boundary
+    /// fades to zero instead of leaving a rectangular edge or a painted line.
+    private static func drawEdgeGlow(context: inout GraphicsContext, size: CGSize, dynamics: RhythmDynamics,
+                                     time: TimeInterval, intensity: Double, reducedMotion: Bool, flashesEnabled: Bool,
+                                     spectrum: AudioSpectrum) {
+        // Use the energy bar's slower hold and release for the lingering light,
+        // and give each key a short attack on top of that continuous envelope.
+        let energy = dynamics.meterEnergy(at: time)
+        var taps = 0.0
+        var accent = 0.0
+        var ripples: [(origin: Double, position: Double, width: Double, light: Double)] = []
+        for pulse in dynamics.pulses {
+            let age = max(0, time - pulse.time)
+            let gain = pulse.strength / pulse.profile.impact
+            let origin: Double
+            let duration: Double
+            let reach: Double
+            let width: Double
+            let light: Double
+            switch pulse.profile.kind {
+            case .space:
+                origin = 0
+                accent += 0.84 * gain * strikeEnvelope(age, attack: 0.008, release: 0.28)
+                duration = 0.62 + 0.10 * pulse.accentCharge
+                reach = 0.92 + 0.08 * pulse.accentCharge
+                width = 0.15
+                light = 1.32 * gain
+            case .returnKey:
+                origin = 0
+                accent += 0.61 * gain * strikeEnvelope(age, attack: 0.008, release: 0.23)
+                duration = 0.49 + 0.07 * pulse.accentCharge
+                reach = 0.64 + 0.12 * pulse.accentCharge
+                width = 0.13
+                light = 0.90 * gain
+            default:
+                origin = min(0.64, max(-0.64, (pulse.profile.lane - 0.5) * 1.35))
+                taps += pulse.strength * strikeEnvelope(age, attack: 0.006, release: 0.10)
+                duration = 0.30
+                reach = 0.35
+                width = 0.10
+                light = 1.70 * pulse.strength
+            }
+            if !reducedMotion && age < duration {
+                let progress = age / duration
+                let travel = progress * (2 - progress)
+                let envelope = min(1, age / 0.032) * pow(1 - progress, 1.1)
+                ripples.append((origin, reach * travel, width + 0.04 * progress, light * envelope))
+            }
+        }
+        let tapLevel = tanh(taps)
+        let accentLevel = tanh(accent)
+        let keyboardDrive = 1 - exp(-(energy * 1.55 + tapLevel * 0.85 + accentLevel * 1.05) * intensity)
+        // Music is rendered in its own two edge-local regions, below the
+        // untouched keyboard layer. Silence contributes no drawing commands.
+        drawEdgeMusic(context: &context, size: size, spectrum: spectrum, time: time,
+                      intensity: intensity, keyboardDrive: keyboardDrive,
+                      keyboardEnergy: energy, reducedMotion: reducedMotion, flashesEnabled: flashesEnabled)
+        let drive = keyboardDrive
+        guard drive > 0.001 else { return }
+        let movement = reducedMotion ? 0.0 : 1.0
+        let phase = time.truncatingRemainder(dividingBy: 24) / 24 * .pi * 2
+        let rise = 52 + (drive * 38 + tapLevel * 8 + accentLevel * 28) * movement
+        let spread = 0.34 + (drive * 0.12 + accentLevel * 0.08) * movement
+        let colors = [Color(red: 0.12, green: 0.76, blue: 0.98),
+                      Color(red: 0.30, green: 0.48, blue: 1),
+                      Color(red: 0.70, green: 0.35, blue: 0.98)]
+
+        func plume(center: CGPoint, horizontal: Double, vertical: Double, color: Color, opacity: Double) {
+            var layer = context
+            layer.translateBy(x: center.x, y: center.y)
+            layer.scaleBy(x: horizontal / vertical, y: 1)
+            let circle = Path(ellipseIn: CGRect(x: -vertical, y: -vertical, width: vertical * 2, height: vertical * 2))
+            layer.fill(circle, with: .radialGradient(Gradient(stops: [
+                .init(color: color.opacity(opacity), location: 0),
+                .init(color: color.opacity(opacity * 0.70), location: 0.24),
+                .init(color: color.opacity(opacity * 0.22), location: 0.63),
+                .init(color: .clear, location: 1)
+            ]), center: .zero, startRadius: 0, endRadius: vertical))
+        }
+        for index in 0..<3 {
+            let drift = sin(phase + Double(index) * 1.9) * 0.025 * movement * drive
+            let x = size.width * (0.20 + Double(index) * 0.30 + drift)
+            plume(center: CGPoint(x: x, y: size.height + 8), horizontal: size.width * spread,
+                  vertical: min(size.height + 4, rise * (index == 1 ? 1.0 : 0.88)),
+                  color: colors[index], opacity: 0.66 * drive)
+        }
+
+        // Each ripple has two mirrored crests. Blend their light before drawing
+        // the ribbon so fast typing can overlap without stacking bright layers.
+        var ribbon = Path()
+        ribbon.move(to: CGPoint(x: -16, y: size.height + 14))
+        var stops: [Gradient.Stop] = []
+        let samples = 56
+        for index in 0...samples {
+            let t = Double(index) / Double(samples)
+            let sum = ripples.reduce(0.0) { total, ripple in
+                let distance = abs(t * 2 - 1 - ripple.origin)
+                let offset = (distance - ripple.position) / ripple.width
+                return total + ripple.light * exp(-0.5 * offset * offset)
+            }
+            let light = 1 - exp(-sum * intensity)
+            let taper = pow(max(0, sin(.pi * t)), 0.30)
+            let wave = 0.83 + 0.17 * sin(t * .pi * 3.4 + phase * movement)
+            let baseLift = (5 + (drive * 18 + tapLevel * 6 + accentLevel * 10) * movement) * wave
+            let lift = (baseLift + 38 * light) * taper
+            ribbon.addLine(to: CGPoint(x: t * (size.width + 32) - 16, y: size.height - lift))
+            let tint = Color(hue: 0.52 + 0.25 * t, saturation: 0.80 - 0.38 * light, brightness: 1)
+            let baseOpacity = drive * (0.49 + 0.08 * taper)
+            let crestOpacity = light * (flashesEnabled ? 0.76 : 0.58)
+            let opacity = baseOpacity + (1 - baseOpacity) * crestOpacity
+            stops.append(.init(color: tint.opacity(opacity), location: t))
+        }
+        ribbon.addLine(to: CGPoint(x: size.width + 16, y: size.height + 14))
+        ribbon.closeSubpath()
+        context.drawLayer { layer in
+            layer.addFilter(.blur(radius: 8))
+            layer.fill(ribbon, with: .linearGradient(
+                Gradient(stops: stops),
+                startPoint: CGPoint(x: -16, y: size.height), endPoint: CGPoint(x: size.width + 16, y: size.height)))
+        }
+    }
+
+    private static func drawEdgeMusic(context: inout GraphicsContext, size: CGSize, spectrum: AudioSpectrum,
+                                      time: TimeInterval, intensity: Double, keyboardDrive: Double, keyboardEnergy: Double,
+                                      reducedMotion: Bool, flashesEnabled: Bool) {
+        let regions = EdgeMusicGeometry.regions(spectrum: spectrum, time: time, intensity: intensity,
+                                                keyboardDrive: keyboardDrive, reducedMotion: reducedMotion,
+                                                keyboardEnergy: keyboardEnergy)
+        // Fixed, asymmetric shoulders read as a low rolling wave instead of
+        // two identical circles. The right shoulder follows mid/high balance;
+        // its anchor and every horizontal control point remain stationary.
+        func wave(center: Double, radius: Double, height: Double, region: EdgeMusicGeometry.Region) -> Path {
+            func point(_ x: Double, _ y: Double) -> CGPoint {
+                CGPoint(x: center + radius * x, y: size.height - height * y)
+            }
+            var path = Path()
+            path.move(to: point(-1, 0))
+            if region.profile == .bass {
+                path.addCurve(to: point(-0.32, 0.88), control1: point(-0.78, 0.02), control2: point(-0.50, 0.88))
+                path.addCurve(to: point(0.16, 0.62), control1: point(-0.14, 0.88), control2: point(0, 0.62))
+                path.addCurve(to: point(0.57, region.shoulder), control1: point(0.30, 0.62),
+                              control2: point(0.40, region.shoulder))
+                path.addCurve(to: point(1, 0), control1: point(0.74, region.shoulder), control2: point(0.90, 0))
+            } else {
+                path.addCurve(to: point(-0.45, region.shoulder), control1: point(-0.81, 0),
+                              control2: point(-0.68, region.shoulder))
+                path.addCurve(to: point(-0.08, region.shoulder * 0.90), control1: point(-0.30, region.shoulder),
+                              control2: point(-0.23, region.shoulder * 0.90))
+                path.addCurve(to: point(0.29, 0.91), control1: point(0.08, region.shoulder * 0.90), control2: point(0.13, 0.91))
+                path.addCurve(to: point(1, 0), control1: point(0.58, 0.91), control2: point(0.69, 0))
+            }
+            path.addLine(to: CGPoint(x: center + radius, y: size.height + 10))
+            path.addLine(to: CGPoint(x: center - radius, y: size.height + 10))
+            path.closeSubpath()
+            return path
+        }
+        for region in regions {
+            let color = Color(hue: region.hue, saturation: 0.74, brightness: 1)
+            let center = size.width * region.crestX
+            let radius = size.width * region.crestRadiusX
+            if region.bodyOpacity > 0.001 {
+                let body = wave(center: size.width * region.centerX, radius: size.width * region.radiusX,
+                                height: region.bodyHeight, region: region)
+                context.drawLayer { layer in
+                    layer.addFilter(.blur(radius: 11))
+                    layer.fill(body, with: .linearGradient(
+                        Gradient(stops: [.init(color: .clear, location: 0),
+                                         .init(color: color.opacity(region.bodyOpacity), location: 0.56),
+                                         .init(color: color.opacity(region.bodyOpacity * 0.24), location: 1)]),
+                        startPoint: CGPoint(x: center, y: size.height - region.bodyHeight),
+                        endPoint: CGPoint(x: center, y: size.height + 8)))
+                }
+            }
+            guard region.crestOpacity > 0.001 else { continue }
+            let crestHeight = min(size.height - 12, region.crestHeight)
+            let crest = wave(center: center, radius: radius, height: crestHeight, region: region)
+            let contourLight = region.crestOpacity * (flashesEnabled && !reducedMotion ? 1 : 0.82)
+            context.drawLayer { layer in
+                layer.addFilter(.blur(radius: 4.5))
+                layer.fill(crest, with: .linearGradient(
+                    Gradient(stops: [
+                        .init(color: color.opacity(contourLight * 0.40), location: 0),
+                        .init(color: color.opacity(contourLight), location: 0.34),
+                        .init(color: color.opacity(contourLight * 0.36), location: 0.76),
+                        .init(color: .clear, location: 1)
+                    ]), startPoint: CGPoint(x: center, y: size.height - crestHeight),
+                    endPoint: CGPoint(x: center, y: size.height + 9)))
+            }
+            // Colored contours carry the attack without a moving hotspot,
+            // white flash, opaque baseline, or music spanning the dark center.
         }
     }
 

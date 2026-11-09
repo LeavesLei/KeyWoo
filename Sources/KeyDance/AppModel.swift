@@ -27,6 +27,7 @@ final class AppModel: ObservableObject {
     let music: LocalMusicStore
     let rhythmFeedback = RhythmFeedbackModel()
     private var rhythmOverlay: RhythmOverlayController?
+    let systemAudioRhythm = SystemAudioRhythmModel()
     private var rhythmDemoTask: Task<Void, Never>?
     private let defaults: UserDefaults
     private let startsKeyboardMonitor: Bool
@@ -116,6 +117,14 @@ final class AppModel: ObservableObject {
         didSet {
             defaults.set(rhythmStyle.rawValue, forKey: "rhythmStyle")
             rhythmFeedback.visualStyle = rhythmStyle
+            rhythmOverlay?.setVisualStyle(rhythmStyle)
+            synchronizeSystemAudioRhythm()
+        }
+    }
+    @Published var rhythmFollowsAudio: Bool {
+        didSet {
+            defaults.set(rhythmFollowsAudio, forKey: "rhythmFollowsAudio")
+            synchronizeSystemAudioRhythm()
         }
     }
     @Published var rhythmFlashes: Bool {
@@ -210,6 +219,7 @@ final class AppModel: ObservableObject {
         rhythmClickThrough = defaults.bool(forKey: "rhythmClickThrough")
         rhythmStyle = RhythmVisualStyle(rawValue: defaults.string(forKey: "rhythmStyle") ?? "energy") ?? .energy
         rhythmFlashes = defaults.object(forKey: "rhythmFlashes") == nil ? true : defaults.bool(forKey: "rhythmFlashes")
+        rhythmFollowsAudio = defaults.bool(forKey: "rhythmFollowsAudio")
         language = AppLanguage(rawValue: defaults.string(forKey: "appLanguage") ?? "zh-Hans") ?? .simplifiedChinese
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appAppearance") ?? "system") ?? .system
         experienceMode = musicModeAvailable ? (AppExperienceMode(rawValue: defaults.string(forKey: "experienceMode") ?? "music") ?? .music) : .keyboardSounds
@@ -255,6 +265,8 @@ final class AppModel: ObservableObject {
         rhythmFeedback.opacity = rhythmOpacity
         rhythmFeedback.visualStyle = rhythmStyle
         rhythmFeedback.flashesEnabled = rhythmFlashes
+        systemAudioRhythm.onSpectrum = { [weak self] spectrum in self?.rhythmFeedback.setMusicSpectrum(spectrum) }
+        systemAudioRhythm.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subscriptions)
         audio.style = style
         audio.hitVolume = hitVolume
         audio.musicVolume = musicVolume
@@ -332,6 +344,7 @@ final class AppModel: ObservableObject {
         if startsKeyboardMonitor { monitor.start() }
     }
     func shutdown() {
+        systemAudioRhythm.setEnabled(false)
         cancelRhythmFeedback()
         rhythmOverlay?.hide()
         remapping.stop(); statistics.flush(); monitor.stop(); audio.stop(); keyboardAudio.stop()
@@ -439,6 +452,7 @@ final class AppModel: ObservableObject {
     }
 
     private func synchronizeRhythmOverlay() {
+        synchronizeSystemAudioRhythm()
         // Device-free tests never instantiate AppKit windows.
         guard started, startsKeyboardMonitor else { return }
         guard rhythmEnabled && isEnabled else { rhythmOverlay?.hide(); return }
@@ -447,8 +461,14 @@ final class AppModel: ObservableObject {
                 self?.rhythmEnabled = false
             }
         }
+        rhythmOverlay?.setVisualStyle(rhythmStyle)
         rhythmOverlay?.setClickThrough(rhythmClickThrough)
         rhythmOverlay?.show()
+    }
+
+    private func synchronizeSystemAudioRhythm() {
+        systemAudioRhythm.setEnabled(started && startsKeyboardMonitor && isEnabled && rhythmEnabled
+            && rhythmStyle == .edgeGlow && rhythmFollowsAudio)
     }
 
     private static func validRhythmIntensity(_ value: Double) -> Double {

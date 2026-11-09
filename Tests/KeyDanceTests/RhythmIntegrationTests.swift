@@ -33,6 +33,26 @@ struct RhythmIntegrationTests {
         return (model, root)
     }
 
+    @Test @MainActor func systemAudioIsAnIndependentOptInAndDoesNotResetKeystrokes() throws {
+        let defaults = RhythmDefaults(["rhythmEnabled": true, "rhythmStyle": "edgeGlow"])
+        let (model, root) = try fixture(defaults)
+        defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
+        #expect(!model.rhythmFollowsAudio && model.systemAudioRhythm.state == .stopped)
+        model.receiveKey(0)
+        let pulses = model.rhythmFeedback.dynamics.pulses.count
+        let count = model.sessionTotal
+        model.rhythmFollowsAudio = true
+        #expect(defaults.bool(forKey: "rhythmFollowsAudio"))
+        #expect(model.rhythmFeedback.dynamics.pulses.count == pulses && model.sessionTotal == count)
+        model.start()
+        #expect(model.systemAudioRhythm.state == .stopped, "Device-free tests must never request audio access.")
+        let (restored, restoredRoot) = try fixture(defaults)
+        defer { restored.shutdown(); try? FileManager.default.removeItem(at: restoredRoot) }
+        #expect(restored.rhythmFollowsAudio)
+        model.rhythmFollowsAudio = false
+        #expect(!defaults.bool(forKey: "rhythmFollowsAudio"))
+    }
+
     @Test @MainActor func optInDoesNotChangeAudioSettingsOrPhysicalCounts() throws {
         let (model, root) = try fixture()
         defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }

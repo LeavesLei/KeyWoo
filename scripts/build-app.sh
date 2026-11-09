@@ -54,6 +54,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>NSHighResolutionCapable</key><true/>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSInputMonitoringUsageDescription</key><string>在其他应用打字时提供敲击反馈，并在本机统计各键的次数。不记录输入文字。</string>
+<key>NSAudioCaptureUsageDescription</key><string>分析电脑正在播放的声音，让底部泛光跟随低音、中音和高音变化。声音仅在本机即时处理。</string>
 </dict></plist>
 PLIST
 python3 "$ROOT/scripts/release-version.py" --plist "$APP/Contents/Info.plist"
@@ -62,11 +63,13 @@ cat > "$APP/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" <<'STRINGS'
 "CFBundleName" = "键舞";
 "CFBundleDisplayName" = "键舞";
 "NSInputMonitoringUsageDescription" = "在其他应用打字时提供敲击反馈，并在本机统计各键的次数。不记录输入文字。";
+"NSAudioCaptureUsageDescription" = "分析电脑正在播放的声音，让底部泛光跟随低音、中音和高音变化。声音仅在本机即时处理。";
 STRINGS
 cat > "$APP/Contents/Resources/en.lproj/InfoPlist.strings" <<'STRINGS'
 "CFBundleName" = "KeyWoo";
 "CFBundleDisplayName" = "KeyWoo";
 "NSInputMonitoringUsageDescription" = "Provide typing feedback across apps and count each key locally. Typed text is never recorded.";
+"NSAudioCaptureUsageDescription" = "Analyze the audio playing on this Mac to animate the bottom glow with bass, midrange and treble. Audio is processed live on this Mac.";
 STRINGS
 swiftc -parse-as-library -module-cache-path "$CLANG_MODULE_CACHE_PATH" scripts/make-icon.swift -o "$ROOT/.build/icon-renderer"
 "$ROOT/.build/icon-renderer" "$ROOT/.build/AppIcon.iconset" "$ROOT/Resources/KeyWooIconSource.png"

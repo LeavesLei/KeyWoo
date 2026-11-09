@@ -2,13 +2,14 @@ import Foundation
 import Combine
 
 enum RhythmVisualStyle: String, CaseIterable, Identifiable, Sendable {
-    case energy, pulse, burst
+    case energy, pulse, burst, edgeGlow
     var id: String { rawValue }
     var title: String {
         switch self {
         case .energy: return L("能量条")
         case .pulse: return L("脉冲")
         case .burst: return L("键阵爆破")
+        case .edgeGlow: return L("底部泛光")
         }
     }
 }
@@ -304,6 +305,10 @@ final class RhythmFeedbackModel: ObservableObject {
         }
     }
     @Published var flashesEnabled = true
+    @Published private(set) var musicSpectrum = AudioSpectrum.silent
+    func setMusicSpectrum(_ spectrum: AudioSpectrum) {
+        if spectrum != musicSpectrum { musicSpectrum = spectrum }
+    }
     @Published var opacity = 1.0
     @Published var intensity = 1.0 {
         didSet {

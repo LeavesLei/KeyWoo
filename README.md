@@ -11,9 +11,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.2-build26"><img src="https://img.shields.io/badge/preview-v1.0.2-C15F34?style=flat-square" alt="v1.0.2 预览版"></a>
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.2-build26/KeyWoo-1.0.2-mac-arm64.dmg"><img src="https://img.shields.io/badge/macOS_14%2B-Apple_silicon-334155?style=flat-square" alt="下载 macOS 版"></a>
-  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.2-build26/KeyWoo-1.0.2-win-x64-setup.exe"><img src="https://img.shields.io/badge/Windows_11-x64-334155?style=flat-square" alt="下载 Windows 版"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.3"><img src="https://img.shields.io/badge/preview-v1.0.3-C15F34?style=flat-square" alt="v1.0.3 预览版"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.3/KeyWoo-1.0.3-mac-arm64.dmg"><img src="https://img.shields.io/badge/macOS_14%2B-Apple_silicon-334155?style=flat-square" alt="下载 macOS 版"></a>
+  <a href="https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.3/KeyWoo-1.0.3-win-x64-setup.exe"><img src="https://img.shields.io/badge/Windows_11-x64-334155?style=flat-square" alt="下载 Windows 版"></a>
 </p>
 
 键舞是一款在 Mac 和 Windows 上运行的键盘音效软件。在笔记本或外接键盘上打字，就能听到红轴、青轴、Holy Panda、Topre 等实录音色，也可以试试麻将和打字机。
@@ -29,13 +29,12 @@
 
 ## 功能
 
-- **25 套音效**，包括键盘实录、拟音和新加入的「街舞节拍」。15 套实录可在原音与 Hi-Fi 之间切换。
-- **键阵爆破**，两端均可调节特效透明度，空格碎光、回车收束。
+- **24 套音效**，包括 12 套键盘实录、3 套实录拟音和 9 套合成音效。空格、回车、退格有各自的声音。
 - **中英文与浅色、深色外观**，可在设置中切换。
 - **改键和统计**，可以设置媒体快捷键、查看各键次数并导出 CSV。日常使用无需登录，统计保存在本机，应用不保存输入文字。
 
 [安装帮助](docs/INSTALL.md) · [隐私说明](docs/PRIVACY.md) · [音效来源与第三方许可](THIRD-PARTY-NOTICES.md) · [反馈问题](https://github.com/LeavesLei/KeyWoo/issues)
 
-[mac]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.2-build26/KeyWoo-1.0.2-mac-arm64.dmg
-[win]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.2-build26/KeyWoo-1.0.2-win-x64-setup.exe
-[release]: https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.2-build26
+[mac]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.3/KeyWoo-1.0.3-mac-arm64.dmg
+[win]: https://github.com/LeavesLei/KeyWoo/releases/download/v1.0.3/KeyWoo-1.0.3-win-x64-setup.exe
+[release]: https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.3
