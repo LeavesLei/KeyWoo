@@ -15,6 +15,9 @@ internal static class InterfaceVerification {
         bool ThemeAndLanguagePassed,bool PreviewAvailabilityPassed,bool FullRowDisclosurePassed,int NativeScreenshots);
     internal static Result Run(string report,SampleBank bank) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-interface-"+Guid.NewGuid().ToString("N"));
+        string screenshotDirectory=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(report))!,"tests","interface");
+        Directory.CreateDirectory(screenshotDirectory);
+        string screenshotBase=Path.Combine(screenshotDirectory,Path.GetFileName(report));
         var store=new StatisticsStore(Path.Combine(directory,"statistics.json"));
         for(int index=0;index<180;index++)store.Record(new PhysicalKey(0x41,0x1e),DateTimeOffset.Now.AddMinutes(-30+index%24));
         var settings=new Settings{Language="zh",Appearance="light",Preset="red",Volume=1,Rules=[new(0x14,KeyModifiers.None,0x1b)]};
@@ -28,7 +31,7 @@ internal static class InterfaceVerification {
             foreach(int index in new[]{0,2,1,3}) {
                 Click(root,"navigation-"+index);Layout(root);
                 Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"按键统计",2=>"改键",3=>"偏好设置",_=>"键盘音效"}),"Navigation must update the workspace heading.");
-                Save(root,Path.ChangeExtension(report,$".interface-light-{index}.png"));screenshots++;
+                Save(root,Path.ChangeExtension(screenshotBase,$".interface-light-{index}.png"));screenshots++;
             }
             Click(root,"navigation-0");Layout(root);
             var practice=Find<TextBox>(root,"practice-input");practice.Text="KeyWoo practice stays local.";
@@ -60,9 +63,9 @@ internal static class InterfaceVerification {
             foreach(int index in new[]{0,2,1,3}) {
                 Click(root,"navigation-"+index);Layout(root);
                 Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"Key statistics",2=>"Remapping",3=>"Preferences",_=>"Keyboard sounds"}),"English navigation must retain its selected page and translated heading.");
-                Save(root,Path.ChangeExtension(report,$".interface-dark-{index}.png"));screenshots++;
+                Save(root,Path.ChangeExtension(screenshotBase,$".interface-dark-{index}.png"));screenshots++;
             }
-            Layout(root,820,650);Save(root,Path.ChangeExtension(report,".interface-dark-narrow.png"),820,650);screenshots++;
+            Layout(root,820,650);Save(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow.png"),820,650);screenshots++;
             return new(true,true,true,true,true,true,true,screenshots);
         } finally {
             window?.DisposeVerification();
