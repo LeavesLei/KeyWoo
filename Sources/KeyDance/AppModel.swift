@@ -3,13 +3,6 @@ import Combine
 import AppKit
 import UniformTypeIdentifiers
 
-enum AppPage: String, CaseIterable {
-    case studio = "音乐空间", remapping = "改键", statistics = "按键统计", settings = "偏好设置"
-    var symbol: String {
-        switch self { case .studio: return "waveform"; case .remapping: return "keyboard"; case .statistics: return "chart.bar.xaxis"; case .settings: return "slider.horizontal.3" }
-    }
-}
-
 struct FeedbackPulse: Identifiable, Equatable {
     let id: Int
     let time: Date
@@ -416,6 +409,18 @@ final class AppModel: ObservableObject {
         guard isEnabled, !monitor.secureInputActive else { return }
         if isKeyboardSoundMode { keyboardAudio.previewSequence() }
         else { audio.preview() }
+    }
+
+    /// A deliberate style-card choice starts that visual effect and gives an
+    /// immediate, silent response. Restoring a preference still uses the passive
+    /// rhythmStyle property so launching or changing language never opts in.
+    func activateRhythmStyle(_ style: RhythmVisualStyle) {
+        rhythmStyle = style
+        rhythmEnabled = true
+        // Configuration remains editable while paused or in secure input. The
+        // master switch and protected input always win over a visual audition.
+        guard isEnabled, !monitor.secureInputActive else { return }
+        previewRhythm()
     }
 
     /// Visual-only sample: never synthesizes keyboard input, plays audio, or counts typing.

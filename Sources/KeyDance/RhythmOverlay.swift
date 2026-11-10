@@ -8,7 +8,7 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
     private let feedback: RhythmFeedbackModel
     private let defaults: UserDefaults
     private let onClose: () -> Void
-    private var panel: RhythmPanel?
+    private var panel: NSPanel?
     private var clickThrough = false
     private var visualStyle: RhythmVisualStyle
     private var normalFrame: NSRect?
@@ -19,8 +19,16 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
     private let size = NSSize(width: 340, height: 224)
     private let edgeHeight: CGFloat = 144
     private let positionKey = "rhythmOverlayPosition"
+    // Embedders and native integration tests can supply a target rectangle and
+    // a real panel factory. Normal desktop presentation uses the live screens.
+    private let screenFrame: (() -> NSRect)?
+    private let makePanel: ((NSRect) -> NSPanel)?
 
-    init(feedback: RhythmFeedbackModel, defaults: UserDefaults, onClose: @escaping () -> Void) {
+    init(feedback: RhythmFeedbackModel, defaults: UserDefaults,
+         screenFrame: (() -> NSRect)? = nil, makePanel: ((NSRect) -> NSPanel)? = nil,
+         onClose: @escaping () -> Void) {
+        self.screenFrame = screenFrame
+        self.makePanel = makePanel
         self.feedback = feedback
         self.defaults = defaults
         self.onClose = onClose
@@ -92,7 +100,8 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
     }
 
     private func createPanel() {
-        let panel = RhythmPanel(contentRect: NSRect(origin: defaultOrigin(), size: size),
+        let frame = NSRect(origin: defaultOrigin(), size: size)
+        let panel = makePanel?(frame) ?? RhythmPanel(contentRect: frame,
                                 styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -148,11 +157,11 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
         let pointer = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(pointer) }
             ?? NSApplication.shared.keyWindow?.screen ?? NSScreen.main ?? NSScreen.screens.first
-        guard let screen else { return }
+        guard let screenBounds = screenFrame?() ?? screen?.frame else { return }
         // The physical frame includes the Dock region; visibleFrame would float
         // the glow above it. Keep the normal floating level and click-through.
-        let frame = NSRect(x: screen.frame.minX, y: screen.frame.minY,
-                           width: screen.frame.width, height: min(edgeHeight, screen.frame.height))
+        let frame = NSRect(x: screenBounds.minX, y: screenBounds.minY,
+                           width: screenBounds.width, height: min(edgeHeight, screenBounds.height))
         guard panel.frame != frame else { return }
         let wasApplying = applyingGeometry
         applyingGeometry = true
@@ -161,12 +170,12 @@ final class RhythmOverlayController: NSObject, NSWindowDelegate {
     }
 
     private func defaultOrigin() -> NSPoint {
-        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
+        let screen = screenFrame?() ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
         return NSPoint(x: screen.maxX - size.width - 24, y: screen.minY + 24)
     }
 
     private func constrainToScreen(_ panel: NSPanel) {
-        let screens = NSScreen.screens.map(\.visibleFrame)
+        let screens = screenFrame.map { [$0()] } ?? NSScreen.screens.map(\.visibleFrame)
         let screen = screens.max { a, b in
             let ia = a.intersection(panel.frame), ib = b.intersection(panel.frame)
             return max(0, ia.width) * max(0, ia.height) < max(0, ib.width) * max(0, ib.height)

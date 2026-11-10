@@ -50,12 +50,12 @@ struct KeyDanceApp: App {
                     Button(L("加入本地音乐…")) { model.importMusic() }.keyboardShortcut("o")
                 }
             }
-            CommandMenu(L("律动")) {
-                Toggle(L("律动悬浮窗"), isOn: $model.rhythmEnabled)
-                Picker(L("显示样式"), selection: $model.rhythmStyle) {
+            CommandMenu(L("特效")) {
+                Toggle(L("桌面特效"), isOn: $model.rhythmEnabled)
+                Picker(L("显示样式"), selection: Binding(get: { model.rhythmStyle }, set: { model.activateRhythmStyle($0) })) {
                     ForEach(RhythmVisualStyle.allCases) { style in Text(style.title).tag(style) }
                 }
-                Button(L("演示律动")) { model.previewRhythm() }.disabled(!model.isEnabled || model.monitor.secureInputActive)
+                Button(L("演示特效")) { model.previewRhythm() }.disabled(!model.isEnabled || model.monitor.secureInputActive)
                 if model.rhythmStyle != .edgeGlow {
                     Toggle(L("鼠标穿透"), isOn: $model.rhythmClickThrough)
                     Button(L("重置律动位置")) { model.resetRhythmPosition() }
@@ -140,9 +140,9 @@ struct MenuBarView: View {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
         Button(L(model.isEnabled ? "暂停" : "继续")) { model.isEnabled.toggle() }
-        Toggle(L("律动悬浮窗"), isOn: $model.rhythmEnabled)
+        Toggle(L("桌面特效"), isOn: $model.rhythmEnabled)
         if model.rhythmEnabled {
-            Picker(L("显示样式"), selection: $model.rhythmStyle) {
+            Picker(L("显示样式"), selection: Binding(get: { model.rhythmStyle }, set: { model.activateRhythmStyle($0) })) {
                 ForEach(RhythmVisualStyle.allCases) { style in Text(style.title).tag(style) }
             }
             if model.rhythmStyle != .edgeGlow {
@@ -225,9 +225,9 @@ private struct WorkspaceNavigationCommands: Commands {
         }
         CommandGroup(after: .sidebar) {
             Divider()
-            ForEach(Array(AppPage.allCases.enumerated()), id: \.element) { index, page in
+            ForEach(AppPage.allCases, id: \.self) { page in
                 Button(page == .studio ? model.studioTitle : L(page.rawValue)) { show(page) }
-                    .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
+                    .keyboardShortcut(KeyEquivalent(page == .settings ? "4" : page.shortcut), modifiers: .command)
             }
         }
     }

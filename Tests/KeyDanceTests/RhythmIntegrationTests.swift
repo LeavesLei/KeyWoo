@@ -165,6 +165,54 @@ struct RhythmIntegrationTests {
         #expect(!model.rhythmClickThrough, "Reset provides a way to recover an unclickable widget.")
     }
 
+    @Test @MainActor func deliberateStyleSelectionEnablesAndAuditionsWithoutPlayingAudioOrCounting() async throws {
+        let defaults = RhythmDefaults()
+        let (model, root) = try fixture(defaults)
+        defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
+        let volume = model.keyboardVolume
+        model.activateRhythmStyle(.edgeGlow)
+        #expect(model.rhythmEnabled && model.rhythmStyle == .edgeGlow)
+        #expect(defaults.bool(forKey: "rhythmEnabled") && defaults.string(forKey: "rhythmStyle") == "edgeGlow")
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(model.rhythmFeedback.isAnimating && !model.rhythmFeedback.dynamics.pulses.isEmpty)
+        #expect(model.sessionTotal == 0 && model.heldKeys.isEmpty)
+        #expect(!model.keyboardAudio.isRunning && model.keyboardVolume == volume)
+        // A repeated deliberate click on the selected style must give fresh
+        // feedback too, rather than leaving the transparent idle view unchanged.
+        model.resetHeldNotes()
+        model.activateRhythmStyle(.edgeGlow)
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(model.rhythmFeedback.isAnimating && !model.rhythmFeedback.dynamics.pulses.isEmpty)
+        #expect(model.sessionTotal == 0)
+    }
+
+    @Test @MainActor func styleSelectionWhilePausedConfiguresTheNextResumeWithoutResumingAnything() async throws {
+        let defaults = RhythmDefaults()
+        let (model, root) = try fixture(defaults)
+        defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
+        model.isEnabled = false
+        model.activateRhythmStyle(.edgeGlow)
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(!model.isEnabled && !model.keyboardAudio.isRunning)
+        #expect(model.rhythmEnabled && model.rhythmStyle == .edgeGlow)
+        #expect(model.rhythmFeedback.dynamics.pulses.isEmpty && !model.rhythmFeedback.isAnimating)
+        #expect(model.sessionTotal == 0 && model.heldKeys.isEmpty)
+        #expect(defaults.bool(forKey: "rhythmEnabled") && defaults.string(forKey: "rhythmStyle") == "edgeGlow")
+        model.isEnabled = true
+        #expect(model.rhythmEnabled && model.rhythmStyle == .edgeGlow)
+        #expect(model.rhythmFeedback.dynamics.pulses.isEmpty, "Resuming must not replay an old audition.")
+    }
+
+    @Test @MainActor func passiveStylePreferenceDoesNotOptInOrScheduleADemo() async throws {
+        let (model, root) = try fixture()
+        defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
+        model.rhythmStyle = .edgeGlow
+        try await Task.sleep(for: .milliseconds(40))
+        #expect(!model.rhythmEnabled && model.rhythmStyle == .edgeGlow)
+        #expect(!model.rhythmFeedback.isAnimating && model.rhythmFeedback.dynamics.pulses.isEmpty)
+        #expect(model.sessionTotal == 0)
+    }
+
     @Test @MainActor func visualPreferencesRestoreAndSliderBoundsAreValidated() throws {
         let defaults = RhythmDefaults(["rhythmIntensity": Double.nan])
         let (model, root) = try fixture(defaults)

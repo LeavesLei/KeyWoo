@@ -34,6 +34,9 @@ enum RenderInterfacePreview {
         let appearance: AppAppearance
         var page: AppPage = .studio
         var paused = false
+        var effectStyle: RhythmVisualStyle = .edgeGlow
+        var effectsEnabled = false
+        var detailsExpanded = false
         var empty = false
         var week = false
         var pinnedKey: UInt16?
@@ -64,6 +67,11 @@ enum RenderInterfacePreview {
             Scenario(name: "remap-en-light-1100", width: 1100, language: .english, appearance: .light, page: .remapping),
             Scenario(name: "stats-zh-light-1100", width: 1100, language: .simplifiedChinese, appearance: .light, page: .statistics),
             Scenario(name: "stats-en-dark-920", width: 920, language: .english, appearance: .dark, page: .statistics),
+            Scenario(name: "effects-zh-light-920", width: 920, language: .simplifiedChinese, appearance: .light, page: .effects, effectsEnabled: true),
+            Scenario(name: "effects-en-dark-920", width: 920, language: .english, appearance: .dark, page: .effects, effectsEnabled: true),
+            Scenario(name: "effects-en-light-1100-off", width: 1100, language: .english, appearance: .light, page: .effects, effectStyle: .energy),
+            Scenario(name: "effects-zh-dark-1100-paused", width: 1100, language: .simplifiedChinese, appearance: .dark, page: .effects, paused: true, effectsEnabled: true),
+            Scenario(name: "effects-en-dark-1400-details", width: 1400, language: .english, appearance: .dark, page: .effects, effectStyle: .burst, effectsEnabled: true, detailsExpanded: true),
             Scenario(name: "settings-zh-light-920", width: 920, language: .simplifiedChinese, appearance: .light, page: .settings),
             Scenario(name: "settings-zh-dark-1100", width: 1100, language: .simplifiedChinese, appearance: .dark, page: .settings),
             Scenario(name: "settings-en-light-920", width: 920, language: .english, appearance: .light, page: .settings),
@@ -89,7 +97,11 @@ enum RenderInterfacePreview {
             model.now = now
             model.page = scenario.page
             model.isEnabled = !scenario.paused
-            let presentation = StatisticsPresentationState()
+            model.rhythmStyle = scenario.effectStyle
+            model.rhythmEnabled = scenario.effectsEnabled
+            let workspacePresentation = WorkspacePresentationState(category: model.keyboardSoundStyle.category)
+            workspacePresentation.effects.detailsExpanded = scenario.detailsExpanded
+            let presentation = workspacePresentation.statistics
             if scenario.week { presentation.range = .week }
             presentation.selectedKey = scenario.pinnedKey
             presentation.search = scenario.search
@@ -99,8 +111,7 @@ enum RenderInterfacePreview {
                 presentation.from = now.addingTimeInterval(scenario.oneMinute ? -60 : 60)
                 presentation.to = now
             }
-            let view = VisibleWindowContent(model: model, statisticsPresentation: presentation,
-                                            soundPresentation: KeyboardSoundPresentationState(category: model.keyboardSoundStyle.category))
+            let view = WorkspaceView(model: model, presentation: workspacePresentation)
                 .frame(width: scenario.width, height: 820)
             let png = output.appendingPathComponent(scenario.name + ".png")
             let size = try capture(view: AnyView(view), width: scenario.width, model: model, now: now, output: png)

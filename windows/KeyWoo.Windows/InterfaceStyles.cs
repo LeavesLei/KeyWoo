@@ -3,7 +3,7 @@ using System.Windows.Markup;
 
 namespace KeyWoo.Windows;
 
-/// <summary>Window-scoped interaction styles shared by the four workspace pages.</summary>
+/// <summary>Window-scoped interaction styles shared by the workspace pages.</summary>
 internal static class InterfaceStyles {
     internal static void Apply(Window window) {
         const string markup="""

@@ -13,7 +13,7 @@ namespace KeyWoo.Windows;
 internal static class InterfaceVerification {
     internal sealed record Result(bool Passed,bool NavigationPassed,bool RuleEditingPassed,bool DraftPreservationPassed,
         bool ThemeAndLanguagePassed,bool PreviewAvailabilityPassed,bool FullRowDisclosurePassed,
-        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,bool NarrowLayoutPassed,int NativeScreenshots);
+        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,bool NarrowLayoutPassed,bool EffectsActivationPassed,int NativeScreenshots);
     internal static Result Run(string report,SampleBank bank) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-interface-"+Guid.NewGuid().ToString("N"));
         string screenshotDirectory=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(report))!,"tests","interface");
@@ -29,15 +29,27 @@ internal static class InterfaceVerification {
         try {
             window=new MainWindow(settings,store,bank);window.Show();Pump();var root=(FrameworkElement)window.Content;Layout(root);
             Require(!Find<Button>(root,"sound-preview").IsEnabled,"Preview must be visibly unavailable before an audio device is connected.");
-            foreach(int index in new[]{0,2,1,3}) {
+            foreach(int index in new[]{0,4,2,1,3}) {
                 Click(root,"navigation-"+index);Layout(root);
-                Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"按键统计",2=>"改键",3=>"偏好设置",_=>"键盘音效"}),"Navigation must update the workspace heading.");
+                Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"按键统计",2=>"改键",3=>"偏好设置",4=>"桌面特效",_=>"键盘音效"}),"Navigation must update the workspace heading.");
                 VerifyPageLabels(root,index);
                 Save(root,Path.ChangeExtension(screenshotBase,$".interface-light-{index}.png"));screenshots++;
             }
+            Click(root,"navigation-4");Layout(root);
+            Require(FindAll<CheckBox>(root).Count(control=>AutomationProperties.GetAutomationId(control)=="key-burst-enabled")==1,"Desktop effects must have a single configuration home.");
+            Click(root,"desktop-style-edgeGlow");Layout(root);
+            Require(settings.KeyBurstEnabled&&settings.DesktopStyle=="edgeGlow"&&Find<CheckBox>(root,"key-burst-enabled").IsChecked==true,"Selecting Bottom Glow must enable the effect, not leave an inert selection.");
+            Require(AutomationProperties.GetItemStatus(Find<Button>(root,"desktop-style-edgeGlow"))=="已选择","The chosen effect must have a clear selected state.");
+            var effectToggle=Find<CheckBox>(root,"key-burst-enabled");effectToggle.IsChecked=false;effectToggle.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Require(!settings.KeyBurstEnabled,"The desktop effect switch must turn effects off.");
+            Click(root,"key-burst-preview");Require(settings.KeyBurstEnabled,"Enable and preview must also enable subsequent keyboard feedback.");
+            Click(root,"pause-all");Require(!Find<Button>(root,"key-burst-preview").IsEnabled,"The effect preview must respect the master pause.");
+            Click(root,"desktop-style-burst");Require(settings.DesktopStyle=="burst"&&!Find<Button>(root,"key-burst-preview").IsEnabled,"Choosing a style while paused must preserve pause and prepare the selected effect.");
+            Click(root,"pause-all");Require(Find<Button>(root,"key-burst-preview").IsEnabled,"Resuming must restore effect preview availability.");
             Click(root,"navigation-0");Layout(root);
             VerifyPopup(Find<ComboBox>(root,"recording-version"),Path.ChangeExtension(screenshotBase,".interface-light-recording-menu.png"));screenshots++;
             var practice=Find<TextBox>(root,"practice-input");practice.Text="KeyWoo practice stays local.";
+            Find<ComboBox>(root,"sound-category").SelectedIndex=1;
             var sources=FindAll<Expander>(root).First(expander=>expander.Header?.ToString()=="声音来源");
             sources.ApplyTemplate();
             var disclosure=FindVisual<ToggleButton>(sources);
@@ -61,11 +73,12 @@ internal static class InterfaceVerification {
             Find<ComboBox>(root,"app-language").SelectedValue="en";Pump();root=(FrameworkElement)window.Content;Layout(root);
             Find<ComboBox>(root,"app-appearance").SelectedValue="dark";Pump();root=(FrameworkElement)window.Content;Layout(root);
             Require(Find<TextBox>(root,"practice-input").Text=="KeyWoo practice stays local.","Changing language and appearance must retain the practice draft.");
+            Require(Find<ComboBox>(root,"sound-category").SelectedIndex==1,"Changing language and appearance must retain the browsed sound category.");
             Require((int?)Find<ComboBox>(root,"remapping-source").SelectedValue==0x44&&Find<CheckBox>(root,"source-shift").IsChecked==true,"Changing language and appearance must retain the unsaved mapping draft.");
             Require(Find<TextBox>(root,"statistics-key-search").Text=="Space","Changing language and appearance must retain statistics filters.");
-            foreach(int index in new[]{0,2,1,3}) {
+            foreach(int index in new[]{0,4,2,1,3}) {
                 Click(root,"navigation-"+index);Layout(root);
-                Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"Key statistics",2=>"Remapping",3=>"Preferences",_=>"Keyboard sounds"}),"English navigation must retain its selected page and translated heading.");
+                Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"Key statistics",2=>"Remapping",3=>"Preferences",4=>"Desktop effects",_=>"Keyboard sounds"}),"English navigation must retain its selected page and translated heading.");
                 VerifyPageLabels(root,index);
                 if(index==2)VerifyDarkMapping(root);
                 Save(root,Path.ChangeExtension(screenshotBase,$".interface-dark-{index}.png"));screenshots++;
@@ -74,12 +87,14 @@ internal static class InterfaceVerification {
             Click(root,"navigation-3");Layout(root);
             window.Width=820;window.Height=650;window.UpdateLayout();Pump();root.UpdateLayout();
             Require(root.ActualWidth>=780&&root.ActualWidth<=820&&root.ActualHeight<650,"The narrow preview must use the real resized window client area, not a clipped bitmap.");
-            foreach(string id in new[]{"app-language","app-appearance","key-burst-preview","key-burst-intensity","key-burst-opacity"})RequireReachable(root,Find<FrameworkElement>(root,id));
+            foreach(string id in new[]{"app-language","app-appearance"})RequireReachable(root,Find<FrameworkElement>(root,id));
             var language=Find<ComboBox>(root,"app-language");ScrollAncestor(language)?.ScrollToTop();Pump();root.UpdateLayout();
             SaveActual(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow.png"));screenshots++;
+            Click(root,"navigation-4");Pump();root.UpdateLayout();
+            foreach(string id in new[]{"key-burst-preview","desktop-style-burst","desktop-style-edgeGlow","key-burst-intensity","key-burst-opacity"})RequireReachable(root,Find<FrameworkElement>(root,id));
             Find<Slider>(root,"key-burst-opacity").BringIntoView();Pump();root.UpdateLayout();
             SaveActual(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow-animation.png"));screenshots++;
-            return new(true,true,true,true,true,true,true,true,true,true,true,screenshots);
+            return new(true,true,true,true,true,true,true,true,true,true,true,true,screenshots);
         } finally {
             window?.DisposeVerification();
             for(int index=0;index<names.Length;index++)if(previous[index] is object value)resources[names[index]]=value;else resources.Remove(names[index]);
@@ -97,7 +112,7 @@ internal static class InterfaceVerification {
     }
     private static void SaveActual(FrameworkElement root,string file)=>Save(root,file,(int)Math.Ceiling(root.ActualWidth),(int)Math.Ceiling(root.ActualHeight));
     private static void VerifyPageLabels(DependencyObject root,int page) {
-        string[] ids=page switch{0=>["recording-version","sound-category"],2=>["remapping-source","remapping-target"],3=>["app-language","app-appearance","desktop-animation-style"],_=>[]};
+        string[] ids=page switch{0=>["recording-version","sound-category"],2=>["remapping-source","remapping-target"],3=>["app-language","app-appearance"],_=>[]};
         foreach(string id in ids) {
             var combo=Find<ComboBox>(root,id);combo.ApplyTemplate();combo.UpdateLayout();
             string expected=combo.SelectedItem?.GetType().GetProperty(combo.DisplayMemberPath)?.GetValue(combo.SelectedItem)?.ToString()??throw new InvalidDataException("Missing display label for "+id);

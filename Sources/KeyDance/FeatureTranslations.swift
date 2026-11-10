@@ -2,6 +2,23 @@ import Foundation
 
 enum FeatureTranslations {
     static let english: [String: String] = [
+        "安全输入中，键盘反馈暂停": "Secure input · keyboard feedback paused",
+        "桌面特效": "Desktop effects",
+        "特效": "Effects",
+        "演示特效": "Preview effects",
+        "声音细节": "Sound details",
+        "已暂停，继续后显示": "Paused · resume to show effects",
+        "安全输入中，暂不显示": "Secure input · effects paused",
+        "已开启 · 打字时显示": "On · appears as you type",
+        "选择样式即可开启": "Choose a style to turn it on",
+        "选择并演示此特效": "Enable and preview this effect",
+        "选好样式，继续后显示": "Choose a style; effects appear after resuming",
+        "只改变画面起伏，不影响声音或音量。": "Changes visual movement only, without affecting sounds or volume.",
+        "数值越低越淡，100% 保持原始亮度。": "Lower values are more subtle; 100% retains the original brightness.",
+        "更多选项": "More options",
+        "启用特效": "Enable effects",
+        "正在等待电脑声音": "Waiting for system audio",
+        "点击样式会开启并播放一段无声演示，不增加按键统计。平时由打字点亮，停手后渐隐；底部泛光始终允许鼠标穿过。": "Choose a style to enable it and play a short silent preview without adding key counts. Typing lights it up; it fades when you pause. Clicks always pass through Bottom Glow.",
         "音量": "Volume",
         "删除": "Delete",
         "重试": "Retry",
