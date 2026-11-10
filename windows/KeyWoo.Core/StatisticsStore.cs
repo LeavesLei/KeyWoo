@@ -16,20 +16,25 @@ public sealed class StatisticsStore {
     public string? Error { get; private set; }
     public long SessionTotal { get; private set; }
     private bool loadFailed;
+    private const long MaximumArchiveTotal = 1_000_000_000_000;
+    private StatisticsQuery? query;
+    private long queryRevision = -1;
+    private readonly SortedSet<long> minuteIndex = [];
     public StatisticsStore(string path) {
         this.path=path;
         if(!File.Exists(path)) return;
         try {
             data=JsonSerializer.Deserialize<StatisticsDocument>(File.ReadAllText(path)) ?? throw new InvalidDataException("Empty statistics");
-            if(data.Schema!=1 || data.Minutes is null || data.Labels is null || data.Minutes.Values.Any(v=>v is null||v.Values.Any(c=>c<0))) throw new InvalidDataException("Invalid statistics schema");
+            if(data.Schema!=1 || data.Minutes is null || data.Labels is null || data.Minutes.Values.Any(v=>v is null)||!SafeCounts(data.Minutes)) throw new InvalidDataException("Invalid statistics schema");
+            minuteIndex.UnionWith(data.Minutes.Keys);
         } catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException) {
             data=new(1,[],[]); Error=ex.Message; loadFailed=true;
         }
     }
     public void Record(PhysicalKey key, DateTimeOffset at) {
         lock(gate) {
-            long minute=at.ToUnixTimeSeconds()/60;
-            if(!data.Minutes.TryGetValue(minute,out var counts)) data.Minutes[minute]=counts=[];
+            long minute=FloorMinute(at);
+            if(!data.Minutes.TryGetValue(minute,out var counts)) { data.Minutes[minute]=counts=[]; minuteIndex.Add(minute); }
             counts[key.Id]=counts.GetValueOrDefault(key.Id)+1;
             data.Labels[key.Id]=KeyboardKeys.Name(key.VirtualKey);
             SessionTotal++; revision++;
@@ -37,13 +42,49 @@ public sealed class StatisticsStore {
     }
     public IReadOnlyList<KeyCount> Counts(DateTimeOffset from,DateTimeOffset to) {
         if(to<=from) return [];
-        long first=(long)Math.Floor(from.ToUnixTimeMilliseconds()/60000d), end=(long)Math.Ceiling(to.ToUnixTimeMilliseconds()/60000d);
+        long first=FloorMinute(from), end=CeilingMinute(to);
         lock(gate) {
             var counts=new Dictionary<int,long>();
             foreach(var (minute,bucket) in data.Minutes) if(minute>=first&&minute<end)
                 foreach(var (key,count) in bucket) counts[key]=counts.GetValueOrDefault(key)+count;
             return counts.OrderByDescending(p=>p.Value).ThenBy(p=>p.Key)
                 .Select(p=>new KeyCount(p.Key,data.Labels.GetValueOrDefault(p.Key,$"Scan {p.Key:X}"),p.Value)).ToArray();
+        }
+    }
+    private static bool SafeCounts(Dictionary<long,Dictionary<int,long>> minutes) {
+        long total = 0;
+        foreach(var keys in minutes.Values) foreach(long count in keys.Values) {
+            if(count<0 || count>MaximumArchiveTotal-total)return false;
+            total+=count;
+        }
+        return true;
+    }
+    private static long FloorMinute(DateTimeOffset value) {
+        long quotient = Math.DivRem(value.UtcTicks-DateTimeOffset.UnixEpoch.UtcTicks,TimeSpan.TicksPerMinute,out long remainder);
+        return quotient-(remainder<0?1:0);
+    }
+    private static long CeilingMinute(DateTimeOffset value) {
+        long quotient = Math.DivRem(value.UtcTicks-DateTimeOffset.UnixEpoch.UtcTicks,TimeSpan.TicksPerMinute,out long remainder);
+        return quotient+(remainder>0?1:0);
+    }
+    public long Revision { get { lock(gate) return revision; } }
+    public StatisticsSnapshot Snapshot(DateTimeOffset from, DateTimeOffset to,
+        TimeZoneInfo? zone = null, StatisticsInterval interval = StatisticsInterval.Auto) {
+        zone ??= TimeZoneInfo.Local;
+        if (to <= from) return new(Revision, from, to, [], 0, 0, 0, null, interval, []);
+        long first = FloorMinute(from);
+        long end = CeilingMinute(to);
+        lock(gate) {
+            if (query is null || queryRevision != revision || !query.Matches(first, end, zone, interval)) {
+                query = new(first, end, zone, interval);
+                foreach (long minute in minuteIndex.GetViewBetween(first, end - 1)) {
+                    var keys = data.Minutes[minute];
+                    foreach (var (key, count) in keys)
+                        query.Add(key, data.Labels.GetValueOrDefault(key, $"Scan {key:X}"), minute, count);
+                }
+                queryRevision = revision;
+            }
+            return query.Snapshot(revision);
         }
     }
     public string Csv(DateTimeOffset from,DateTimeOffset to) {

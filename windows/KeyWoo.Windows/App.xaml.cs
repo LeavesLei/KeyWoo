@@ -24,7 +24,8 @@ public partial class App : System.Windows.Application {
                 if(hashes.Values.Distinct().Count()!=hashes.Count)throw new InvalidDataException("Duplicate preset PCM");
                 var keyBurst=KeyBurstVerification.Run(e.Args[1]);
                 var edgeGlow=EdgeGlowVerification.Run(e.Args[1]);
-                File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=true,presets=hashes,hiFiPresets=hiFiHashes,keyBurst,edgeGlow,deviceTested=false},new JsonSerializerOptions{WriteIndented=true}));Shutdown(0);
+                var statistics=StatisticsVerification.Run(e.Args[1]);
+                File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=true,presets=hashes,hiFiPresets=hiFiHashes,keyBurst,edgeGlow,statistics,deviceTested=false},new JsonSerializerOptions{WriteIndented=true}));Shutdown(0);
             } catch(Exception ex){File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=false,error=ex.ToString()}));Shutdown(1);}
             return;
         }

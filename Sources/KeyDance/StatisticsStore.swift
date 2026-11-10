@@ -87,6 +87,45 @@ final class StatisticsStore: ObservableObject {
         return indexedMinutes(in: range).count
     }
 
+    /// Derive the statistics screen in one pass over occupied selected minutes.
+    /// The caller refreshes the snapshot on the presentation clock, not on input.
+    func insights(from: Date, to: Date, calendar: Calendar = .current,
+                  trendInterval: StatisticsTrendInterval? = nil) -> StatisticsInsights {
+        guard let range = Self.minuteRange(from: from, to: to) else {
+            return StatisticsInsights(counts: [:], total: 0, activeMinutes: 0,
+                                      peakMinute: nil, trend: [], trendInterval: trendInterval ?? .minutes(5))
+        }
+        let start = Date(timeIntervalSince1970: Double(range.lowerBound) * 60)
+        let end = Date(timeIntervalSince1970: Double(range.upperBound) * 60)
+        let plan = StatisticsTrendPlan.make(from: start, to: end, calendar: calendar, preferred: trendInterval)
+        var trend = plan.buckets
+        var counts: [UInt16: Int] = [:]
+        var total = 0
+        var active = 0
+        var peak: StatisticsPeakMinute?
+        var bucketIndex = 0
+        for minute in indexedMinutes(in: range) {
+            guard let keys = minutes[minute] else { continue }
+            var minuteTotal = 0
+            for (key, count) in keys where count > 0 {
+                counts[key, default: 0] += count
+                minuteTotal += count
+            }
+            guard minuteTotal > 0 else { continue }
+            total += minuteTotal
+            active += 1
+            let date = Date(timeIntervalSince1970: Double(minute) * 60)
+            if minuteTotal > (peak?.count ?? 0) { peak = StatisticsPeakMinute(date: date, count: minuteTotal) }
+            while bucketIndex < trend.count, date >= trend[bucketIndex].end { bucketIndex += 1 }
+            if bucketIndex < trend.count, date >= trend[bucketIndex].start {
+                trend[bucketIndex].count += minuteTotal
+                trend[bucketIndex].activeMinutes += 1
+            }
+        }
+        return StatisticsInsights(counts: counts, total: total, activeMinutes: active,
+                                  peakMinute: peak, trend: trend, trendInterval: plan.interval)
+    }
+
     /// Current second and the preceding N-1 seconds, accurate to one second.
     /// Memory-only and limited to the latest five minutes; not reconstructed from minute history.
     func recentCount(seconds: TimeInterval = 60, endingAt date: Date = Date()) -> Int {
@@ -278,7 +317,8 @@ final class StatisticsStore: ObservableObject {
     }
 
     private static func minuteRange(from: Date, to: Date) -> Range<Int>? {
-        guard from.timeIntervalSince1970.isFinite, to.timeIntervalSince1970.isFinite, to > from else {
+        guard from.timeIntervalSince1970.isFinite, to.timeIntervalSince1970.isFinite,
+              from.timeIntervalSince1970 > Double(Int.min), to.timeIntervalSince1970 < Double(Int.max), to > from else {
             return nil
         }
         let lower = minute(for: from)

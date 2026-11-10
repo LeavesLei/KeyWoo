@@ -99,7 +99,7 @@ enum AppLocalization {
         for key in translations.keys.sorted() where result[translations[key]!] == nil { result[translations[key]!] = key }
         return result
     }()
-    static let translations = commonTranslations.merging(FeatureTranslations.english) { _, newer in newer }
+    static let translations = commonTranslations.merging(FeatureTranslations.english) { _, newer in newer }.merging(StatisticsTranslations.english) { _, newer in newer }
     private static let commonTranslations: [String: String] = [
         "音色": "Sounds",
         "录音版本": "Recording version",

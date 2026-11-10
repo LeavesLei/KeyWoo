@@ -46,9 +46,9 @@ public sealed class MainWindow : Window {
     private Button pause=new();
     private Button? keyBurstPreview;
     private CheckBox mappingCheck=new();
-    private DataGrid statsGrid=new(),ruleGrid=new();
-    private DatePicker fromDate=new(),toDate=new();
-    private TextBox fromTime=new(),toTime=new();
+    private DataGrid ruleGrid=new();
+    private readonly StatisticsPresentation statisticsPresentation=new();
+    private StatisticsPanel? statisticsPanel;
     private ComboBox sourceKey=new(),targetKey=new();
     private readonly Dictionary<KeyModifiers,CheckBox> sourceModifiers=[],targetModifiers=[];
     private TextBox? practice;
@@ -104,7 +104,7 @@ public sealed class MainWindow : Window {
         catch(Exception ex){enabled=false;audio?.Mixer.Reset();ShowError(T("全局输入启动失败：","Global input could not start: ")+ex.Message);UpdatePause();}
     }
     private void Build() {
-        int previousTab=tabs?.SelectedIndex??0;var previousFrom=fromDate.SelectedDate;var previousTo=toDate.SelectedDate;string previousFromTime=fromTime.Text,previousToTime=toTime.Text;
+        int previousTab=tabs?.SelectedIndex??0;
         building=true;Language=XmlLanguage.GetLanguage(Chinese?"zh-CN":"en-US");Title=Chinese?"键舞":"KeyWoo";
         var previousPractice=practice?.Text??"";ApplyTheme();presetButtons.Clear();keyButtons.Clear();
         var shell=new DockPanel{Margin=new Thickness(28)};
@@ -122,9 +122,8 @@ public sealed class MainWindow : Window {
         tabs.Items.Add(new TabItem{Header=T("按键映射","Key mapping"),Content=Scroll(Mapping())});
         tabs.Items.Add(new TabItem{Header=T("设置","Settings"),Content=Scroll(Preferences())});shell.Children.Add(tabs);Content=shell;
         if(practice is not null)practice.Text=previousPractice;
-        if(previousFrom is not null)fromDate.SelectedDate=previousFrom;if(previousTo is not null)toDate.SelectedDate=previousTo;
-        if(!string.IsNullOrEmpty(previousFromTime))fromTime.Text=previousFromTime;if(!string.IsNullOrEmpty(previousToTime))toTime.Text=previousToTime;
-        if(currentError is not null)ShowError(currentError);building=false;UpdatePause();UpdatePresets();RefreshStatistics();
+
+        if(currentError is not null)ShowError(currentError);building=false;UpdatePause();UpdatePresets();statisticsPanel?.RefreshIfNeeded(true);
     }
     private ScrollViewer Scroll(UIElement child)=>new(){Content=child,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,Margin=new Thickness(0,18,0,0)};
     private TextBlock Text(string content,double size=14,bool muted=false)=>new(){Text=content,FontSize=size,Foreground=Brush(muted?"MutedBrush":"TextBrush"),TextWrapping=TextWrapping.Wrap};
@@ -283,29 +282,7 @@ public sealed class MainWindow : Window {
             }
         } catch(OperationCanceledException){}
     }
-    private UIElement Statistics() {
-        var panel=Panel();panel.Children.Add(Text(T("指定时间段的逐键次数","Key counts over a chosen period"),18));
-        var dates=new WrapPanel{Margin=new Thickness(0,16,0,12)};
-        fromDate=new DatePicker{SelectedDate=DateTime.Today,Width=145,Margin=new Thickness(0,0,6,0)};fromTime=new TextBox{Text="00:00",Width=72,Padding=new Thickness(5),Margin=new Thickness(0,0,12,0)};
-        toDate=new DatePicker{SelectedDate=DateTime.Today.AddDays(1),Width=145,Margin=new Thickness(0,0,6,0)};toTime=new TextBox{Text="00:00",Width=72,Padding=new Thickness(5),Margin=new Thickness(0,0,12,0)};
-        dates.Children.Add(fromDate);dates.Children.Add(fromTime);dates.Children.Add(Text(" → "));dates.Children.Add(toDate);dates.Children.Add(toTime);dates.Children.Add(MakeButton(T("更新","Update"),(_,_)=>RefreshStatistics()));
-        dates.Children.Add(MakeButton(T("导出 CSV","Export CSV"),(_,_)=>ExportStatistics()));panel.Children.Add(dates);
-        panel.Children.Add(Text(T("本地时间，截止时间不含；分钟边界向外取整。只保存按键次数，不保存顺序、文字或应用名称。","Local time; end is exclusive. Partial minutes round outward. Only key counts are stored—no order, text or application names."),12,true));
-        statsGrid=new DataGrid{AutoGenerateColumns=false,IsReadOnly=true,CanUserAddRows=false,Height=350,Margin=new Thickness(0,16,0,0),Background=Brush("CardBrush"),Foreground=Brush("TextBrush"),RowBackground=Brush("CardBrush"),AlternatingRowBackground=Brush("PageBrush")};
-        statsGrid.Columns.Add(new DataGridTextColumn{Header=T("物理键","Physical key"),Binding=new System.Windows.Data.Binding(nameof(KeyCount.Label)),Width=new DataGridLength(1,DataGridLengthUnitType.Star)});
-        statsGrid.Columns.Add(new DataGridTextColumn{Header=T("扫描码","Scan code"),Binding=new System.Windows.Data.Binding(nameof(KeyCount.Key)),Width=130});
-        statsGrid.Columns.Add(new DataGridTextColumn{Header=T("次数","Count"),Binding=new System.Windows.Data.Binding(nameof(KeyCount.Count)),Width=150});panel.Children.Add(statsGrid);return panel;
-    }
-    private bool Range(out DateTimeOffset from,out DateTimeOffset to) {
-        from=to=default;
-        if(!TimeSpan.TryParse(fromTime.Text,CultureInfo.InvariantCulture,out var a)||!TimeSpan.TryParse(toTime.Text,CultureInfo.InvariantCulture,out var b)||a<TimeSpan.Zero||b<TimeSpan.Zero||a>=TimeSpan.FromDays(1)||b>=TimeSpan.FromDays(1))return false;
-        from=new DateTimeOffset((fromDate.SelectedDate??DateTime.Today).Date+a);to=new DateTimeOffset((toDate.SelectedDate??DateTime.Today.AddDays(1)).Date+b);return to>from;
-    }
-    private void RefreshStatistics(){if(Range(out var from,out var to))statsGrid.ItemsSource=statistics.Counts(from,to);}
-    private void ExportStatistics() {
-        if(!Range(out var from,out var to)){ShowError(T("请输入有效时间段。","Enter a valid time range."));return;}
-        var dialog=new SaveFileDialog{FileName="KeyWoo-counts.csv",Filter="CSV|*.csv"};if(dialog.ShowDialog(this)==true){try{File.WriteAllText(dialog.FileName,statistics.Csv(from,to),new UTF8Encoding(true));}catch(Exception ex){ShowError(ex.Message);}}
-    }
+    private UIElement Statistics() => statisticsPanel=new StatisticsPanel(statistics,Chinese,statisticsPresentation,ShowError);
     private sealed record KeyOption(int Key,string Name,string Category);
     private sealed record RuleRow(InputRule Rule,string Source,string Target);
     private UIElement Mapping() {
@@ -482,6 +459,7 @@ public sealed class MainWindow : Window {
             lastFlush=DateTimeOffset.UtcNow;_=Task.Run(async()=>{try{await statistics.FlushAsync();}finally{Interlocked.Exchange(ref flushing,0);}});
         }
         if(Interlocked.Read(ref droppedCounts)>0)ShowError(T("输入事件过多，部分次数未保存。","The input queue overflowed; some counts were not saved."));
+        if(IsVisible&&tabs?.SelectedIndex==1)statisticsPanel?.RefreshIfNeeded();
         if(statistics.Error is not null)ShowError(statistics.Error);
     }
     private async void ToggleEnabled(){

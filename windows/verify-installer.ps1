@@ -54,8 +54,10 @@ try {
     if (-not $assets.passed -or @($assets.presets.PSObject.Properties).Count -ne 25 -or @($assets.hiFiPresets.PSObject.Properties).Count -ne 15) { throw 'Installed app asset self-check failed.' }
     if (-not $assets.keyBurst.Passed) { throw 'Installed Key Burst drawing and overlay self-check failed.' }
     if (-not $assets.edgeGlow.Passed) { throw 'Installed bottom glow and system-audio self-check failed.' }
+    if (-not $assets.statistics.Passed) { throw 'Installed statistics interaction and rendering self-check failed.' }
     $result.installedKeyBurstVerified=[bool]$assets.keyBurst.Passed
     $result.installedEdgeGlowVerified=[bool]$assets.edgeGlow.Passed
+    $result.installedStatisticsVerified=[bool]$assets.statistics.Passed
     $result.installedPresetCount=@($assets.presets.PSObject.Properties).Count
     $result.installedHiFiPresetCount=@($assets.hiFiPresets.PSObject.Properties).Count
     Run-Checked (Join-Path $install 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/LOG=`"$(Join-Path $ReportDirectory 'uninstall.log')`""))

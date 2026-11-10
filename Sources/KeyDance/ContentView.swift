@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 import AppKit
 
 enum Palette {
@@ -327,21 +326,25 @@ struct BrandMark: View {
 }
 
 struct KeyboardView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let pressed: Set<UInt16>
     let counts: [UInt16: Int]
     let heatmap: Bool
     var performanceOnly = false
     var action: ((UInt16) -> Void)? = nil
-    private var maximum: Int { max(1, counts.values.max() ?? 1) }
+    var selectedKey: UInt16? = nil
+    var hoverAction: ((UInt16?) -> Void)? = nil
+    private var heatScale: HeatmapScale { HeatmapScale(maximum: counts.values.max() ?? 0) }
     var body: some View {
-        GeometryReader { geometry in
+        let scale = heatScale
+        return GeometryReader { geometry in
             VStack(spacing: 5) {
                 ForEach(Array(KeyLayout.rows.enumerated()), id: \.offset) { _, row in
                     HStack(spacing: 4) {
                         let rowUnits = max(14.5, row.reduce(0) { $0 + $1.width })
                         let unitWidth = (geometry.size.width - Double(row.count - 1) * 4) / rowUnits
                         ForEach(row) { key in
-                            keyView(key, width: max(1, unitWidth * key.width), height: max(1, (geometry.size.height - 20) / 5))
+                            keyView(key, width: max(1, unitWidth * key.width), height: max(1, (geometry.size.height - 20) / 5), level: heatmap ? scale.level(for: counts[key.code, default: 0]) : 0)
                         }
                     }
                 }
@@ -349,21 +352,23 @@ struct KeyboardView: View {
         }
     }
 
-    private func keyView(_ key: KeyDescriptor, width: CGFloat, height: CGFloat) -> some View {
+    private func keyView(_ key: KeyDescriptor, width: CGFloat, height: CGFloat, level: Int) -> some View {
         let interactive = !performanceOnly || KeyGestureRole.isPerformanceKey(key.code)
         let down = pressed.contains(key.code)
         let count = counts[key.code, default: 0]
-        let level = Double(count) / Double(maximum)
+        let accessibleLabel = heatmap ? StatisticsKeyLabels.label(for: key.code) : key.label
         let cap = Text(key.label)
             .font(.system(size: key.label.count > 2 ? 9 : 11, weight: down ? .semibold : .medium))
             .lineLimit(1)
             .minimumScaleFactor(0.7)
-            .foregroundStyle(down ? Palette.keyInk : heatmap && level > 0.72 ? Palette.onAccent : Palette.ink)
+            .foregroundStyle(down ? Palette.keyInk : heatmap && level >= (colorScheme == .dark ? 4 : 5) ? Palette.onAccent : Palette.ink)
             .frame(width: width, height: height)
             .background(down ? Palette.mint : heatmap && level > 0
-                        ? Palette.accent.opacity(0.12 + level * 0.88) : Palette.raisedSurface,
+                        ? StatisticsColors.fill(for: level) : Palette.raisedSurface,
                         in: RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.line.opacity(0.85)))
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(
+                heatmap && selectedKey == key.code ? Palette.accent : Palette.line.opacity(0.85),
+                lineWidth: heatmap && selectedKey == key.code ? 1.8 : 0.8))
             .offset(y: down ? 1 : 0)
             .contentShape(Rectangle())
         return Group {
@@ -376,266 +381,14 @@ struct KeyboardView: View {
             }
         }
         .opacity(interactive ? 1 : 0.40)
-        .help(heatmap ? Lf("%@ · %d 次 · 键码 %d", key.label, count, Int(key.code))
+        .onHover { inside in
+            if heatmap { hoverAction?(inside ? key.code : nil) }
+        }
+        .help(heatmap ? Lf("%@ · %@ 次 · 键码 %d", accessibleLabel, count.formatted(.number.locale(AppLocalization.locale)), Int(key.code))
               : (interactive ? Lf("试听 %@", key.label) : L("仅统计，不影响音乐")))
-        .accessibilityLabel(heatmap ? Lf("%@ 键，%d 次", key.label, count)
+        .accessibilityLabel(heatmap ? Lf("%@ 键，%@ 次", accessibleLabel, count.formatted(.number.locale(AppLocalization.locale)))
                             : (interactive && action != nil ? Lf("%@ 键，点击试听", key.label) : Lf("%@ 键，仅统计", key.label)))
     }
-}
-
-private enum TimeRange: String, CaseIterable {
-    case today = "今天", hour = "近一小时", week = "近七天", custom = "自定义"
-}
-
-private final class StatisticsPresentationState: ObservableObject {
-    @Published var range: TimeRange = .today
-    @Published var from = Calendar.current.startOfDay(for: Date())
-    @Published var to = Calendar.current.dateInterval(of: .minute, for: Date())!.start.addingTimeInterval(60)
-    @Published var showAllKeys = false
-}
-
-private struct StatisticsView: View {
-    @ObservedObject var model: AppModel
-    @ObservedObject var presentation: StatisticsPresentationState
-    private var dates: (Date, Date) {
-        switch presentation.range {
-        case .today: return (Calendar.current.startOfDay(for: model.now), model.now)
-        case .hour: return (model.now.addingTimeInterval(-3600), model.now)
-        case .week: return (Calendar.current.date(byAdding: .day, value: -6, to: Calendar.current.startOfDay(for: model.now))!, model.now)
-        case .custom: return (Calendar.current.dateInterval(of: .minute, for: presentation.from)!.start, Calendar.current.dateInterval(of: .minute, for: presentation.to)!.start)
-        }
-    }
-    private var snapshot: StatisticsSnapshot {
-        let range = dates
-        let values = model.statistics.counts(from: range.0, to: range.1)
-        let codes: Set<UInt16> = presentation.showAllKeys ? Set(KeyLayout.all.map(\.code)).union(values.keys) : Set(values.keys)
-        let ranked: [(code: UInt16, count: Int)] = codes.map { (code: $0, count: values[$0, default: 0]) }
-            .sorted { $0.count == $1.count ? $0.code < $1.code : $0.count > $1.count }
-        return StatisticsSnapshot(dates: range, counts: values, total: values.values.reduce(0, +), ranked: ranked)
-    }
-    var body: some View {
-        StatisticsContent(model: model, presentation: presentation, snapshot: snapshot)
-    }
-}
-
-private struct StatisticsSnapshot {
-    let dates: (Date, Date)
-    let counts: [UInt16: Int]
-    let total: Int
-    let ranked: [(code: UInt16, count: Int)]
-}
-
-private struct StatisticsContent: View {
-    let model: AppModel
-    @ObservedObject var presentation: StatisticsPresentationState
-    let snapshot: StatisticsSnapshot
-    private var dates: (Date, Date) { snapshot.dates }
-    private var counts: [UInt16: Int] { snapshot.counts }
-    private var total: Int { snapshot.total }
-    private var ranked: [(code: UInt16, count: Int)] { snapshot.ranked }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            rangeControls
-            metrics
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 18) {
-                    heatmap.frame(minWidth: 600).padding(18).cardStyle()
-                    activity.frame(minWidth: 300).padding(18).cardStyle()
-                }
-                VStack(alignment: .leading, spacing: 18) {
-                    heatmap
-                    Divider()
-                    activity
-                }
-                .padding(18)
-                .cardStyle()
-            }
-            details
-        }
-    }
-
-    private var rangeControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                Picker(L("时间范围"), selection: $presentation.range) {
-                    ForEach(TimeRange.allCases, id: \.self) { Text(L($0.rawValue)).tag($0) }
-                }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 356)
-                .accessibilityIdentifier("statistics-range")
-                .help(L("本机时间 · 精度为分钟"))
-
-                InfoHelpButton(title: "统计方式", message: "只统计真实按下的次数，包括 Shift 等修饰键；长按产生的重复输入不计数。试听按钮和屏幕键盘不计数。时间按本机时区、整分钟统计。结束时间恰好为整分钟时，不计入该分钟。", identifier: "statistics-help")
-                Spacer(minLength: 0)
-
-                Button { model.exportCSV(from: dates.0, to: dates.1) } label: {
-                    Label(L("导出"), systemImage: "square.and.arrow.up")
-                }
-                .buttonStyle(.bordered)
-                .disabled(dates.1 <= dates.0)
-                .accessibilityIdentifier("statistics-export")
-                .help(L("保存为 CSV 表格，可用 Numbers 或 Excel 打开。"))
-            }
-            if presentation.range == .custom {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 18) { customDateFields }
-                    VStack(alignment: .leading, spacing: 10) { customDateFields }
-                }
-                .datePickerStyle(.compact)
-                .font(.callout)
-                if dates.1 <= dates.0 {
-                    Label(L("结束时间需要晚于开始时间。"), systemImage: "exclamationmark.circle")
-                        .font(.callout)
-                        .foregroundStyle(Palette.accent)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder private var customDateFields: some View {
-        DatePicker(L("从"), selection: $presentation.from, displayedComponents: [.date, .hourAndMinute])
-            .fixedSize()
-            .accessibilityIdentifier("statistics-custom-from")
-        DatePicker(L("至"), selection: $presentation.to, displayedComponents: [.date, .hourAndMinute])
-            .fixedSize()
-            .accessibilityIdentifier("statistics-custom-to")
-    }
-
-    private var metrics: some View {
-        let active = model.statistics.activeMinuteCount(from: dates.0, to: dates.1)
-        let mostUsed = ranked.first.flatMap { $0.count > 0 ? KeyLayout.label(for: $0.code).uppercased() : nil }
-        return HStack(spacing: 16) {
-            metric("总敲击", value: formatted(total), accented: true)
-            Divider().frame(height: 34)
-            metric("按键种类", value: formatted(counts.count))
-            Divider().frame(height: 34)
-            metric("最常用", value: mostUsed ?? "—")
-            Divider().frame(height: 34)
-            metric("打字分钟", value: formatted(active), explanation: "这一分钟内只要按过键，就计为 1 个打字分钟。它不是连续打字时长。")
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
-        .cardStyle()
-    }
-
-    private func metric(_ title: String, value: String, accented: Bool = false, explanation: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 2) {
-                Text(L(title)).font(.callout).foregroundStyle(Palette.muted)
-                if let explanation { InfoHelpButton(title: title, message: explanation) }
-            }
-            .frame(height: 28, alignment: .leading)
-            Text(value)
-                .font(.system(size: 25, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(accented ? Palette.accent : Palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .contain)
-    }
-
-    private var heatmap: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                sectionTitle("按键分布")
-                InfoHelpButton(title: "按键分布", message: "颜色越深，按得越多。将鼠标放在按键上可查看次数。这里展示常见键盘的主键区；其他按键也会记录，可在下方明细中查看。统计按实际按下的键位计算，不受改键规则影响。", identifier: "statistics-keymap-help")
-                Spacer()
-                if total == 0 {
-                    Text(L("尚无按键记录"))
-                        .font(.caption)
-                        .foregroundStyle(Palette.muted)
-                } else {
-                    HStack(spacing: 4) {
-                        Text(L("少")).padding(.trailing, 2)
-                        ForEach(0..<5) { index in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Palette.accent.opacity(0.12 + Double(index) * 0.22))
-                                .frame(width: 10, height: 8)
-                                .accessibilityHidden(true)
-                        }
-                        Text(L("多")).padding(.leading, 2)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(Palette.muted)
-                }
-            }
-            KeyboardView(pressed: [], counts: counts, heatmap: true)
-                .frame(height: 190)
-                .accessibilityIdentifier("statistics-heatmap")
-        }
-    }
-
-    private var activity: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("打字趋势")
-                .frame(height: 28, alignment: .leading)
-            Chart(model.statistics.activity(from: dates.0, to: dates.1, buckets: 36)) { item in
-                BarMark(x: .value(L("时间"), item.date), y: .value(L("次数"), item.count))
-                    .foregroundStyle(Palette.accent.opacity(0.78))
-                    .cornerRadius(2)
-            }
-            .chartYAxis { AxisMarks(position: .leading) }
-            .frame(height: 190)
-            .accessibilityIdentifier("statistics-activity")
-        }
-    }
-
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                sectionTitle("按键次数")
-                Spacer()
-                Toggle(L("显示未使用的键"), isOn: $presentation.showAllKeys)
-                    .toggleStyle(.checkbox)
-                    .font(.callout)
-                    .accessibilityIdentifier("statistics-include-unused")
-            }
-            if ranked.isEmpty {
-                Text(L("尚无按键记录"))
-                    .font(.callout)
-                    .foregroundStyle(Palette.muted)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 144), spacing: 16)], spacing: 0) {
-                    ForEach(ranked, id: \.code) { item in
-                        let label = KeyLayout.label(for: item.code).uppercased()
-                        HStack(spacing: 8) {
-                            Text(label)
-                                .font(.system(.callout, design: .monospaced, weight: .medium))
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                            Text(formatted(item.count))
-                                .font(.callout)
-                                .monospacedDigit()
-                                .foregroundStyle(Palette.muted)
-                        }
-                        .padding(.vertical, 9)
-                        .overlay(alignment: .bottom) { Divider() }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Lf("%@ 键，%d 次", label, item.count))
-                    }
-                }
-            }
-        }
-        .padding(18)
-        .cardStyle()
-    }
-
-    private func sectionTitle(_ title: String) -> some View {
-        Text(L(title))
-            .font(.system(size: 15, weight: .semibold))
-            .accessibilityAddTraits(.isHeader)
-    }
-
-    private func formatted(_ number: Int) -> String {
-        number.formatted(.number.locale(AppLocalization.locale))
-    }
-
 }
 
 private struct PreferencesView: View {
