@@ -28,23 +28,42 @@ internal static class InterfaceStyles {
   <Style TargetType="ComboBoxItem">
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="Background" Value="{DynamicResource CardBrush}"/>
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem">
-      <Border Background="{TemplateBinding Background}" Padding="10,8"><ContentPresenter/></Border>
+      <Border Background="{TemplateBinding Background}" Padding="10,8"><ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" TextElement.Foreground="{TemplateBinding Foreground}"/></Border>
       <ControlTemplate.Triggers>
         <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="{DynamicResource SelectedBrush}"/><Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/></Trigger>
         <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource SelectedBrush}"/></Trigger>
       </ControlTemplate.Triggers>
     </ControlTemplate></Setter.Value></Setter>
   </Style>
+  <Style TargetType="DataGridColumnHeader">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="Background" Value="{DynamicResource RaisedBrush}"/>
+    <Setter Property="Padding" Value="12,9"/><Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DataGridColumnHeader">
+      <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+        <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" TextElement.Foreground="{TemplateBinding Foreground}"/>
+      </Border>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style TargetType="DataGridCell">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Padding" Value="12,8"/><Setter Property="BorderThickness" Value="0"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DataGridCell">
+      <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+        <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" TextElement.Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center"/>
+      </Border>
+      <ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource SelectedBrush}"/></Trigger></ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style TargetType="Expander">
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Expander">
       <StackPanel>
-        <ToggleButton IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent},Mode=TwoWay}" HorizontalContentAlignment="Stretch" Cursor="Hand" FocusVisualStyle="{x:Null}">
+        <ToggleButton Foreground="{Binding Foreground,RelativeSource={RelativeSource TemplatedParent}}" IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent},Mode=TwoWay}" HorizontalContentAlignment="Stretch" Cursor="Hand" FocusVisualStyle="{x:Null}">
           <ToggleButton.Template><ControlTemplate TargetType="ToggleButton">
             <Border x:Name="surface" Background="Transparent" CornerRadius="6" Padding="4,9">
               <DockPanel>
                 <TextBlock x:Name="arrow" Text="›" FontSize="18" Width="22" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}"/>
-                <ContentPresenter Content="{Binding Header,RelativeSource={RelativeSource AncestorType=Expander}}" VerticalAlignment="Center"/>
+                <ContentPresenter Content="{Binding Header,RelativeSource={RelativeSource AncestorType=Expander}}" TextElement.Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center"/>
               </DockPanel>
             </Border>
             <ControlTemplate.Triggers>

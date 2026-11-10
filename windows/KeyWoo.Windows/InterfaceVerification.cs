@@ -12,7 +12,8 @@ namespace KeyWoo.Windows;
 /// <summary>Paint and exercise the actual workspace without input capture, audio devices or real preferences.</summary>
 internal static class InterfaceVerification {
     internal sealed record Result(bool Passed,bool NavigationPassed,bool RuleEditingPassed,bool DraftPreservationPassed,
-        bool ThemeAndLanguagePassed,bool PreviewAvailabilityPassed,bool FullRowDisclosurePassed,int NativeScreenshots);
+        bool ThemeAndLanguagePassed,bool PreviewAvailabilityPassed,bool FullRowDisclosurePassed,
+        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,int NativeScreenshots);
     internal static Result Run(string report,SampleBank bank) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-interface-"+Guid.NewGuid().ToString("N"));
         string screenshotDirectory=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(report))!,"tests","interface");
@@ -26,14 +27,16 @@ internal static class InterfaceVerification {
         object?[] previous=names.Select(name=>resources.Contains(name)?resources[name]:null).ToArray();
         MainWindow? window=null;int screenshots=0;
         try {
-            window=new MainWindow(settings,store,bank);var root=(FrameworkElement)window.Content;Layout(root);
+            window=new MainWindow(settings,store,bank);window.Show();Pump();var root=(FrameworkElement)window.Content;Layout(root);
             Require(!Find<Button>(root,"sound-preview").IsEnabled,"Preview must be visibly unavailable before an audio device is connected.");
             foreach(int index in new[]{0,2,1,3}) {
                 Click(root,"navigation-"+index);Layout(root);
                 Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"按键统计",2=>"改键",3=>"偏好设置",_=>"键盘音效"}),"Navigation must update the workspace heading.");
+                VerifyPageLabels(root,index);
                 Save(root,Path.ChangeExtension(screenshotBase,$".interface-light-{index}.png"));screenshots++;
             }
             Click(root,"navigation-0");Layout(root);
+            VerifyPopup(Find<ComboBox>(root,"recording-version"),Path.ChangeExtension(screenshotBase,".interface-light-recording-menu.png"));screenshots++;
             var practice=Find<TextBox>(root,"practice-input");practice.Text="KeyWoo practice stays local.";
             var sources=FindAll<Expander>(root).First(expander=>expander.Header?.ToString()=="声音来源");
             sources.ApplyTemplate();
@@ -63,15 +66,60 @@ internal static class InterfaceVerification {
             foreach(int index in new[]{0,2,1,3}) {
                 Click(root,"navigation-"+index);Layout(root);
                 Require(Find<TextBlock>(root,"workspace-page-title").Text==(index switch{1=>"Key statistics",2=>"Remapping",3=>"Preferences",_=>"Keyboard sounds"}),"English navigation must retain its selected page and translated heading.");
+                VerifyPageLabels(root,index);
+                if(index==2)VerifyDarkMapping(root);
                 Save(root,Path.ChangeExtension(screenshotBase,$".interface-dark-{index}.png"));screenshots++;
             }
+            Click(root,"navigation-2");Layout(root);VerifyPopup(Find<ComboBox>(root,"remapping-source"),Path.ChangeExtension(screenshotBase,".interface-dark-key-menu.png"));screenshots++;
+            Click(root,"navigation-3");Layout(root);
             Layout(root,820,650);Save(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow.png"),820,650);screenshots++;
-            return new(true,true,true,true,true,true,true,screenshots);
+            return new(true,true,true,true,true,true,true,true,true,true,screenshots);
         } finally {
             window?.DisposeVerification();
             for(int index=0;index<names.Length;index++)if(previous[index] is object value)resources[names[index]]=value;else resources.Remove(names[index]);
             if(Directory.Exists(directory))Directory.Delete(directory,true);
         }
+    }
+    private static void VerifyPageLabels(DependencyObject root,int page) {
+        string[] ids=page switch{0=>["recording-version","sound-category"],2=>["remapping-source","remapping-target"],3=>["app-language","app-appearance","desktop-animation-style"],_=>[]};
+        foreach(string id in ids) {
+            var combo=Find<ComboBox>(root,id);combo.ApplyTemplate();combo.UpdateLayout();
+            string expected=combo.SelectedItem?.GetType().GetProperty(combo.DisplayMemberPath)?.GetValue(combo.SelectedItem)?.ToString()??throw new InvalidDataException("Missing display label for "+id);
+            string[] visible=Visuals<TextBlock>(combo).Where(text=>text.ActualWidth>0&&text.ActualHeight>0).Select(text=>text.Text).ToArray();
+            Require(visible.Contains(expected),$"The visible {id} selection must show '{expected}', not an object's ToString(). Actual: {string.Join(" | ",visible)}");
+            Require(!visible.Any(IsObjectDescription),"ComboBox selections must never expose record or key-value debug text.");
+        }
+    }
+    private static void VerifyPopup(ComboBox combo,string file) {
+        combo.IsDropDownOpen=true;Pump();combo.UpdateLayout();
+        try {
+            var popup=(Popup?)combo.Template.FindName("PART_Popup",combo);
+            Require(popup?.Child is FrameworkElement,"The actual combo popup must be created.");
+            var surface=(FrameworkElement)popup!.Child;surface.UpdateLayout();
+            var visible=Visuals<TextBlock>(surface).Where(text=>text.ActualWidth>0&&text.ActualHeight>0&&text.IsVisible).ToArray();
+            Require(visible.Length>=2&&!visible.Any(text=>IsObjectDescription(text.Text)),"The open menu must show readable friendly labels, not object descriptions.");
+            var expected=combo.SelectedItem?.GetType().GetProperty(combo.DisplayMemberPath)?.GetValue(combo.SelectedItem)?.ToString();
+            Require(visible.Any(text=>text.Text==expected),"The selected option must remain readable in the actual open menu.");
+            Save(surface,file,Math.Max(1,(int)Math.Ceiling(surface.ActualWidth)),Math.Max(1,(int)Math.Ceiling(surface.ActualHeight)));
+        } finally {combo.IsDropDownOpen=false;Pump();}
+    }
+    private static bool IsObjectDescription(string value)=>value.Contains("KeyOption {")||value.Contains("SoundGroup {")||value.StartsWith("[False,")||value.StartsWith("[True,")||value.StartsWith("[en,")||value.StartsWith("[dark,");
+    private static void VerifyDarkMapping(DependencyObject root) {
+        var grid=Find<DataGrid>(root,"remapping-rules");grid.UpdateLayout();
+        Require(grid.Columns.All(column=>column.ActualWidth>=140),"Mapping columns must have enough width for readable shortcuts.");
+        var headers=Visuals<DataGridColumnHeader>(grid).Where(header=>header.Content is string).ToArray();
+        Require(headers.Length==2&&headers.All(header=>Light(header.Foreground)),"Both mapping column headers must use readable dark-mode text.");
+        foreach(var header in headers)Require(Visuals<TextBlock>(header).Any(text=>Light(text.Foreground)&&text.ActualWidth>20),"Column header text must be visible and have usable width.");
+        var cells=Visuals<DataGridCell>(grid).ToArray();
+        Require(cells.Length>=2&&cells.All(cell=>Light(cell.Foreground)&&cell.ActualWidth>=140),"Mapping cells must retain text contrast and column width.");
+        Require(cells.SelectMany(Visuals<TextBlock>).All(text=>Light(text.Foreground)),"Mapping row labels must inherit the readable foreground.");
+        var media=FindAll<Expander>(root).First(expander=>expander.Header?.ToString()=="Media shortcut template");
+        Require(Visuals<TextBlock>(media).Any(text=>text.Text=="Media shortcut template"&&Light(text.Foreground)),"The media template disclosure must remain readable in dark mode.");
+    }
+    private static bool Light(Brush foreground)=>foreground is SolidColorBrush brush&&(.2126*brush.Color.R+.7152*brush.Color.G+.0722*brush.Color.B)>140;
+    private static IEnumerable<T> Visuals<T>(DependencyObject root) where T:DependencyObject {
+        if(root is T match)yield return match;
+        for(int index=0;index<VisualTreeHelper.GetChildrenCount(root);index++)foreach(var found in Visuals<T>(VisualTreeHelper.GetChild(root,index)))yield return found;
     }
     private static void Click(DependencyObject root,string id)=>Find<Button>(root,id).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     private static void Pump(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}
