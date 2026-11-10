@@ -11,7 +11,7 @@ namespace KeyWoo.Windows;
 /// <summary>Exercise the shipped statistics controls and paint using isolated synthetic minute aggregates.</summary>
 internal static class StatisticsVerification {
     internal sealed record Result(bool Passed, bool HeatmapTooltipPassed, bool PinnedSelectionPassed,
-        bool SearchPassed, bool EmptyStatePassed, bool TrendRenderingPassed, bool DarkModePassed);
+        bool SearchPassed, bool EmptyStatePassed, bool TrendRenderingPassed, bool NativeCurveRenderingPassed, bool DarkModePassed);
     internal static Result Run(string report) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-stats-"+Guid.NewGuid().ToString("N"));
         var store=new StatisticsStore(Path.Combine(directory,"statistics.json"));
@@ -32,6 +32,7 @@ internal static class StatisticsVerification {
         search.Text="";Layout(panel);Save(panel,Path.ChangeExtension(report,".statistics-light.png"));
         var chart=Find<StatisticsTrendView>(panel,"statistics-activity");
         Require(chart.ActualWidth>300&&chart.ActualHeight>100,"The trend must occupy the available chart width.");
+        VerifyCurve(report);
         var empty=new StatisticsPanel(new StatisticsStore(Path.Combine(directory,"empty.json")),false,new(),message=>throw new InvalidDataException(message));
         Layout(empty);Require(Find<StackPanel>(empty,"statistics-ranking").Children.Count==1,"An empty range must show a clear empty state.");
         var resources=System.Windows.Application.Current.Resources;
@@ -44,7 +45,50 @@ internal static class StatisticsVerification {
             Layout(dark);Save(dark,Path.ChangeExtension(report,".statistics-dark.png"));
             Require(Find<Button>(dark,"statistics-key-30").ToolTip is string darkTooltip&&darkTooltip.Contains("120"),"The Chinese dark interface must retain its count details.");
         } finally {for(int index=0;index<names.Length;index++)resources[names[index]]=original[index];}
-        return new(true,true,true,true,true,true,true);
+        return new(true,true,true,true,true,true,true,true);
+    }
+    private static void VerifyCurve(string report) {
+        var start=DateTimeOffset.Now;
+        var counts=new long[]{0,3,8,2,0};
+        var buckets=counts.Select((count,index)=>new StatisticsTrendBucket(start.AddMinutes(index*5),start.AddMinutes((index+1)*5),count)).ToArray();
+        var curve=new StatisticsTrendView(false);
+        curve.SetData(buckets);
+        var active=RenderChart(curve);
+        var zero=new StatisticsTrendView(false);
+        zero.SetData(buckets.Select(bucket=>bucket with { Count=0 }).ToArray());
+        var empty=RenderChart(zero);
+        Require(active.ColoredPixels>100&&empty.ColoredPixels==0&&!active.Pixels.AsSpan().SequenceEqual(empty.Pixels),
+            "A positive time series must paint a visible curve and area above the zero baseline.");
+        StatisticsTrendBucket? selected=null;
+        curve.Hovered+=bucket=>selected=bucket;
+        curve.HoverAt(new Point(52+(680-62)*.3,50));
+        var hovered=RenderChart(curve);
+        Require(selected==buckets[1]&&!hovered.Pixels.AsSpan().SequenceEqual(active.Pixels),
+            "Hover must select the exact interval and visibly paint its dot and crosshair.");
+        var sparse=new StatisticsTrendView(false);
+        sparse.SetData([new(start,start.AddMinutes(1),1)]);
+        Require(RenderChart(sparse).ColoredPixels>4,"A single interval must remain visible as a point.");
+        var scale=StatisticsTrendView.AxisScale(500);
+        Require(scale.Step==200&&scale.Maximum==600,"Count axes must use whole 1/2/5 steps.");
+        SaveChart(active.Bitmap,Path.ChangeExtension(report,".statistics-curve.png"));
+        SaveChart(hovered.Bitmap,Path.ChangeExtension(report,".statistics-curve-hover.png"));
+    }
+    private sealed record CurveFrame(RenderTargetBitmap Bitmap,byte[] Pixels,int ColoredPixels);
+    private static CurveFrame RenderChart(StatisticsTrendView view) {
+        view.Width=680;view.Height=208;
+        view.Measure(new Size(680,208));view.Arrange(new Rect(0,0,680,208));view.UpdateLayout();
+        var bitmap=new RenderTargetBitmap(680,208,96,96,PixelFormats.Pbgra32);
+        bitmap.Render(view);
+        var bytes=new byte[680*208*4];bitmap.CopyPixels(bytes,680*4,0);
+        int colored=0;
+        for(int y=12;y<176;y++)for(int x=60;x<665;x++) {
+            int index=(y*680+x)*4;
+            if(bytes[index+3]>0&&bytes[index]>=12&&bytes[index]>bytes[index+1]*1.1&&bytes[index]>bytes[index+2]*1.25)colored++;
+        }
+        return new(bitmap,bytes,colored);
+    }
+    private static void SaveChart(BitmapSource bitmap,string file) {
+        var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var stream=File.Create(file);png.Save(stream);
     }
     private static void Layout(FrameworkElement view) {view.Measure(new Size(880,double.PositiveInfinity));view.Arrange(new Rect(0,0,880,view.DesiredSize.Height));view.UpdateLayout();}
     private static T Find<T>(DependencyObject root,string id) where T:DependencyObject {

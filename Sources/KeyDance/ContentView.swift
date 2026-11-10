@@ -381,6 +381,7 @@ struct KeyboardView: View {
             }
         }
         .opacity(interactive ? 1 : 0.40)
+        .accessibilityIdentifier(heatmap ? "statistics-key-\(key.code)" : "keyboard-key-\(key.code)")
         .onHover { inside in
             if heatmap { hoverAction?(inside ? key.code : nil) }
         }

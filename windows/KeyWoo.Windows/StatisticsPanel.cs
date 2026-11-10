@@ -107,7 +107,7 @@ internal sealed class StatisticsPanel : StackPanel {
         heat.Children.Add(legend); content.Children.Add(Card(heat));
 
         var activity = new StackPanel();
-        activity.Children.Add(Heading(T("打字趋势","Typing activity"),T("按所选时间分段累计","Totals within each time interval")));
+        activity.Children.Add(Heading(T("打字趋势","Typing activity"),T("每个点代表该时段的累计次数","Each point shows its interval total")));
         trend = new StatisticsTrendView(chinese) { Height = 208, Margin = new(0,8,0,0) };
         trend.Hovered += bucket => {
             trendInspector.Text = bucket is null ? TrendDescription() :
@@ -295,48 +295,147 @@ internal sealed class StatisticsPanel : StackPanel {
 }
 
 internal sealed class StatisticsTrendView(bool chinese) : FrameworkElement {
-    private IReadOnlyList<StatisticsTrendBucket> buckets=[];
+    private IReadOnlyList<StatisticsTrendBucket> buckets = [];
     private int? hovered;
     internal event Action<StatisticsTrendBucket?>? Hovered;
-    internal void SetData(IReadOnlyList<StatisticsTrendBucket> values){buckets=values;hovered=null;InvalidateVisual();}
+    internal void SetData(IReadOnlyList<StatisticsTrendBucket> values) {
+        buckets = values;
+        hovered = null;
+        InvalidateVisual();
+    }
     internal StatisticsTrendView() : this(false) { }
+
     protected override void OnRender(DrawingContext context) {
         base.OnRender(context);
-        if(ActualWidth<100||ActualHeight<80)return;
-        context.DrawRectangle(Brushes.Transparent,null,new Rect(RenderSize));
-        Brush accent=(Brush)System.Windows.Application.Current.Resources["AccentBrush"], muted=(Brush)System.Windows.Application.Current.Resources["MutedBrush"], line=(Brush)System.Windows.Application.Current.Resources["LineBrush"];
-        double left=52,right=ActualWidth-10,top=12,bottom=ActualHeight-30,width=right-left,height=bottom-top;
-        long maximum=buckets.Count==0?0:buckets.Max(bucket=>bucket.Count);
-        double ceiling=NiceMaximum(maximum);
-        for(int index=0;index<4;index++) {
-            double y=bottom-height*index/3;
-            context.DrawLine(new Pen(line,.6),new(left,y),new(right,y));
-            Label(context,(ceiling*index/3).ToString("0.#",CultureInfo.CurrentCulture),new(0,y-7),muted);
+        if (ActualWidth < 100 || ActualHeight < 80) return;
+        context.DrawRectangle(Brushes.Transparent, null, new Rect(RenderSize));
+        var resources = System.Windows.Application.Current.Resources;
+        var accent = (SolidColorBrush)resources["AccentBrush"];
+        var muted = (Brush)resources["MutedBrush"];
+        var line = (Brush)resources["LineBrush"];
+        double left = 52, right = ActualWidth - 10, top = 12, bottom = ActualHeight - 30;
+        double width = right - left, height = bottom - top;
+        long maximum = buckets.Count == 0 ? 0 : buckets.Max(bucket => bucket.Count);
+        var scale = AxisScale(maximum);
+        for (double tick = 0; tick <= scale.Maximum; tick += scale.Step) {
+            double y = bottom - height * tick / scale.Maximum;
+            context.DrawLine(new Pen(line, .6), new(left, y), new(right, y));
+            Label(context, tick.ToString("N0", CultureInfo.CurrentCulture), new(0, y - 7), muted);
         }
-        if(buckets.Count==0)return;
-        double step=width/buckets.Count;
-        for(int index=0;index<buckets.Count;index++) {
-            var bucket=buckets[index];double barHeight=height*bucket.Count/ceiling;
-            if(barHeight<=0)continue;
-            context.PushOpacity(hovered is null || hovered==index ? .84 : .42);
-            context.DrawRoundedRectangle(accent,null,new(left+index*step+step*.15,bottom-barHeight,Math.Max(1,step*.70),barHeight),2,2);context.Pop();
+        if (buckets.Count == 0) return;
+        var points = Points(left, width, bottom, height, scale.Maximum);
+        if (maximum > 0) {
+            if (points.Length > 1) {
+                var outline = Curve(points, bottom, false);
+                var fill = Curve(points, bottom, true);
+                Color color = accent.Color;
+                var tint = new LinearGradientBrush {
+                    StartPoint = new(0, 0), EndPoint = new(0, 1),
+                    GradientStops = [
+                        new(Color.FromArgb(38, color.R, color.G, color.B), 0),
+                        new(Color.FromArgb(3, color.R, color.G, color.B), 1)
+                    ]
+                };
+                context.DrawGeometry(tint, null, fill);
+                context.DrawGeometry(null, new Pen(accent, 2.2) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, outline);
+            } else {
+                context.DrawEllipse(accent, null, points[0], 3.5, 3.5);
+            }
         }
-        foreach(int index in new[]{0,buckets.Count/2,buckets.Count-1}.Distinct()) {
-            var date=buckets[index].Start.LocalDateTime;string text=date.ToString((buckets[^1].End-buckets[0].Start).TotalDays>365?"yyyy":(buckets[^1].End-buckets[0].Start).TotalDays>2?"M/d":"HH:mm");
-            double x=Math.Clamp(left+(index+.5)*step-18,left,right-36);Label(context,text,new(x,bottom+10),muted);
+        foreach (int index in new[] {0, buckets.Count / 2, buckets.Count - 1}.Distinct()) {
+            var date = Midpoint(buckets[index]).LocalDateTime;
+            double days = (buckets[^1].End - buckets[0].Start).TotalDays;
+            string text = date.ToString(days > 365 ? "yyyy" : days > 2 ? "M/d" : "HH:mm");
+            double x = Math.Clamp(points[index].X - 18, left, right - 36);
+            Label(context, text, new(x, bottom + 10), muted);
         }
-        if(maximum==0)Label(context,chinese?"暂无按键记录":"No activity yet",new(left+width/2-50,top+height/2-10),muted);
+        if (hovered is int selected && selected < points.Length) {
+            Point point = points[selected];
+            var guide = new Pen(line, 1) { DashStyle = new DashStyle([3, 3], 0) };
+            context.DrawLine(guide, new(point.X, top), new(point.X, bottom));
+            context.DrawLine(guide, new(left, point.Y), new(right, point.Y));
+            context.DrawEllipse(accent, new Pen((Brush)resources["CardBrush"], 2), point, 4.5, 4.5);
+        }
+        if (maximum == 0)
+            Label(context, chinese ? "暂无按键记录" : "No activity yet", new(left + width / 2 - 50, top + height / 2 - 10), muted);
     }
+
+    private Point[] Points(double left, double width, double bottom, double height, double maximum) {
+        double span = (buckets[^1].End - buckets[0].Start).TotalSeconds;
+        return buckets.Select(bucket => new Point(
+            left + width * (span > 0 ? (Midpoint(bucket) - buckets[0].Start).TotalSeconds / span : .5),
+            bottom - height * bucket.Count / maximum)).ToArray();
+    }
+    private static DateTimeOffset Midpoint(StatisticsTrendBucket bucket) =>
+        bucket.Start.AddTicks((bucket.End - bucket.Start).Ticks / 2);
+
+    // A monotone cubic never introduces a negative count or rises above either
+    // endpoint. Harmonic tangents retain continuous motion between samples.
+    private static StreamGeometry Curve(Point[] points, double baseline, bool fill) {
+        var geometry = new StreamGeometry();
+        using var path = geometry.Open();
+        path.BeginFigure(fill ? new(points[0].X, baseline) : points[0], fill, fill);
+        if (fill) path.LineTo(points[0], true, false);
+        var slopes = new double[points.Length - 1];
+        for (int index = 0; index < slopes.Length; index++)
+            slopes[index] = (points[index + 1].Y - points[index].Y) / (points[index + 1].X - points[index].X);
+        var tangents = new double[points.Length];
+        tangents[0] = slopes[0];
+        tangents[^1] = slopes[^1];
+        for (int index = 1; index < tangents.Length - 1; index++)
+            tangents[index] = slopes[index - 1] * slopes[index] <= 0 ? 0
+                : 2 * slopes[index - 1] * slopes[index] / (slopes[index - 1] + slopes[index]);
+        for (int index = 0; index < points.Length - 1; index++) {
+            Point from = points[index], to = points[index + 1];
+            double step = (to.X - from.X) / 3;
+            double lower = Math.Min(from.Y, to.Y), upper = Math.Max(from.Y, to.Y);
+            var first = new Point(from.X + step, Math.Clamp(from.Y + tangents[index] * step, lower, upper));
+            var second = new Point(to.X - step, Math.Clamp(to.Y - tangents[index + 1] * step, lower, upper));
+            path.BezierTo(first, second, to, true, false);
+        }
+        if (fill) path.LineTo(new(points[^1].X, baseline), true, false);
+        return geometry;
+    }
+
     protected override void OnMouseMove(MouseEventArgs e) {
-        base.OnMouseMove(e);double width=ActualWidth-62;int? index=null;
-        if(width>0&&buckets.Count>0) {double x=e.GetPosition(this).X-52;if(x>=0&&x<=width)index=Math.Clamp((int)(x/width*buckets.Count),0,buckets.Count-1);}
-        if(hovered==index)return;hovered=index;InvalidateVisual();Hovered?.Invoke(index is int at?buckets[at]:null);
+        base.OnMouseMove(e);
+        HoverAt(e.GetPosition(this));
     }
-    protected override void OnMouseLeave(MouseEventArgs e){base.OnMouseLeave(e);hovered=null;InvalidateVisual();Hovered?.Invoke(null);}
-    private void Label(DrawingContext context,string text,Point origin,Brush brush)=>context.DrawText(new FormattedText(text,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),10,brush,VisualTreeHelper.GetDpi(this).PixelsPerDip),origin);
-    private static double NiceMaximum(long maximum) {
-        if(maximum<=3)return 3;
-        double magnitude=Math.Pow(10,Math.Floor(Math.Log10(maximum))), fraction=maximum/magnitude;
-        return (fraction<=1?1:fraction<=2?2:fraction<=5?5:10)*magnitude;
+    internal void HoverAt(Point position) {
+        double width = ActualWidth - 62;
+        int? index = null;
+        if (width > 0 && buckets.Count > 0) {
+            double x = position.X - 52;
+            if (x >= 0 && x <= width) {
+                long span = (buckets[^1].End - buckets[0].Start).Ticks;
+                long offset = Math.Min(span, (long)(x / width * span));
+                var time = buckets[0].Start.AddTicks(offset);
+                index = buckets.Count - 1;
+                for (int at = 0; at < buckets.Count; at++)
+                    if (time < buckets[at].End) { index = at; break; }
+            }
+        }
+        if (hovered == index) return;
+        hovered = index;
+        InvalidateVisual();
+        Hovered?.Invoke(index is int selected ? buckets[selected] : null);
+    }
+    protected override void OnMouseLeave(MouseEventArgs e) {
+        base.OnMouseLeave(e);
+        hovered = null;
+        InvalidateVisual();
+        Hovered?.Invoke(null);
+    }
+    private void Label(DrawingContext context, string text, Point origin, Brush brush) =>
+        context.DrawText(new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+            new Typeface("Segoe UI"), 10, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip), origin);
+
+    internal static (double Step, double Maximum) AxisScale(long maximum) {
+        if (maximum <= 0) return (1, 4);
+        double target = Math.Max(1, maximum / 4d);
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(target)));
+        double fraction = target / magnitude;
+        double step = (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * magnitude;
+        return (step, Math.Max(step, Math.Ceiling(maximum / step) * step));
     }
 }

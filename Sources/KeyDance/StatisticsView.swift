@@ -215,6 +215,7 @@ private struct StatisticsDashboard: View {
             KeyboardView(pressed: [], counts: snapshot.counts, heatmap: true, action: pin,
                          selectedKey: inspectedKey, hoverAction: { hoveredKey = $0 })
                 .frame(height: 202)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("statistics-heatmap")
             HStack(spacing: 12) {
                 legendItem(level: 0, text: "0")
@@ -258,7 +259,7 @@ private struct StatisticsDashboard: View {
             }
         }
         .frame(height: 30)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("statistics-key-details")
     }
 
@@ -277,6 +278,7 @@ private struct StatisticsDashboard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 title("打字趋势")
+                InfoHelpButton(title: "打字趋势", message: "每个点代表对应时段的敲击次数，曲线连接各时段的变化。首尾时段可能不足完整间隔，悬停可查看具体时间和次数。", identifier: "statistics-trend-help")
                 Spacer()
                 Text(intervalLabel).font(.system(size: 11)).foregroundStyle(Palette.muted)
             }
@@ -293,7 +295,7 @@ private struct StatisticsDashboard: View {
                     }
                 }
                 .accessibilityIdentifier("statistics-activity")
-            Text(L("每根柱表示对应时段的敲击次数，首尾时段可能不足一个完整间隔。"))
+            Text(L("按时段汇总，悬停查看详情。"))
                 .font(.system(size: 10)).foregroundStyle(Palette.muted)
         }
         .padding(20)
@@ -326,18 +328,29 @@ private struct StatisticsDashboard: View {
 
     private var trendChart: some View {
         let maximum = snapshot.trend.map(\.count).max() ?? 0
+        let selected = hoveredBucket
+        let peak = snapshot.trend.first { $0.count == maximum && maximum > 0 }
         return Chart {
             ForEach(snapshot.trend) { bucket in
-                let inset = bucket.end.timeIntervalSince(bucket.start) * 0.14
-                RectangleMark(xStart: .value(L("从"), bucket.start.addingTimeInterval(inset)),
-                              xEnd: .value(L("至"), bucket.end.addingTimeInterval(-inset)),
-                              yStart: .value(L("次数"), 0), yEnd: .value(L("次数"), bucket.count))
-                    .foregroundStyle(LinearGradient(colors: [Palette.accent.opacity(hoveredBucket?.id == bucket.id ? 1 : 0.78), Palette.accent.opacity(0.32)], startPoint: .top, endPoint: .bottom))
-                    .cornerRadius(3)
+                AreaMark(x: .value(L("时间"), midpoint(bucket)),
+                         yStart: .value(L("次数"), 0), yEnd: .value(L("次数"), bucket.count))
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(LinearGradient(colors: [Palette.accent.opacity(0.23), Palette.accent.opacity(0.015)], startPoint: .top, endPoint: .bottom))
+                    .accessibilityHidden(true)
+                LineMark(x: .value(L("时间"), midpoint(bucket)), y: .value(L("次数"), bucket.count))
+                    .interpolationMethod(.monotone)
+                    .lineStyle(StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(snapshot.total > 0 ? Palette.accent : Palette.line)
                     .accessibilityLabel(bucketLabel(bucket))
                     .accessibilityValue(Lf("%@ 次", number(bucket.count)))
             }
-            if let bucket = hoveredBucket {
+            if let bucket = selected ?? peak {
+                PointMark(x: .value(L("时间"), midpoint(bucket)), y: .value(L("次数"), bucket.count))
+                    .foregroundStyle(Palette.accent)
+                    .symbolSize(selected == nil ? 22 : 48)
+                    .accessibilityHidden(true)
+            }
+            if let bucket = selected {
                 RuleMark(x: .value(L("时间"), midpoint(bucket)))
                     .foregroundStyle(Palette.muted.opacity(0.45))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
@@ -505,6 +518,7 @@ private struct StatisticsDashboard: View {
         }
         .padding(20)
         .cardStyle()
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("statistics-ranking")
     }
 

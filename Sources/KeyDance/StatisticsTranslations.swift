@@ -2,6 +2,8 @@ import Foundation
 
 enum StatisticsTranslations {
     static let english: [String: String] = [
+        "每个点代表对应时段的敲击次数，曲线连接各时段的变化。首尾时段可能不足完整间隔，悬停可查看具体时间和次数。": "Each point shows the presses in its time interval. The curve connects those totals. Edge intervals may be shorter. Hover for the exact time range and count.",
+        "按时段汇总，悬停查看详情。": "Totals by interval. Hover for details.",
         "%@ 次": "%@ presses",
         "%@ · %@ 次": "%@ · %@ presses",
         "%@ 键，%@ 次": "%@ key, %@ presses",
