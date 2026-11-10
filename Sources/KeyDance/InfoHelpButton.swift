@@ -6,20 +6,44 @@ struct InfoHelpButton: View {
     let title: String
     let message: String
     var identifier: String? = nil
+    var rowSymbol: String? = nil
+    var rowDetail: String? = nil
     @State private var showingDetails = false
     @State private var escapeMonitor: Any?
 
     var body: some View {
         Button { showingDetails.toggle() } label: {
-            Image(systemName: "info.circle")
-                .font(.system(size: 13))
-                .foregroundStyle(Palette.muted)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
+            Group {
+                if let rowSymbol {
+                    HStack(spacing: 12) {
+                        Image(systemName: rowSymbol)
+                            .font(.system(size: 14)).frame(width: 20)
+                            .foregroundStyle(Palette.muted)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L(title)).font(.system(size: 13, weight: .medium))
+                            if let rowDetail {
+                                Text(L(rowDetail)).font(.system(size: 12)).foregroundStyle(Palette.muted)
+                            }
+                        }
+                        Spacer(minLength: 12)
+                        Image(systemName: "info.circle").foregroundStyle(Palette.muted)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+                    .contentShape(Rectangle())
+                } else {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.muted)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SettingsActionRowStyle())
         .help(L("查看说明"))
-        .accessibilityLabel(Lf("%@说明", L(title)))
+        .accessibilityLabel(rowSymbol == nil ? Lf("%@说明", L(title)) : L(title))
+        .accessibilityValue(rowDetail.map { L($0) } ?? "")
         .accessibilityIdentifier(identifier ?? "info-\(title)")
         .popover(isPresented: $showingDetails, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 12) {

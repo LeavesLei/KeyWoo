@@ -31,12 +31,18 @@ struct ContentView: View {
     let model: AppModel
     @State private var windowVisible = false
     @StateObject private var statisticsPresentation = StatisticsPresentationState()
+    @StateObject private var soundPresentation: KeyboardSoundPresentationState
+
+    init(model: AppModel) {
+        self.model = model
+        _soundPresentation = StateObject(wrappedValue: KeyboardSoundPresentationState(category: model.keyboardSoundStyle.category))
+    }
 
     var body: some View {
         ZStack {
             Palette.background
             if windowVisible {
-                VisibleWindowContent(model: model, statisticsPresentation: statisticsPresentation)
+                VisibleWindowContent(model: model, statisticsPresentation: statisticsPresentation, soundPresentation: soundPresentation)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -137,11 +143,13 @@ private final class WindowVisibilityProbe: NSView {
     }
 }
 
-private struct VisibleWindowContent: View {
+struct VisibleWindowContent: View {
     @ObservedObject var model: AppModel
     let statisticsPresentation: StatisticsPresentationState
+    let soundPresentation: KeyboardSoundPresentationState
     @State private var hoveredPage: AppPage?
     private let workspaceInset: CGFloat = 24
+    private let maximumContentWidth: CGFloat = 1120
 
     var body: some View {
         HStack(spacing: 0) {
@@ -161,14 +169,14 @@ private struct VisibleWindowContent: View {
                             switch model.page {
                             case .studio:
                                 if model.musicModeAvailable { modePicker }
-                                if model.isKeyboardSoundMode { KeyboardSoundSpaceView(model: model) }
+                                if model.isKeyboardSoundMode { KeyboardSoundSpaceView(model: model, presentation: soundPresentation) }
                                 else { MusicSpaceView(model: model) }
                             case .remapping: RemappingView(model: model)
                             case .statistics: StatisticsView(model: model, presentation: statisticsPresentation)
                             case .settings: PreferencesView(model: model)
                             }
                         }
-                        .frame(maxWidth: .infinity, minHeight: max(0, viewport.size.height - 52), alignment: .topLeading)
+                        .frame(maxWidth: maximumContentWidth, minHeight: max(0, viewport.size.height - 52), alignment: .topLeading)
                         .padding(.horizontal, workspaceInset)
                         .padding(.top, 20)
                         .padding(.bottom, 32)
@@ -213,8 +221,8 @@ private struct VisibleWindowContent: View {
                 Text(AppLocalization.appName)
                     .font(.system(size: 19, weight: .semibold))
             }
-            .padding(.top, 32)
-            .padding(.bottom, 25)
+            .padding(.top, 30)
+            .padding(.bottom, 24)
             .padding(.leading, 8)
 
             VStack(spacing: 4) {
@@ -258,6 +266,7 @@ private struct VisibleWindowContent: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityLabel(pageTitle(page))
         .accessibilityIdentifier("navigation-\(page)")
+        .help(pageTitle(page) + " · ⌘" + String((AppPage.allCases.firstIndex(of: page) ?? 0) + 1))
     }
 
     private var listeningStatus: some View {
@@ -275,7 +284,7 @@ private struct VisibleWindowContent: View {
                 Label(L(model.monitor.isGlobalActive ? "所有应用" : model.isEnabled ? "仅应用内" : "已暂停"),
                       systemImage: model.monitor.isGlobalActive ? "checkmark.shield" : "keyboard")
                     .foregroundStyle(Palette.muted)
-                    .help(L("本机统计"))
+                    .help(L("音效、动画与统计的输入范围；改键有独立开关。"))
             }
         }
         .font(.system(size: 12, weight: .medium))
@@ -295,13 +304,14 @@ private struct VisibleWindowContent: View {
                     .lineLimit(1)
             }
             Button { model.isEnabled.toggle() } label: {
-                Label(L(model.isEnabled ? "全部暂停" : "继续"), systemImage: model.isEnabled ? "pause.fill" : "play.fill")
+                Label(L(model.isEnabled ? "暂停" : "继续"), systemImage: model.isEnabled ? "pause.fill" : "play.fill")
                     .font(.system(size: 12, weight: .medium))
                     .padding(.horizontal, 3)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
-            .help(L("暂停或继续声音、律动与按键统计"))
+            .help(L("暂停或继续音效、动画与统计。改键有独立开关。"))
+            .accessibilityIdentifier("workspace-pause")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, workspaceInset)
@@ -392,12 +402,12 @@ struct KeyboardView: View {
     }
 }
 
-private struct PreferencesView: View {
+struct PreferencesView: View {
     @ObservedObject var model: AppModel
     private var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 22) {
             displaySettings
             inputSettings
             RhythmSettingsCard(model: model)
@@ -421,8 +431,8 @@ private struct PreferencesView: View {
                     Spacer(minLength: 0)
                     appearanceOptions
                 }
-                .padding(12)
-                Divider().padding(.leading, 42)
+                .padding(16)
+                Divider().padding(.leading, 48)
                 HStack(spacing: 12) {
                     rowLabel("语言", symbol: "globe")
                     Spacer(minLength: 0)
@@ -455,7 +465,8 @@ private struct PreferencesView: View {
         .padding(3)
         .frame(width: 248)
         .background(Palette.raisedSurface, in: RoundedRectangle(cornerRadius: 8))
-        .accessibilityIdentifier("app-appearance")
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("外观"))
     }
 
     private var languageOptions: some View {
@@ -479,13 +490,14 @@ private struct PreferencesView: View {
         .padding(3)
         .frame(width: 248)
         .background(Palette.raisedSurface, in: RoundedRectangle(cornerRadius: 8))
-        .accessibilityIdentifier("app-language")
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("语言"))
     }
 
     private var inputSettings: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 4) {
-                sectionTitle("跨应用使用")
+                sectionTitle("使用与隐私")
                 InfoHelpButton(title: "跨应用使用", message: "允许“输入监控”后，在其他应用中打字也能播放音效、显示动画并统计次数。改键还需要单独允许“辅助功能”。这些权限都由你在系统设置中开启。", identifier: "preferences-monitoring-help")
             }
             VStack(alignment: .leading, spacing: 0) {
@@ -494,7 +506,7 @@ private struct PreferencesView: View {
                     else { model.monitor.requestPermission() }
                 } label: {
                     HStack(spacing: 12) {
-                        rowLabel("其他应用", symbol: "keyboard", detail: monitoringStatus)
+                        rowLabel("全局输入", symbol: "keyboard", detail: monitoringStatus)
                         Spacer(minLength: 12)
                         Text(L(model.monitor.hasGlobalAccess ? "系统设置" : "去开启"))
                             .font(.system(size: 12))
@@ -505,25 +517,15 @@ private struct PreferencesView: View {
                             .accessibilityHidden(true)
                     }
                     .frame(minHeight: 32)
-                    .padding(12)
+                    .padding(16)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(SettingsActionRowStyle())
                 .accessibilityIdentifier("input-monitoring-settings")
                 Divider().padding(.leading, 42)
-                HStack(spacing: 8) {
-                    rowLabel("隐私", symbol: "hand.raised", detail: L("只记次数，不记文字"))
-                    Spacer(minLength: 0)
-                    InfoHelpButton(title: "隐私", message: "统计只保存在这台电脑，按分钟保存每个物理键的累计次数。不保存输入文字、按键顺序、剪贴板或其他应用的内容。改键配置也只保存在本机。", identifier: "preferences-privacy-help")
-                }
-                .padding(12)
-                Divider().padding(.leading, 42)
-                HStack(spacing: 8) {
-                    rowLabel("后台运行", symbol: "menubar.rectangle", detail: L("关闭窗口后继续工作"))
-                    Spacer(minLength: 0)
-                    InfoHelpButton(title: "后台运行", message: "关闭窗口后，音效、动画与统计会继续工作。点菜单栏中的键舞图标可重新打开。右上角“全部暂停”可同时暂停这些功能；按 ⌘ Q 才会完全退出。改键有独立开关。", identifier: "preferences-background-help")
-                }
-                .padding(12)
+                InfoHelpButton(title: "隐私", message: "统计只保存在这台电脑，按分钟保存每个物理键的累计次数。不保存输入文字、按键顺序、剪贴板或其他应用的内容。改键配置也只保存在本机。", identifier: "preferences-privacy-help", rowSymbol: "hand.raised", rowDetail: "只记次数，不记文字")
+                Divider().padding(.leading, 48)
+                InfoHelpButton(title: "后台运行", message: "关闭窗口后，音效、动画与统计会继续工作。点菜单栏中的键舞图标可重新打开。右上角“暂停”可暂停这些功能；按 ⌘ Q 才会完全退出。改键有独立开关。", identifier: "preferences-background-help", rowSymbol: "menubar.rectangle", rowDetail: "关闭窗口后继续工作")
             }
             .cardStyle()
         }
@@ -531,7 +533,8 @@ private struct PreferencesView: View {
 
     private var monitoringStatus: String {
         if model.monitor.isGlobalActive { return L("已开启") }
-        return L(model.monitor.hasGlobalAccess ? "已授权，当前暂停" : "尚未开启，仅应用内可用")
+        if !model.monitor.hasGlobalAccess { return L("尚未开启，仅应用内可用") }
+        return L(!model.isEnabled ? "已授权，当前暂停" : "已授权，当前仅应用内")
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -545,12 +548,12 @@ private struct PreferencesView: View {
             Image(systemName: symbol)
                 .font(.system(size: 14))
                 .foregroundStyle(Palette.muted)
-                .frame(width: 18)
+                .frame(width: 20)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(L(title)).font(.system(size: 13, weight: .medium))
                 if let detail {
-                    Text(detail).font(.callout).foregroundStyle(Palette.muted)
+                    Text(detail).font(.system(size: 12)).foregroundStyle(Palette.muted)
                 }
             }
         }
@@ -564,7 +567,7 @@ extension View {
         background(Palette.surface, in: RoundedRectangle(cornerRadius: 12))
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Palette.line.opacity(0.85))
+                    .strokeBorder(Palette.line.opacity(0.65), lineWidth: 0.8)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }

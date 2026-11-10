@@ -7,21 +7,35 @@ struct RhythmSettingsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             HStack(spacing: 12) {
+                Button { model.rhythmEnabled.toggle() } label: {
+                    HStack(spacing: 12) {
                 Image(systemName: "waveform.path")
                     .font(.system(size: 21, weight: .medium))
                     .foregroundStyle(Palette.accent)
                     .frame(width: 36, height: 36)
                     .background(Palette.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
                     .accessibilityHidden(true)
-                HStack(spacing: 4) {
                     Text(L("桌面律动")).font(.system(size: 14, weight: .semibold))
-                    InfoHelpButton(title: "桌面律动", message: "选择随按键变化的桌面动画。演示只播放画面，不发声，也不计入统计。", identifier: "rhythm-help")
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(SettingsActionRowStyle())
+                .accessibilityLabel(L("桌面律动"))
+                .accessibilityValue(L(model.rhythmEnabled ? "已开启" : "已关闭"))
+                .accessibilityIdentifier("rhythm-title-toggle")
+                InfoHelpButton(title: "桌面律动", message: "选择随按键变化的桌面动画。演示只播放画面，不发声，也不计入统计。", identifier: "rhythm-help")
                 Spacer(minLength: 8)
-                Button(L("演示")) { model.previewRhythm() }
+                if compact {
+                    Button { model.page = .settings } label: {
+                        Label(L("设置"), systemImage: "slider.horizontal.3")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("rhythm-open-settings")
+                }
+                Button(L(model.rhythmEnabled ? "演示" : "开启并演示")) { model.previewRhythm() }
                     .buttonStyle(.bordered)
                     .disabled(!model.isEnabled || model.monitor.secureInputActive)
-                    .help(L("仅演示画面，不播放声音、不计入统计。"))
+                    .help(L(!model.isEnabled ? "继续后可演示" : model.monitor.secureInputActive ? "安全输入期间不可演示" : "仅演示画面，不播放声音、不计入统计。"))
                     .accessibilityIdentifier("rhythm-preview")
                 Toggle(L("桌面律动"), isOn: $model.rhythmEnabled)
                     .toggleStyle(.switch).labelsHidden()
@@ -29,18 +43,8 @@ struct RhythmSettingsCard: View {
             }
             if model.rhythmEnabled || !compact {
                 Divider()
-                HStack(spacing: 12) {
-                    Text(L("样式")).font(.system(size: 12)).foregroundStyle(Palette.muted)
-                    Spacer(minLength: 0)
-                    Picker(L("显示样式"), selection: $model.rhythmStyle) {
-                        ForEach(RhythmVisualStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
-                    }
-                    .pickerStyle(.segmented).labelsHidden()
-                    .frame(width: 320)
-                    .accessibilityIdentifier("rhythm-style")
-                }
+                styleOptions
+                if !compact {
                 if model.rhythmStyle == .burst {
                     Text(L("最近的按键会化成发光字符。空格将它们打成碎光，回车轻轻收束，旧字符会自行淡出。"))
                         .font(.system(size: 11))
@@ -59,7 +63,7 @@ struct RhythmSettingsCard: View {
                             InfoHelpButton(title: "跟随电脑声音", message: "低音推动柔光，中音带动流动，高音点亮细节；打字效果会自然叠加。首次开启需允许系统音频录制，声音只在本机即时分析，不保存录音。", identifier: "rhythm-follow-audio-help")
                             Spacer()
                         }
-                        if model.rhythmFollowsAudio { audioStatus }
+                        if model.rhythmFollowsAudio && model.rhythmEnabled { audioStatus }
                     } else {
                         Text(L("跟随电脑声音需要 macOS 14.2 或更新版本。"))
                             .font(.system(size: 11)).foregroundStyle(Palette.muted)
@@ -71,7 +75,7 @@ struct RhythmSettingsCard: View {
                         InfoHelpButton(title: "动画幅度", message: "动画幅度从 25% 到 100% 均匀调节。数值越高，打字时的起伏越明显；不会改变声音或音量。", identifier: "rhythm-intensity-help")
                     }
                     VStack(spacing: 1) {
-                        Slider(value: intensityPosition, in: ControlScale.rhythmIntensity.displayRange, step: ControlScale.displayStep)
+                        Slider(value: intensityPosition, in: ControlScale.rhythmIntensity.displayRange)
                             .accessibilityLabel(L("动画幅度"))
                             .accessibilityValue(Text(intensityPercent))
                             .accessibilityIdentifier("rhythm-intensity")
@@ -86,13 +90,13 @@ struct RhythmSettingsCard: View {
                         Text(L("特效透明度")).font(.system(size: 12)).foregroundStyle(Palette.muted)
                         InfoHelpButton(title: "特效透明度", message: "所有律动样式共用。25% 最淡，100% 保持原始亮度。", identifier: "rhythm-opacity-help")
                     }
-                    Slider(value: $model.rhythmOpacity, in: AppModel.rhythmOpacityRange, step: 0.01)
+                    Slider(value: $model.rhythmOpacity, in: AppModel.rhythmOpacityRange)
                         .accessibilityLabel(L("特效透明度"))
-                        .accessibilityValue(Text(model.rhythmOpacity.formatted(.percent.precision(.fractionLength(0)))))
+                        .accessibilityValue(Text(model.rhythmOpacity.formatted(.percent.precision(.fractionLength(0)).locale(AppLocalization.locale))))
                         .accessibilityIdentifier("rhythm-opacity")
-                    Text(model.rhythmOpacity.formatted(.percent.precision(.fractionLength(0))))
+                    Text(model.rhythmOpacity.formatted(.percent.precision(.fractionLength(0)).locale(AppLocalization.locale)))
                         .font(.system(size: 12)).monospacedDigit()
-                        .foregroundStyle(Palette.muted).frame(width: 40, alignment: .trailing)
+                        .foregroundStyle(Palette.muted).frame(width: 60, alignment: .trailing)
                 }
                 HStack {
                     HStack(spacing: 2) {
@@ -115,17 +119,56 @@ struct RhythmSettingsCard: View {
                         Button(L("重置位置")) { model.resetRhythmPosition() }
                             .buttonStyle(.plain).font(.system(size: 12))
                             .foregroundStyle(Palette.accent)
+                            .help(L("恢复默认位置并允许拖动动画。"))
                             .accessibilityIdentifier("rhythm-reset-position")
                     }
                 }
-                if !model.isEnabled {
+                if !model.isEnabled && model.rhythmEnabled {
                     Text(L("继续运行后，律动悬浮窗会重新出现。"))
                         .font(.system(size: 11)).foregroundStyle(Palette.muted)
+                }
                 }
             }
         }
         .padding(18)
         .cardStyle()
+    }
+
+    private var styleOptions: some View {
+        HStack(spacing: 8) {
+            ForEach(RhythmVisualStyle.allCases) { style in
+                let selected = model.rhythmStyle == style
+                Button { model.rhythmStyle = style } label: {
+                    VStack(spacing: 8) {
+                        Image(systemName: styleSymbol(style))
+                            .font(.system(size: 20, weight: .regular))
+                            .accessibilityHidden(true)
+                        Text(style.title).font(.system(size: 12, weight: selected ? .semibold : .medium))
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    .foregroundStyle(selected ? Palette.accent : Palette.muted)
+                    .frame(maxWidth: .infinity, minHeight: 72)
+                    .background(selected ? Palette.accent.opacity(0.08) : Palette.raisedSurface.opacity(0.45), in: RoundedRectangle(cornerRadius: 9))
+                    .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(selected ? Palette.accent.opacity(0.7) : Palette.line.opacity(0.4), lineWidth: selected ? 1.2 : 0.8))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(SettingsActionRowStyle())
+                .accessibilityAddTraits(selected ? .isSelected : [])
+                .accessibilityValue(L(selected ? "已选择" : "未选择"))
+                .accessibilityIdentifier("rhythm-style-\(style.rawValue)")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("显示样式"))
+    }
+
+    private func styleSymbol(_ style: RhythmVisualStyle) -> String {
+        switch style {
+        case .energy: return "chart.bar.fill"
+        case .pulse: return "waveform.path"
+        case .burst: return "keyboard"
+        case .edgeGlow: return "light.min"
+        }
     }
 
     private var intensityPosition: Binding<Double> {

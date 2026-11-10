@@ -48,6 +48,12 @@ struct RemappingView: View {
     @State private var addingProfile = false
     @State private var profileName = ""
     @State private var message: String?
+    @State private var pendingRemoval: Removal?
+    @State private var showingRemovalConfirmation = false
+
+    private enum Removal {
+        case rule(RemapRule), layer(UUID), profile(UUID)
+    }
 
     init(model: AppModel) { controller = model.remapping }
     private var profile: RemapProfile { controller.configuration.activeProfile! }
@@ -103,6 +109,12 @@ struct RemappingView: View {
             Button(L("取消"), role: .cancel) {}
             Button(L("创建")) { createProfile() }
                 .disabled(profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .alert(removalTitle, isPresented: $showingRemovalConfirmation) {
+            Button(L("取消"), role: .cancel) { pendingRemoval = nil }
+            Button(L("删除"), role: .destructive) { confirmRemoval() }
+        } message: {
+            Text(removalMessage)
         }
         .onChange(of: controller.configuration) { old, new in
             if old.activeProfileID != new.activeProfileID
@@ -226,9 +238,9 @@ struct RemappingView: View {
                 Button(L("导出方案…")) { exportFile() }
                 if layerID != nil || controller.configuration.profiles.count > 1 {
                     Divider()
-                    if layerID != nil { Button(L("删除键位组"), role: .destructive) { removeLayer() } }
+                    if let layerID { Button(L("删除键位组"), role: .destructive) { requestRemoval(.layer(layerID)) } }
                     if controller.configuration.profiles.count > 1 {
-                        Button(L("删除当前方案"), role: .destructive) { removeProfile() }
+                        Button(L("删除当前方案"), role: .destructive) { requestRemoval(.profile(profile.id)) }
                     }
                 }
             } label: {
@@ -263,9 +275,27 @@ struct RemappingView: View {
     private var ruleList: some View {
         VStack(alignment: .leading, spacing: 5) {
             if rules.isEmpty {
-                Text(L("还没有改键。点击「添加规则」开始，其他键保持不变。"))
-                    .font(.system(size: 13)).foregroundStyle(Palette.muted)
-                    .padding(.vertical, 16).frame(maxWidth: .infinity)
+                VStack(spacing: 10) {
+                    Image(systemName: "arrow.triangle.swap")
+                        .font(.system(size: 24, weight: .light))
+                        .foregroundStyle(Palette.muted)
+                        .accessibilityHidden(true)
+                    Text(L("还没有改键。点击「添加规则」开始，其他键保持不变。"))
+                        .font(.system(size: 13)).foregroundStyle(Palette.muted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.vertical, 24).frame(maxWidth: .infinity)
+            } else {
+                HStack(spacing: 10) {
+                    Text(L("按下")).frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "arrow.right").hidden().accessibilityHidden(true)
+                    Text(L("改成")).frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "pencil").hidden().accessibilityHidden(true)
+                }
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Palette.muted)
+                .padding(.leading, 10).padding(.trailing, 93).padding(.bottom, 2)
             }
             ForEach(rules) { rule in
                 RemapRuleRow(rule: rule, edit: { editing = rule }, setEnabled: { enabled in
@@ -275,19 +305,88 @@ struct RemappingView: View {
                         }
                     }
                 }, remove: {
-                    changeProfile { $0.rules.removeAll { $0.id == rule.id } }
+                    requestRemoval(.rule(rule))
                 })
             }
-            ForEach(profile.layerKeys.filter { layerID == nil || $0.layerID == layerID }) { key in
-                HStack(spacing: 10) {
-                    Image(systemName: "square.3.layers.3d").foregroundStyle(Palette.accent)
-                    Text(RemapKeyName.name(key.keyCode)).fontWeight(.medium)
-                    Image(systemName: "arrow.right").foregroundStyle(Palette.muted)
-                    Text(profile.layers.first { $0.id == key.layerID }?.name ?? "")
-                    Spacer()
-                    Text(L(key.mode == .hold ? "按住时启用" : "按一次切换")).foregroundStyle(Palette.muted)
-                }.font(.system(size: 12)).padding(10)
+            if !visibleLayerKeys.isEmpty {
+                Divider().padding(.vertical, 7)
+                HStack(spacing: 4) {
+                    Text(L("键位组")).font(.system(size: 11, weight: .medium)).foregroundStyle(Palette.muted)
+                    InfoHelpButton(title: "方案与键位组", message: "方案是一整套改键设置，可为不同键盘手动切换。键位组是一组额外规则：例如按住右 Option 时，让 H、J、K、L 变成方向键。启用按键会被用来切换键位组，未设置的键保持原样。", identifier: "remap-layer-list-help")
+                }.padding(.leading, 10)
+                ForEach(visibleLayerKeys) { key in
+                    if layerID == key.layerID {
+                        layerKeyLabel(key, navigable: false)
+                    } else {
+                        Button { layerID = key.layerID } label: {
+                            layerKeyLabel(key, navigable: true)
+                        }
+                        .buttonStyle(.plain)
+                        .background(Palette.raisedSurface.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+                        .accessibilityIdentifier("remap-layer-key-\(key.id)")
+                    }
+                }
             }
+        }
+    }
+
+    private var visibleLayerKeys: [RemapLayerKey] {
+        profile.layerKeys.filter { layerID == nil || $0.layerID == layerID }
+    }
+
+    private func layerKeyLabel(_ key: RemapLayerKey, navigable: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "square.3.layers.3d").foregroundStyle(Palette.accent).frame(width: 18)
+            Text(RemapKeyName.name(key.keyCode)).fontWeight(.medium)
+            Image(systemName: "arrow.right").foregroundStyle(Palette.muted)
+            Text(profile.layers.first { $0.id == key.layerID }?.name ?? "")
+            Spacer(minLength: 8)
+            Text(L(key.mode == .hold ? "按住时启用" : "按一次切换")).foregroundStyle(Palette.muted)
+            if navigable {
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Palette.muted)
+            }
+        }
+        .font(.system(size: 12)).padding(.horizontal, 10).frame(minHeight: 40)
+        .frame(maxWidth: .infinity).contentShape(Rectangle())
+    }
+
+    private var removalTitle: String {
+        switch pendingRemoval {
+        case .rule: return L("删除这条规则？")
+        case .layer: return L("删除键位组？")
+        case .profile: return L("删除当前方案？")
+        case nil: return ""
+        }
+    }
+
+    private var removalMessage: String {
+        switch pendingRemoval {
+        case .rule(let rule):
+            return "\(RemapKeyName.trigger(rule.trigger)) → \(RemapKeyName.action(rule.action))"
+        case .layer:
+            return L("组内规则和启用按键也会一并删除，其他键位不受影响。")
+        case .profile:
+            return L("此方案的全部规则和键位组会一并删除。")
+        case nil: return ""
+        }
+    }
+
+    private func requestRemoval(_ removal: Removal) {
+        pendingRemoval = removal
+        showingRemovalConfirmation = true
+    }
+
+    private func confirmRemoval() {
+        guard let removal = pendingRemoval else { return }
+        pendingRemoval = nil
+        switch removal {
+        case .rule(let rule): changeProfile { $0.rules.removeAll { $0.id == rule.id } }
+        case .layer(let id):
+            guard layerID == id else { return }
+            removeLayer()
+        case .profile(let id):
+            guard profile.id == id else { return }
+            removeProfile()
         }
     }
 
@@ -330,10 +429,22 @@ struct RemappingView: View {
         if !profile.layers.contains(where: { $0.id == id }) { layerID = nil }
     }
     private func addMediaTemplate(_ modifiers: RemapModifiers) {
+        if let existing = profile.rules.first(where: { $0.trigger.layerID == nil && $0.trigger.keyCode == 49 && $0.trigger.modifiers == modifiers }) {
+            layerID = nil
+            var draft = existing
+            draft.action = .media(.playPause)
+            editing = draft
+            return
+        }
         changeProfile { $0.rules.append(.init(trigger: .init(keyCode: 49, modifiers: modifiers), action: .media(.playPause))) }
         if message == nil { layerID = nil }
     }
     private func addNavigationLayer() {
+        if let existing = profile.layerKeys.first(where: { $0.keyCode == 61 }) {
+            layerID = existing.layerID
+            message = "右 Option 已用于此键位组，可在下方编辑规则。"
+            return
+        }
         let layer = RemapLayer(name: L("方向键组"))
         changeProfile { p in
             p.layers.append(layer); p.layerKeys.append(.init(keyCode: 61, layerID: layer.id))
@@ -472,12 +583,21 @@ private struct RemapRuleEditor: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 7) {
                 Text(L("设置按键")).font(.system(size: 22, weight: .semibold))
-                Text("\(RemapKeyName.trigger(rule.trigger))  →  \(RemapKeyName.action(draftAction))")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Palette.muted)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("remap-draft-preview")
+                HStack(spacing: 12) {
+                    Text(RemapKeyName.trigger(rule.trigger))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "arrow.right").foregroundStyle(Palette.muted)
+                        .accessibilityHidden(true)
+                    Text(RemapKeyName.action(draftAction))
+                        .foregroundStyle(Palette.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .font(.system(size: 13, weight: .medium))
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .background(Palette.raisedSurface, in: RoundedRectangle(cornerRadius: 8))
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("remap-draft-preview")
             }.padding(20)
             Divider()
             ScrollView {
@@ -507,6 +627,7 @@ private struct RemapRuleEditor: View {
             }.padding(.horizontal, 20).padding(.vertical, 16)
         }
         .frame(width: 530, height: 570).background(Palette.background)
+        .interactiveDismissDisabled(captureTarget != nil)
         .onChange(of: controller.lastCapturedKey) { _, value in
             guard let value, !value.isModifier, let target = captureTarget else { return }
             if target == "source" {
@@ -526,6 +647,11 @@ private struct RemapRuleEditor: View {
             error = nil
         }
         .onChange(of: rule.trigger) { _, _ in error = nil }
+        .onChange(of: rule.trigger.keyCode) { _, code in
+            // A physical modifier selected as the source is already the key;
+            // selecting it again as a modifier makes an unusable combination.
+            rule.trigger.modifiers.subtract(RemapModifiers.forKeyCode(code))
+        }
         .onChange(of: targetCode) { _, _ in error = nil }
         .onChange(of: targetModifiers) { _, _ in error = nil }
         .onChange(of: media) { _, _ in error = nil }
@@ -542,13 +668,13 @@ private struct RemapRuleEditor: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 4) {
                 Text(L("按下")).font(.system(size: 13, weight: .semibold))
-                InfoHelpButton(title: "选择原按键", message: "从列表选键，或点「按键录入」后直接按下要设置的键。需要组合键时，可点选下方的 ⌃、⌥、⇧、⌘ 或 Fn。录入完成后会自动停止。", identifier: "remap-capture-help")
+                InfoHelpButton(title: "选择原按键", message: "从列表选键，或点「按键录入」后直接按下要设置的键。单独的修饰键请从列表选择。需要组合键时，可点选下方的 ⌃、⌥、⇧、⌘ 或 Fn。录入完成后会自动停止。", identifier: "remap-capture-help")
             }
             keyPicker(L("按下"), code: $rule.trigger.keyCode, target: "source", includesMedia: true)
             RemapModifierChips(value: Binding(get: { rule.trigger.modifiers }, set: { selected in
                 stopCapture()
                 rule.trigger.modifiers = selected
-            }))
+            }), excluding: RemapModifiers.forKeyCode(rule.trigger.keyCode))
             if captureTarget == "source" {
                 captureHint
             } else {
@@ -566,6 +692,11 @@ private struct RemapRuleEditor: View {
                 }
             }
         }.padding(14).cardStyle()
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(captureTarget == "source" ? Palette.accent : .clear, lineWidth: 1.5)
+                    .allowsHitTesting(false)
+            }
     }
     private var actionPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -611,6 +742,11 @@ private struct RemapRuleEditor: View {
                     .help(L("媒体指令由当前媒体应用接收；亮度与背光取决于设备支持。"))
             }
         }.padding(14).cardStyle()
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(captureTarget == "target" ? Palette.accent : .clear, lineWidth: 1.5)
+                    .allowsHitTesting(false)
+            }
     }
     private func mediaShortcut(_ action: RemapMediaAction, symbol: String) -> some View {
         let selected = media == action
@@ -661,6 +797,7 @@ private struct RemapRuleEditor: View {
                       systemImage: captureTarget == target ? "stop.circle" : "record.circle")
             }
             .fixedSize()
+            .tint(captureTarget == target ? Palette.accent : nil)
             .accessibilityIdentifier("remap-capture-\(target)")
         }
     }
@@ -682,6 +819,7 @@ private struct RemapRuleEditor: View {
 
 private struct RemapModifierChips: View {
     @Binding var value: RemapModifiers
+    var excluding: RemapModifiers = []
     private let options: [(symbol: String, name: String, modifier: RemapModifiers)] = [
         ("⌃", "Control", .control), ("⌥", "Option / Alt", .option),
         ("⇧", "Shift", .shift), ("⌘", "Command", .command), ("Fn", "Fn / 🌐", .fn)
@@ -703,6 +841,8 @@ private struct RemapModifierChips: View {
                 }.buttonStyle(.plain).accessibilityLabel(option.name)
                     .help(option.name)
                     .accessibilityValue(L(value.contains(option.modifier) ? "已选择" : "未选择"))
+                    .disabled(excluding.contains(option.modifier))
+                    .opacity(excluding.contains(option.modifier) ? 0.4 : 1)
             }
             Spacer()
         }

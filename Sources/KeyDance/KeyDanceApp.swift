@@ -21,6 +21,7 @@ struct KeyDanceApp: App {
         .defaultSize(width: 1100, height: 760)
         .windowStyle(.hiddenTitleBar)
         .commands {
+            WorkspaceNavigationCommands(model: model)
             CommandGroup(replacing: .newItem) {}
             CommandGroup(replacing: .appInfo) {
                 Button(Lf("关于 %@", AppLocalization.appName)) { showBilingualAbout() }
@@ -31,7 +32,7 @@ struct KeyDanceApp: App {
                 }
             } }
             CommandMenu(L("声音")) {
-                Button(L(model.isEnabled ? "全部暂停" : "继续")) { model.isEnabled.toggle() }
+                Button(L(model.isEnabled ? "暂停" : "继续")) { model.isEnabled.toggle() }
                     .keyboardShortcut("p", modifiers: [.command, .shift])
                 Button(L(model.isKeyboardSoundMode ? "试听键盘音效" : "试听音乐响应")) { model.previewSound() }
                     .disabled(!model.isEnabled || (!model.isKeyboardSoundMode && !model.musicWantsPlayback))
@@ -138,7 +139,7 @@ struct MenuBarView: View {
             openWindow(id: "main")
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
-        Button(L(model.isEnabled ? "全部暂停" : "继续")) { model.isEnabled.toggle() }
+        Button(L(model.isEnabled ? "暂停" : "继续")) { model.isEnabled.toggle() }
         Toggle(L("律动悬浮窗"), isOn: $model.rhythmEnabled)
         if model.rhythmEnabled {
             Picker(L("显示样式"), selection: $model.rhythmStyle) {
@@ -210,4 +211,34 @@ struct MenuBarView: View {
         .applicationName: "键舞 · KeyWoo",
         .credits: NSAttributedString(string: L("让每次敲击，都有喜欢的声音。") + "\n" + L("本机运行 · 不保存输入文字"))
     ])
+}
+
+/// Standard Mac navigation remains available after the main window is closed.
+private struct WorkspaceNavigationCommands: Commands {
+    @ObservedObject var model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .appSettings) {
+            Button(L("偏好设置…")) { show(.settings) }
+                .keyboardShortcut(",", modifiers: .command)
+        }
+        CommandGroup(after: .sidebar) {
+            Divider()
+            ForEach(Array(AppPage.allCases.enumerated()), id: \.element) { index, page in
+                Button(page == .studio ? model.studioTitle : L(page.rawValue)) { show(page) }
+                    .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
+            }
+        }
+    }
+
+    private func show(_ page: AppPage) {
+        // Page changes must never dismiss an editor or a confirmation sheet.
+        guard NSApplication.shared.modalWindow == nil,
+              NSApplication.shared.keyWindow?.sheetParent == nil,
+              NSApplication.shared.mainWindow?.attachedSheet == nil else { return }
+        model.page = page
+        openWindow(id: "main")
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
 }
