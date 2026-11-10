@@ -13,7 +13,7 @@ namespace KeyWoo.Windows;
 internal static class InterfaceVerification {
     internal sealed record Result(bool Passed,bool NavigationPassed,bool RuleEditingPassed,bool DraftPreservationPassed,
         bool ThemeAndLanguagePassed,bool PreviewAvailabilityPassed,bool FullRowDisclosurePassed,
-        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,int NativeScreenshots);
+        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,bool NarrowLayoutPassed,int NativeScreenshots);
     internal static Result Run(string report,SampleBank bank) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-interface-"+Guid.NewGuid().ToString("N"));
         string screenshotDirectory=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(report))!,"tests","interface");
@@ -72,14 +72,30 @@ internal static class InterfaceVerification {
             }
             Click(root,"navigation-2");Layout(root);VerifyPopup(Find<ComboBox>(root,"remapping-source"),Path.ChangeExtension(screenshotBase,".interface-dark-key-menu.png"));screenshots++;
             Click(root,"navigation-3");Layout(root);
-            Layout(root,820,650);Save(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow.png"),820,650);screenshots++;
-            return new(true,true,true,true,true,true,true,true,true,true,screenshots);
+            window.Width=820;window.Height=650;window.UpdateLayout();Pump();root.UpdateLayout();
+            Require(root.ActualWidth>=780&&root.ActualWidth<=820&&root.ActualHeight<650,"The narrow preview must use the real resized window client area, not a clipped bitmap.");
+            foreach(string id in new[]{"app-language","app-appearance","key-burst-preview","key-burst-intensity","key-burst-opacity"})RequireReachable(root,Find<FrameworkElement>(root,id));
+            var language=Find<ComboBox>(root,"app-language");ScrollAncestor(language)?.ScrollToTop();Pump();root.UpdateLayout();
+            SaveActual(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow.png"));screenshots++;
+            Find<Slider>(root,"key-burst-opacity").BringIntoView();Pump();root.UpdateLayout();
+            SaveActual(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow-animation.png"));screenshots++;
+            return new(true,true,true,true,true,true,true,true,true,true,true,screenshots);
         } finally {
             window?.DisposeVerification();
             for(int index=0;index<names.Length;index++)if(previous[index] is object value)resources[names[index]]=value;else resources.Remove(names[index]);
             if(Directory.Exists(directory))Directory.Delete(directory,true);
         }
     }
+    private static void RequireReachable(FrameworkElement root,FrameworkElement control) {
+        control.BringIntoView();Pump();root.UpdateLayout();
+        var bounds=control.TransformToAncestor(root).TransformBounds(new Rect(0,0,control.ActualWidth,control.ActualHeight));
+        Require(control.ActualWidth>0&&control.ActualHeight>0&&bounds.Left>=-1&&bounds.Top>=-1&&bounds.Right<=root.ActualWidth+1&&bounds.Bottom<=root.ActualHeight+1,
+            $"The narrow-window {AutomationProperties.GetAutomationId(control)} control must fit in the visible client area after scrolling. Bounds={bounds}; root={root.ActualWidth}×{root.ActualHeight}");
+    }
+    private static ScrollViewer? ScrollAncestor(DependencyObject control) {
+        for(DependencyObject? parent=VisualTreeHelper.GetParent(control);parent is not null;parent=VisualTreeHelper.GetParent(parent))if(parent is ScrollViewer scroll)return scroll;return null;
+    }
+    private static void SaveActual(FrameworkElement root,string file)=>Save(root,file,(int)Math.Ceiling(root.ActualWidth),(int)Math.Ceiling(root.ActualHeight));
     private static void VerifyPageLabels(DependencyObject root,int page) {
         string[] ids=page switch{0=>["recording-version","sound-category"],2=>["remapping-source","remapping-target"],3=>["app-language","app-appearance","desktop-animation-style"],_=>[]};
         foreach(string id in ids) {
