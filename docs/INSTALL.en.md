@@ -2,7 +2,7 @@
 
 [简体中文](INSTALL.md)
 
-Choose the file for your computer under **Assets**. [KeyWoo v1.0.3 release](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.3)
+Choose the file for your computer under **Assets**. [KeyWoo v1.0.4 release](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.4)
 
 | Computer | Download |
 | --- | --- |
@@ -29,7 +29,7 @@ For the portable version, extract the entire ZIP and run `KeyWoo.exe` from the e
 KeyWoo stays in the system tray when you close the window. Select **Quit** from its tray menu to exit.
 
 
-For audio-reactive lighting, choose **Bottom glow** in **Desktop rhythm** and enable **Follow computer audio**. On Mac, this requires macOS 14.2 or later and system audio capture permission. Windows uses the current output device audio. This option is off by default.
+For audio-reactive lighting, open **Effects / Desktop effects**, click **Bottom Glow** to enable and preview it, then turn on audio following. On Mac, this requires macOS 14.2 or later and system audio capture permission. Windows uses the current output device audio. This option is off by default.
 
 ## Update or uninstall
 
