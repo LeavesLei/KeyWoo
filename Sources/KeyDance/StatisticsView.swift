@@ -371,20 +371,7 @@ private struct StatisticsDashboard: View {
                 }
             }
         }
-        .chartOverlay { proxy in
-            GeometryReader { geometry in
-                Rectangle().fill(.clear).contentShape(Rectangle())
-                    .onContinuousHover { phase in
-                        switch phase {
-                        case .active(let point):
-                            guard let anchor = proxy.plotFrame else { return }
-                            let frame = geometry[anchor]
-                            hoveredDate = frame.contains(point) ? proxy.value(atX: point.x - frame.minX, as: Date.self) : nil
-                        case .ended: hoveredDate = nil
-                        }
-                    }
-            }
-        }
+        .chartXSelection(value: $hoveredDate)
     }
 
     private var trendAxisDates: [Date] {
