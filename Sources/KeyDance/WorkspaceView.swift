@@ -1,47 +1,39 @@
 import SwiftUI
-import AppKit
 
 struct WorkspaceView: View {
     @ObservedObject var model: AppModel
     let presentation: WorkspacePresentationState
     @State private var hoveredPage: AppPage?
-    private let workspaceInset: CGFloat = 24
-    private let maximumContentWidth: CGFloat = 1120
+    private let maximumContentWidth: CGFloat = 1100
+    private let headerHeight: CGFloat = 70
 
     var body: some View {
         HStack(spacing: 0) {
-            sidebar.frame(width: 186)
-            Divider().overlay(Palette.line)
-            VStack(spacing: 0) {
-                topBar
-                GeometryReader { viewport in
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            if let error = visibleError {
-                                Label(L(error), systemImage: "exclamationmark.circle")
-                                    .font(.system(size: 13)).foregroundStyle(Palette.ink).padding(12)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Palette.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
-                            }
-                            switch model.page {
-                            case .studio:
-                                if model.musicModeAvailable { modePicker }
-                                if model.isKeyboardSoundMode { KeyboardSoundSpaceView(model: model, presentation: presentation.sound) }
-                                else { MusicSpaceView(model: model) }
-                            case .remapping: RemappingView(model: model)
-                            case .statistics: StatisticsView(model: model, presentation: presentation.statistics)
-                            case .effects: DesktopEffectsView(model: model, presentation: presentation.effects)
-                            case .settings: PreferencesView(model: model)
-                            }
+            sidebar.frame(width: 188)
+            Divider().overlay(Palette.line.opacity(0.7))
+            GeometryReader { viewport in
+                let inset: CGFloat = viewport.size.width < 900 ? 24 : 32
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        if let error = visibleError {
+                            Label(L(error), systemImage: "exclamationmark.circle")
+                                .font(.system(size: 13))
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Palette.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
                         }
-                        .frame(maxWidth: maximumContentWidth, minHeight: max(0, viewport.size.height - 52), alignment: .topLeading)
-                        .padding(.horizontal, workspaceInset)
-                        .padding(.top, 20)
-                        .padding(.bottom, 32)
-                        .frame(maxWidth: .infinity)
-                    }.id(model.page)
+                        pageContent
+                    }
+                    .frame(maxWidth: maximumContentWidth, minHeight: max(0, viewport.size.height - headerHeight - 52), alignment: .topLeading)
+                    .padding(.horizontal, inset)
+                    .padding(.top, 20)
+                    .padding(.bottom, 32)
+                    .frame(maxWidth: .infinity)
                 }
-            }.background(Palette.background)
+                .id(model.page)
+                .safeAreaInset(edge: .top, spacing: 0) { topBar(inset: inset) }
+            }
+            .background(Palette.background)
         }
         .foregroundStyle(Palette.ink)
         .tint(Palette.accent)
@@ -51,6 +43,22 @@ struct WorkspaceView: View {
         // Only the visible presentation refreshes. Its statistics state is
         // owned above this subtree and survives language or appearance changes.
         .id(model.language)
+    }
+
+    @ViewBuilder private var pageContent: some View {
+        switch model.page {
+        case .studio:
+            if model.musicModeAvailable { modePicker }
+            if model.isKeyboardSoundMode {
+                KeyboardSoundSpaceView(model: model, presentation: presentation.sound)
+            } else {
+                MusicSpaceView(model: model)
+            }
+        case .remapping: RemappingView(model: model)
+        case .statistics: StatisticsView(model: model, presentation: presentation.statistics)
+        case .effects: DesktopEffectsView(model: model, presentation: presentation.effects)
+        case .settings: PreferencesView(model: model)
+        }
     }
 
     private var visibleError: String? {
@@ -78,28 +86,28 @@ struct WorkspaceView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                BrandMark().frame(width: 34, height: 34)
+            HStack(spacing: 9) {
+                BrandMark().frame(width: 32, height: 32)
                 Text(AppLocalization.appName)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
             }
-            .padding(.top, 30)
-            .padding(.bottom, 24)
-            .padding(.leading, 8)
+            .padding(.top, 35)
+            .padding(.bottom, 23)
+            .padding(.leading, 9)
 
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 ForEach(AppPage.primaryPages, id: \.self) { page in
                     navigationRow(page)
                 }
             }
             Spacer(minLength: 20)
             navigationRow(.settings)
-                .padding(.bottom, 8)
-            Divider().overlay(Palette.line.opacity(0.6))
-            listeningStatus.padding(.vertical, 12)
+                .padding(.bottom, 9)
+            Divider().overlay(Palette.line.opacity(0.65))
+            listeningStatus.padding(.vertical, 9)
         }
-        .padding(.horizontal, 14)
-        .background(Palette.sidebar)
+        .padding(.horizontal, 12)
+        .background(WorkspaceChrome(fill: Palette.sidebar))
     }
 
     private func navigationRow(_ page: AppPage) -> some View {
@@ -107,22 +115,19 @@ struct WorkspaceView: View {
         return Button { model.page = page } label: {
             HStack(spacing: 10) {
                 Image(systemName: page.symbol)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: selected ? .semibold : .medium))
                     .foregroundStyle(selected ? Palette.accent : Palette.muted)
-                    .frame(width: 18)
-                Text(page == .studio && model.isKeyboardSoundMode ? L("音效") : page == .effects ? L("特效") : pageTitle(page))
+                    .frame(width: 18, alignment: .center)
+                Text(pageTitle(page))
                     .font(.system(size: 13, weight: selected ? .semibold : .medium))
                     .lineLimit(1).minimumScaleFactor(0.9)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 11)
-            .frame(height: 40)
-            .background(selected ? Palette.accent.opacity(0.10)
-                        : hoveredPage == page ? Palette.raisedSurface : .clear,
-                        in: RoundedRectangle(cornerRadius: 8))
+            .frame(height: 38)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(WorkspaceNavigationStyle(selected: selected, hovered: hoveredPage == page))
         .onHover { hovering in
             if hovering { hoveredPage = page }
             else if hoveredPage == page { hoveredPage = nil }
@@ -139,7 +144,7 @@ struct WorkspaceView: View {
                 Button { model.monitor.requestPermission() } label: {
                     Label(L("开启全局体验"), systemImage: "keyboard")
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .frame(minHeight: 36)
+                        .frame(minHeight: 34)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -152,15 +157,15 @@ struct WorkspaceView: View {
             }
         }
         .font(.system(size: 12, weight: .medium))
-        .padding(.horizontal, 9)
-        .frame(minHeight: 26, alignment: .leading)
+        .padding(.horizontal, 11)
+        .frame(minHeight: 34, alignment: .leading)
     }
 
-    private var topBar: some View {
+    private func topBar(inset: CGFloat) -> some View {
         HStack(spacing: 14) {
             Text(pageTitle(model.page))
-                .font(.system(size: 24, weight: .semibold))
-                .tracking(-0.4)
+                .font(.system(size: 23, weight: .semibold))
+                .tracking(-0.25)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 12)
             if model.isEnabled && model.monitor.secureInputActive {
@@ -170,20 +175,63 @@ struct WorkspaceView: View {
             }
             Button { model.isEnabled.toggle() } label: {
                 Label(L(model.isEnabled ? "暂停" : "继续"), systemImage: model.isEnabled ? "pause.fill" : "play.fill")
-                    .font(.system(size: 12, weight: .medium))
-                    .padding(.horizontal, 3)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(model.isEnabled ? Palette.ink : Palette.accent)
+                    .frame(minWidth: 66)
+                    .padding(.vertical, 1)
             }
             .buttonStyle(.bordered)
-            .controlSize(.large)
+            .controlSize(.regular)
             .help(L("暂停或继续音效、动画与统计。改键有独立开关。"))
             .accessibilityIdentifier("workspace-pause")
         }
-        .frame(maxWidth: maximumContentWidth)
-        .padding(.horizontal, workspaceInset)
-        .padding(.top, 21)
-        .padding(.bottom, 15)
+        .frame(maxWidth: maximumContentWidth, minHeight: headerHeight, alignment: .leading)
+        .padding(.horizontal, inset)
         .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) { Divider().overlay(Palette.line) }
+        .background(WorkspaceChrome(fill: Palette.surface))
+        .overlay(alignment: .bottom) { Divider().overlay(Palette.line.opacity(0.7)) }
+    }
+}
+
+private struct WorkspaceChrome: View {
+    let fill: Color
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        if reduceTransparency || contrast == .increased {
+            fill
+        } else {
+            Rectangle()
+                .fill(.regularMaterial)
+                .overlay(fill.opacity(0.64))
+        }
+    }
+}
+
+private struct WorkspaceNavigationStyle: ButtonStyle {
+    let selected: Bool
+    let hovered: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 9)
+        configuration.label
+            .background {
+                if selected {
+                    shape.fill(Palette.accent.opacity(configuration.isPressed ? 0.20 : 0.12))
+                } else if configuration.isPressed || hovered {
+                    shape.fill(Palette.ink.opacity(configuration.isPressed ? 0.10 : 0.06))
+                }
+            }
+            .overlay {
+                if selected && contrast == .increased {
+                    shape.strokeBorder(Palette.accent, lineWidth: 1).allowsHitTesting(false)
+                }
+            }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: hovered)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: configuration.isPressed)
     }
 }
 

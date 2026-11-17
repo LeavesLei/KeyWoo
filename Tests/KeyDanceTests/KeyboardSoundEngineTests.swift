@@ -92,7 +92,8 @@ struct KeyboardSoundEngineTests {
             e.noteOff(keyCode: 0); _ = e.renderForVerification(frames: 8_192)
             e.noteOn(keyCode: 0)
             let second = e.renderForVerification(frames: 8_192)
-            if [.panda, .macbookPro, .hermes, .mahjongTiles, .woodDesk].contains(style) || !style.isRecorded {
+            if [.panda, .macbookPro, .hermes, .mahjongTiles, .woodDesk,
+                .rainy75, .whiteFox, .unicomp, .technicsYellow, .laneAlps].contains(style) || !style.isRecorded {
                 #expect(first != second)
             } else {
                 #expect(first == second, "One real recording of this physical key must not be pitch-shifted into fake variants.")
@@ -213,7 +214,7 @@ struct KeyboardSoundEngineTests {
             let info = e.recordingInfo(for: style)
             #expect(info != nil)
             #expect((info?.mappedKeyCount ?? 0) >= 100)
-            let oneShot = [.hermes, .mahjongTiles, .woodDesk].contains(style)
+            let oneShot = [.hermes, .mahjongTiles, .woodDesk, .rainy75, .unicomp, .technicsYellow, .laneAlps].contains(style)
             #expect((info?.clipCount ?? 0) >= (oneShot ? 8 : 12))
             if oneShot {
                 #expect(info?.separateReleaseKeyCount == 0)
@@ -265,6 +266,46 @@ struct KeyboardSoundEngineTests {
         #expect(reference.renderForVerification(frames: 8_192) == switched.renderForVerification(frames: 8_192))
         reference.noteOn(keyCode: 0); switched.noteOn(keyCode: 0)
         #expect(reference.renderForVerification(frames: 4_800) != switched.renderForVerification(frames: 4_800))
+    }
+
+    @Test func packagedLosslessRecordingsDecodeToIdenticalPlayback() throws {
+        let source = try #require(Bundle.module.resourceURL?.appendingPathComponent("KeyboardSounds"))
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("keyboard-compressed-\(UUID().uuidString)")
+        let manager = FileManager.default
+        try manager.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: folder) }
+        for filename in ["manifest.json", "hifi-manifest.json", "street-beat-manifest.json"] {
+            try manager.copyItem(at: source.appendingPathComponent(filename), to: folder.appendingPathComponent(filename))
+        }
+        for path in ["red/samples.wav", "red/samples-hifi.wav", "streetBeat/samples.wav"] {
+            let url = folder.appendingPathComponent(path + ".gz")
+            try manager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data().write(to: url)
+            let output = try FileHandle(forWritingTo: url)
+            defer { try? output.close() }
+            let gzip = Process()
+            gzip.executableURL = URL(fileURLWithPath: "/usr/bin/gzip")
+            gzip.arguments = ["-c", source.appendingPathComponent(path).path]
+            gzip.standardOutput = output
+            try gzip.run()
+            gzip.waitUntilExit()
+            try #require(gzip.terminationStatus == 0)
+        }
+        let unpacked = KeyboardSoundEngine(audioDeviceEnabled: false, recordingResourceURL: source)
+        let packed = KeyboardSoundEngine(audioDeviceEnabled: false, recordingResourceURL: folder)
+        for (style, quality) in [(KeyboardSoundStyle.red, KeyboardSoundQuality.original), (.red, .hiFi), (.streetBeat, .original)] {
+            for engine in [unpacked, packed] {
+                engine.style = style; engine.quality = quality; engine.start()
+                try #require(engine.isRunning)
+            }
+            unpacked.noteOn(keyCode: 49); packed.noteOn(keyCode: 49)
+            let onset = unpacked.renderForVerification(frames: 7_200)
+            #expect(energy(onset) > 0)
+            #expect(packed.renderForVerification(frames: 7_200) == onset)
+            unpacked.noteOff(keyCode: 49); packed.noteOff(keyCode: 49)
+            #expect(packed.renderForVerification(frames: 12_000) == unpacked.renderForVerification(frames: 12_000))
+            unpacked.stop(); packed.stop()
+        }
     }
 
     @Test func missingOrCorruptRecordingFailsClosedButExplicitSyntheticPresetStillWorks() throws {

@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../KeyWoo.Core/KeyWoo.Core.csproj"/><PackageReference Include="NAudio" Version="2.2.1"/></ItemGroup>
   <ItemGroup>
-    <Content Include="../../Sources/KeyDance/Resources/KeyboardSounds/**/*" Link="Assets/KeyboardSounds/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+    <Content Include="../../Sources/KeyDance/Resources/KeyboardSounds/**/*" Condition="'$(PackageKeyboardSounds)' != 'true'" Link="Assets/KeyboardSounds/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
     <Content Include="../licenses/*" Link="Licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
   </ItemGroup>
   <Target Name="IncludeRuntimeLicenses" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(SelfContained)' == 'true'">

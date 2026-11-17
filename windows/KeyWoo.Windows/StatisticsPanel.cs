@@ -12,6 +12,8 @@ namespace KeyWoo.Windows;
 
 internal sealed class StatisticsPresentation {
     internal string Period = "today";
+    internal int ActivityDays = 7;
+    internal DateOnly? ActivityDay;
     internal DateTime From = DateTime.Today;
     internal DateTime To = DateTime.Today.AddDays(1);
     internal string Search = "";
@@ -26,14 +28,24 @@ internal sealed class StatisticsPanel : StackPanel {
     private readonly StatisticsPresentation state;
     private readonly Action<string> showError;
     private readonly StackPanel content = new();
+    private readonly StackPanel keyDetails = new();
     private readonly WrapPanel ranges = new();
     private readonly WrapPanel custom = new();
-    private readonly TextBlock rangeCaption = new(), inspector = new(), trendInspector = new();
+    private readonly TextBlock rangeCaption = new(), comparisonCaption = new(), inspector = new(), trendInspector = new();
     private readonly UniformGrid metrics = new();
     private readonly Grid keyboard = new();
     private readonly WrapPanel legend = new();
     private readonly StackPanel ranking = new();
     private readonly StatisticsTrendView trend;
+    private readonly StatisticsTrendView dailyActivity, hourlyActivity;
+    private readonly TextBlock dailyInspector, hourlyInspector;
+    private readonly ComboBox activityDay;
+    private readonly Dictionary<int, Button> activityButtons = [];
+    private (long Revision, DateOnly Today, long EndMinute, TimeZoneInfo Zone, int Days)? dailyRefresh;
+    private IReadOnlyList<StatisticsDailyActivity> dailyValues = [];
+    private IReadOnlyList<StatisticsTrendBucket> hourlyValues = [];
+    private DateOnly? hourlyDate;
+    private bool updatingActivityDays;
     private readonly Dictionary<int,Button> keyButtons = [];
     private readonly Dictionary<string,Button> periodButtons = [];
     private readonly DatePicker fromDate, toDate;
@@ -45,6 +57,7 @@ internal sealed class StatisticsPanel : StackPanel {
     private int? hoveredKey;
     private bool building;
     private readonly record struct KeyboardKey(int Id, string Label, double Width = 1);
+    private sealed record DayOption(DateOnly Day, string Label);
     private static readonly KeyboardKey[][] Rows = [
         [new(0x29,"`"),new(0x02,"1"),new(0x03,"2"),new(0x04,"3"),new(0x05,"4"),new(0x06,"5"),new(0x07,"6"),new(0x08,"7"),new(0x09,"8"),new(0x0a,"9"),new(0x0b,"0"),new(0x0c,"−"),new(0x0d,"="),new(0x0e,"⌫",1.8)],
         [new(0x0f,"Tab",1.4),new(0x10,"Q"),new(0x11,"W"),new(0x12,"E"),new(0x13,"R"),new(0x14,"T"),new(0x15,"Y"),new(0x16,"U"),new(0x17,"I"),new(0x18,"O"),new(0x19,"P"),new(0x1a,"["),new(0x1b,"]"),new(0x2b,"\\",1.4)],
@@ -62,9 +75,10 @@ internal sealed class StatisticsPanel : StackPanel {
         var top = new DockPanel { Margin = new(0,0,0,10) };
         var export = Button(T("导出 CSV","Export CSV"), Export);
         DockPanel.SetDock(export,Dock.Right); top.Children.Add(export);
-        foreach (var (id,zh,en) in new[] {("today","今天","Today"),("hour","近一小时","Past hour"),("week","近七天","Past week"),("custom","自定义","Custom")}) {
+        foreach (var (id,zh,en) in new[] {("today","今天","Today"),("hour","近一小时","Past hour"),("week","近七天","Past week"),("month","近 30 天","Past 30 days"),("custom","自定义","Custom")}) {
             string selection = id;
             var button = Button(T(zh,en),()=>{state.Period=selection;RefreshIfNeeded(true);});
+            AutomationProperties.SetAutomationId(button,"statistics-period-"+id);
             periodButtons[id] = button; ranges.Children.Add(button);
         }
         top.Children.Add(ranges); Children.Add(top);
@@ -77,9 +91,28 @@ internal sealed class StatisticsPanel : StackPanel {
         }
         custom.Margin = new(0,0,0,10); Children.Add(custom);
         rangeCaption.Foreground = Brush("MutedBrush"); rangeCaption.FontSize = 12;
-        rangeCaption.Margin = new(0,0,0,16); Children.Add(rangeCaption);
+        rangeCaption.TextWrapping = TextWrapping.Wrap;
+        rangeCaption.Margin = new(0,0,0,12); Children.Add(rangeCaption);
         Children.Add(content);
-        metrics.Columns = 4; content.Children.Add(Card(metrics));
+        var overview = new StackPanel();
+        string comparisonHelp = T(
+            "今天与昨天的同时段相比。近 7 天和近 30 天与前一段相同天数相比，并对齐最后一天的本机时间。近一小时和自定义范围与紧邻的等长时段相比。只比较已记录的按键。对比时段若开始于最早记录的分钟之前，会显示历史记录不足。",
+            "Today is compared with yesterday through the same local time. The 7- and 30-day ranges use the same number of preceding days, aligned to the local time on the final day. Past hour and custom ranges use the immediately preceding period of equal length. Comparisons use recorded presses. A comparison is unavailable if it starts before the earliest recorded minute.");
+        var help = Button("ⓘ", () => MessageBox.Show(Window.GetWindow(this), comparisonHelp,
+            T("统计对比", "Statistics comparison"), MessageBoxButton.OK, MessageBoxImage.Information));
+        help.Padding = new(6,1,6,1);
+        help.ToolTip = comparisonHelp;
+        AutomationProperties.SetName(help, T("查看统计对比说明", "How statistics are compared"));
+        overview.Children.Add(Heading(T("概览", "Overview"), help));
+        metrics.Columns = 4;
+        overview.Children.Add(metrics);
+        comparisonCaption.FontSize = 11;
+        comparisonCaption.Foreground = Brush("MutedBrush");
+        comparisonCaption.TextWrapping = TextWrapping.Wrap;
+        comparisonCaption.Margin = new(0,10,0,0);
+        AutomationProperties.SetAutomationId(comparisonCaption, "statistics-comparison-period");
+        overview.Children.Add(comparisonCaption);
+        content.Children.Add(Card(overview));
 
         var heat = new StackPanel();
         heat.Children.Add(Heading(T("按键分布","Keyboard heatmap"),T("悬停查看次数，点击固定选择","Hover for details · Click to pin")));
@@ -104,11 +137,11 @@ internal sealed class StatisticsPanel : StackPanel {
         heat.Children.Add(keyboard);
         inspector.Margin = new(2,12,0,12); inspector.FontSize=13; inspector.Foreground=Brush("TextBrush");
         AutomationProperties.SetAutomationId(inspector,"statistics-key-detail"); heat.Children.Add(inspector);
-        heat.Children.Add(legend); content.Children.Add(Card(heat));
+        heat.Children.Add(legend);
 
         var activity = new StackPanel();
-        activity.Children.Add(Heading(T("打字趋势","Typing activity"),T("每个点代表该时段的累计次数","Each point shows its interval total")));
-        trend = new StatisticsTrendView(chinese) { Height = 208, Margin = new(0,8,0,0) };
+        activity.Children.Add(Heading(T("打字趋势","Typing activity"),""));
+        trend = new StatisticsTrendView(chinese) { Height = 192 };
         trend.Hovered += bucket => {
             trendInspector.Text = bucket is null ? TrendDescription() :
                 $"{IntervalLabel(bucket.Start,bucket.End)}   ·   {Number(bucket.Count)} {T("次","presses")}";
@@ -117,6 +150,54 @@ internal sealed class StatisticsPanel : StackPanel {
         activity.Children.Add(trend);
         trendInspector.Foreground=Brush("MutedBrush"); trendInspector.FontSize=12; trendInspector.Margin=new(0,4,0,0);trendInspector.TextWrapping=TextWrapping.Wrap;
         activity.Children.Add(trendInspector); content.Children.Add(Card(activity));
+
+        var daily = new StackPanel();
+        activityDay = new() { DisplayMemberPath = nameof(DayOption.Label), MinWidth = 136 };
+        var dayRanges = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (int days in new[] { 7, 30 }) {
+            var button = Button(T($"{days} 天", $"{days} days"), () => {
+                state.ActivityDays = days;
+                RefreshActiveMinutes(DateTimeOffset.Now);
+            });
+            AutomationProperties.SetAutomationId(button, $"statistics-active-{days}-days");
+            activityButtons[days] = button;
+            dayRanges.Children.Add(button);
+        }
+        daily.Children.Add(Heading(T("每日活跃分钟", "Daily active minutes"), dayRanges));
+        dailyActivity = new(chinese) { Height = 192, Cursor = Cursors.Hand };
+        AutomationProperties.SetAutomationId(dailyActivity, "statistics-daily-active-minutes");
+        daily.Children.Add(dailyActivity);
+        dailyInspector = Text(DailyDescription(), 12, true);
+        dailyInspector.Margin = new(0,4,0,0);
+        AutomationProperties.SetAutomationId(dailyInspector, "statistics-daily-active-detail");
+        daily.Children.Add(dailyInspector);
+        dailyActivity.DailyHovered += value => dailyInspector.Text = value is null
+            ? DailyDescription() : $"{ActivityDate(value.Day)}   ·   {Number(value.ActiveMinutes)} {T("分钟", "min")}";
+        dailyActivity.DailySelected += value => {
+            activityDay.SelectedItem = activityDay.Items.Cast<DayOption>().FirstOrDefault(option => option.Day == value.Day);
+        };
+        var hourly = new StackPanel();
+        AutomationProperties.SetName(activityDay, T("选择日期", "Select date"));
+        AutomationProperties.SetAutomationId(activityDay, "statistics-active-date");
+        hourly.Children.Add(Heading(T("每小时活跃分钟", "Hourly active minutes"), activityDay));
+        hourlyActivity = new(chinese) { Height = 192 };
+        AutomationProperties.SetAutomationId(hourlyActivity, "statistics-hourly-active-minutes");
+        hourly.Children.Add(hourlyActivity);
+        hourlyInspector = Text(HourlyDescription(), 12, true);
+        hourlyInspector.Margin = new(0,4,0,0);
+        AutomationProperties.SetAutomationId(hourlyInspector, "statistics-hourly-active-detail");
+        hourly.Children.Add(hourlyInspector);
+        hourlyActivity.Hovered += bucket => hourlyInspector.Text = bucket is null
+            ? HourlyDescription() : $"{IntervalLabel(bucket.Start, bucket.End)}   ·   {Number(bucket.Count)} {T("分钟", "min")}";
+        activityDay.SelectionChanged += (_, _) => {
+            if (updatingActivityDays || activityDay.SelectedItem is not DayOption option) return;
+            state.ActivityDay = option.Day == dailyValues[^1].Day ? null : option.Day;
+            RefreshHourlyActivity(DateTimeOffset.Now);
+        };
+        daily.Children.Add(new Border { Height = 1, Background = Brush("LineBrush"), Margin = new(0,16,0,16) });
+        daily.Children.Add(hourly);
+        Children.Add(Card(daily));
+        keyDetails.Children.Add(Card(heat));
 
         var details = new StackPanel();
         details.Children.Add(Heading(T("按键次数","Key counts"),T("按次数排序，点击与键盘联动","Sorted by count · Click to select")));
@@ -131,7 +212,9 @@ internal sealed class StatisticsPanel : StackPanel {
         searchField.Children.Add(search);searchField.Children.Add(searchHint);
         searchHint.Visibility=string.IsNullOrEmpty(search.Text)?Visibility.Visible:Visibility.Collapsed;
         search.TextChanged+=(_,_)=>searchHint.Visibility=string.IsNullOrEmpty(search.Text)?Visibility.Visible:Visibility.Collapsed;
-        filters.Children.Add(searchField); details.Children.Add(filters); details.Children.Add(ranking); content.Children.Add(Card(details));
+        filters.Children.Add(searchField); details.Children.Add(filters); details.Children.Add(ranking);
+        keyDetails.Children.Add(Card(details));
+        Children.Add(keyDetails);
         AutomationProperties.SetAutomationId(ranking,"statistics-ranking");
         search.TextChanged += (_,_)=>{state.Search=search.Text;RefreshRanking();};
         unused.Checked += (_,_)=>{state.ShowUnused=true;RefreshRanking();};
@@ -144,30 +227,79 @@ internal sealed class StatisticsPanel : StackPanel {
         var now = DateTimeOffset.Now;
         if (!force && (now-refreshed).TotalSeconds < 1) return;
         refreshed = now;
+        RefreshActiveMinutes(now);
         var (from,to,interval) = Range(now);
         if (!force && snapshot is not null && snapshot.Revision==store.Revision &&
             snapshot.From.ToUnixTimeSeconds()==(long)Math.Floor(from.ToUnixTimeMilliseconds()/60000d)*60 &&
             snapshot.To.ToUnixTimeSeconds()==(long)Math.Ceiling(to.ToUnixTimeMilliseconds()/60000d)*60) return;
         custom.Visibility = state.Period == "custom" ? Visibility.Visible : Visibility.Collapsed;
-        foreach (var (id,button) in periodButtons) button.BorderBrush=Brush(id==state.Period?"AccentBrush":"LineBrush");
+        foreach (var (id,button) in periodButtons) SetRangeSelection(button, id == state.Period);
         if (to<=from) {
             rangeCaption.Text=T("结束时间需要晚于开始时间。","Choose an end after the start.");
-            content.Visibility=Visibility.Collapsed; snapshot=null; return;
+            content.Visibility=Visibility.Collapsed; keyDetails.Visibility=Visibility.Collapsed; snapshot=null; return;
         }
         content.Visibility=Visibility.Visible;
+        keyDetails.Visibility=Visibility.Visible;
         snapshot=store.Snapshot(from,to,TimeZoneInfo.Local,interval);
-        rangeCaption.Text=$"{IntervalLabel(snapshot.From,snapshot.To)}   ·   {T("本机时间 · 分钟精度","Local time · Minute precision")}";
-        RefreshMetrics(); RefreshHeatmap(); RefreshRanking();
+        rangeCaption.Text=$"{IntervalLabel(snapshot.From,snapshot.To)}   ·   {T("本机时间","Local time")}";
+        int? daysBack = state.Period switch { "today" => 1, "week" => 7, "month" => 30, _ => null };
+        RefreshMetrics(snapshot, store.ComparePrevious(from, to, daysBack));
+        RefreshHeatmap(); RefreshRanking();
         trend.SetData(snapshot.Trend);
         trendInspector.Text=TrendDescription();
     }
 
     private (DateTimeOffset From,DateTimeOffset To,StatisticsInterval Interval) Range(DateTimeOffset now) => state.Period switch {
         "hour" => (now.AddHours(-1),now,StatisticsInterval.FiveMinutes),
-        "week" => (new DateTimeOffset(DateTime.Today.AddDays(-6)),now,StatisticsInterval.Day),
+        "week" => (StatisticsStore.StartOfRecentDays(now,7,TimeZoneInfo.Local),now,StatisticsInterval.Day),
+        "month" => (StatisticsStore.StartOfRecentDays(now,30,TimeZoneInfo.Local),now,StatisticsInterval.Day),
         "custom" => (new DateTimeOffset(state.From),new DateTimeOffset(state.To),StatisticsInterval.Auto),
-        _ => (new DateTimeOffset(DateTime.Today),now,StatisticsInterval.Hour)
+        _ => (StatisticsStore.StartOfRecentDays(now,1,TimeZoneInfo.Local),now,StatisticsInterval.Hour)
     };
+    private void RefreshActiveMinutes(DateTimeOffset now) {
+        var today = DateOnly.FromDateTime(now.LocalDateTime);
+        long endMinute = (now.UtcTicks + TimeSpan.TicksPerMinute - 1) / TimeSpan.TicksPerMinute;
+        var next = (store.Revision, today, endMinute, TimeZoneInfo.Local, state.ActivityDays);
+        if (dailyRefresh == next) return;
+        dailyRefresh = next;
+        var values = store.DailyActivity(now, state.ActivityDays);
+        if (!dailyValues.SequenceEqual(values)) {
+            bool datesChanged = dailyValues.Count != values.Count || dailyValues[^1].Day != values[^1].Day;
+            dailyValues = values;
+            dailyActivity.SetDailyData(values);
+            dailyInspector.Text = DailyDescription();
+            if (datesChanged) UpdateActivityDays(today);
+        }
+        foreach (var (days, button) in activityButtons) SetRangeSelection(button, days == state.ActivityDays);
+        RefreshHourlyActivity(now);
+    }
+    private void SetRangeSelection(Button button, bool selected) {
+        button.BorderBrush = Brush(selected ? "AccentBrush" : "LineBrush");
+        AutomationProperties.SetItemStatus(button, selected ? T("已选择", "Selected") : "");
+    }
+    private void UpdateActivityDays(DateOnly today) {
+        if (state.ActivityDay is DateOnly selected && !dailyValues.Any(value => value.Day == selected))
+            state.ActivityDay = null;
+        updatingActivityDays = true;
+        var options = dailyValues.Reverse().Select(value => new DayOption(value.Day,
+            value.Day == today ? T("今天", "Today") : ActivityDate(value.Day))).ToArray();
+        activityDay.ItemsSource = options;
+        activityDay.SelectedItem = options.First(option => option.Day == (state.ActivityDay ?? today));
+        updatingActivityDays = false;
+    }
+    private void RefreshHourlyActivity(DateTimeOffset now) {
+        var day = state.ActivityDay ?? DateOnly.FromDateTime(now.LocalDateTime);
+        var values = store.HourlyActivity(day, now);
+        if (day == hourlyDate && hourlyValues.SequenceEqual(values)) return;
+        hourlyDate = day;
+        hourlyValues = values;
+        hourlyActivity.SetData(values, labelIntervalStart: true);
+        hourlyInspector.Text = HourlyDescription();
+    }
+    private string ActivityDate(DateOnly day) => day.ToString(T("yyyy/M/d", "MMM d, yyyy"), CultureInfo.GetCultureInfo(T("zh-CN", "en-US")));
+    private string DailyDescription() => T("有按键记录的分钟计为活跃。点击日期查看每小时明细。",
+        "A minute with a recorded press counts as active. Click a day to see its hourly detail.");
+    private string HourlyDescription() => T("悬停查看该小时的活跃分钟。", "Hover to see the active minutes in an hour.");
     private void ApplyCustom() {
         if (!TimeSpan.TryParse(fromTime.Text,CultureInfo.InvariantCulture,out var a) ||
             !TimeSpan.TryParse(toTime.Text,CultureInfo.InvariantCulture,out var b) || a<TimeSpan.Zero || b<TimeSpan.Zero || a>=TimeSpan.FromDays(1) || b>=TimeSpan.FromDays(1)) {
@@ -179,17 +311,49 @@ internal sealed class StatisticsPanel : StackPanel {
         }
         state.From=from;state.To=to;RefreshIfNeeded(true);
     }
-    private void RefreshMetrics() {
-        metrics.Children.Clear(); if(snapshot is null)return;
-        AddMetric(T("总敲击","Total presses"),Number(snapshot.Total),T($"使用了 {snapshot.Counts.Count:N0} 个键",$"{snapshot.Counts.Count:N0} keys used"));
-        AddMetric(T("活跃分钟","Active minutes"),Number(snapshot.ActiveMinutes),T("该分钟有按键即计入","Minutes with at least one press"));
-        AddMetric(T("平均每分钟","Average per active minute"),snapshot.AveragePerActiveMinute.ToString("N1",CultureInfo.CurrentCulture),T("仅按活跃分钟计算","Calculated over active minutes"));
-        AddMetric(T("最高每分钟","Peak minute"),Number(snapshot.PeakMinuteCount),snapshot.PeakMinute is DateTimeOffset at?Local(at).ToString(Local(at).Year==DateTime.Now.Year?"M/d HH:mm":"yyyy/M/d HH:mm"):T("尚无记录","No activity yet"));
+    private void RefreshMetrics(StatisticsSnapshot current, StatisticsComparison? previous) {
+        metrics.Children.Clear();
+        comparisonCaption.Text = previous is null ? T("历史记录不足，暂时无法对比", "Not enough recorded history to compare")
+            : T("对比时段 ", "Compared with ") + IntervalLabel(previous.From, previous.To);
+        AddMetric(T("总敲击","Total presses"), Number(current.Total),
+            T($"{current.Counts.Count:N0} 个键", $"{current.Counts.Count:N0} keys used"),
+            Delta(current.Total, previous?.Total, T("次", "presses")), "statistics-total-change", primary: true);
+        AddMetric(T("活跃分钟","Active minutes"), Number(current.ActiveMinutes), T("有敲击的分钟", "Minutes with a press"),
+            Delta(current.ActiveMinutes, previous?.ActiveMinutes, T("分钟", "min")), "statistics-active-change");
+        AddMetric(T("每活跃分钟","Per active minute"), current.AveragePerActiveMinute.ToString("0.#", CultureInfo.CurrentCulture), T("次/分钟", "presses/min"));
+        AddMetric(T("分钟峰值","Peak minute"), current.PeakMinute is null ? "—" : Number(current.PeakMinuteCount),
+            current.PeakMinute is DateTimeOffset at ? Local(at).ToString(Local(at).Year == DateTime.Now.Year ? "M/d HH:mm" : "yyyy/M/d HH:mm") : T("暂无记录", "No activity yet"));
     }
-    private void AddMetric(string label,string value,string note) {
+    private (string Text, string Tooltip)? Delta(long current, long? prior, string unit) {
+        if (prior is not long previous) return null;
+        long difference = current - previous;
+        string signedCount = difference.ToString("+#,##0;−#,##0;0", CultureInfo.CurrentCulture);
+        string absolute = $"{signedCount} {unit}";
+        double ratio = previous == 0 ? 0 : (double)difference / previous;
+        string change = difference == 0 ? T("持平", "No change") : Math.Abs(ratio) < .0005 ? absolute
+            : (difference > 0 ? "+" : "−") + Math.Abs(ratio).ToString("P1", CultureInfo.CurrentCulture);
+        return (change, T("上期 ", "Previous ") + $"{Number(previous)} {unit}   ·   " + T("变化 ", "Change ") + absolute);
+    }
+    private void AddMetric(string label, string value, string note, (string Text, string Tooltip)? delta = null,
+        string? deltaId = null, bool primary = false) {
         var body=new StackPanel{Margin=new(0,0,12,0)};
-        body.Children.Add(Text(label,12,true)); var number=Text(value,27);number.FontWeight=FontWeights.SemiBold;number.Margin=new(0,8,0,6);body.Children.Add(number);
-        var explanation=Text(note,11,true);explanation.ToolTip=note;body.Children.Add(explanation);metrics.Children.Add(body);
+        body.Children.Add(Text(label,12,true));
+        var number = Text(value, 27);
+        number.FontWeight = FontWeights.SemiBold;
+        number.Margin = new(0,4,0,4);
+        if (primary) number.Foreground = Brush("AccentBrush");
+        body.Children.Add(number);
+        var explanation = Text(note,11,true);
+        body.Children.Add(explanation);
+        if (delta is { } change) {
+            var changeLabel = Text(change.Text, 11, true);
+            changeLabel.ToolTip = change.Tooltip;
+            changeLabel.Margin = new(0,3,0,0);
+            AutomationProperties.SetName(changeLabel, change.Tooltip);
+            AutomationProperties.SetAutomationId(changeLabel, deltaId);
+            body.Children.Add(changeLabel);
+        }
+        metrics.Children.Add(body);
     }
     private void RefreshHeatmap() {
         if(snapshot is null)return;
@@ -288,18 +452,50 @@ internal sealed class StatisticsPanel : StackPanel {
     private Button Button(string label,Action action){var button=new Button{Content=label,Margin=new(0,0,6,0),Padding=new(12,7,12,7),HorizontalContentAlignment=HorizontalAlignment.Left};button.Click+=(_,_)=>action();return button;}
     private Border Card(UIElement child)=>new(){Child=child,Background=Brush("CardBrush"),Padding=new(20),CornerRadius=new(12),Margin=new(0,0,0,16)};
     private UIElement Heading(string title,string hint) {
-        var row=new DockPanel{Margin=new(0,0,0,12)};var note=Text(hint,11,true);DockPanel.SetDock(note,Dock.Right);row.Children.Add(note);
+        return Heading(title, Text(hint, 11, true));
+    }
+    private UIElement Heading(string title, UIElement accessory) {
+        var row=new DockPanel{Margin=new(0,0,0,12)};DockPanel.SetDock(accessory,Dock.Right);row.Children.Add(accessory);
         var name=Text(title,15);name.FontWeight=FontWeights.SemiBold;row.Children.Add(name);return row;
     }
     private static TextBox TimeBox(DateTime value)=>new(){Text=value.ToString("HH:mm",CultureInfo.InvariantCulture),Width=72,Padding=new(6),VerticalContentAlignment=VerticalAlignment.Center};
 }
 
 internal sealed class StatisticsTrendView(bool chinese) : FrameworkElement {
-    private IReadOnlyList<StatisticsTrendBucket> buckets = [];
+    private readonly record struct PlotSample(string Label, long Count, double Center, double End);
+    private PlotSample[] samples = [];
+    private Action<int?>? reportHover;
+    private Action<int>? reportSelection;
     private int? hovered;
     internal event Action<StatisticsTrendBucket?>? Hovered;
-    internal void SetData(IReadOnlyList<StatisticsTrendBucket> values) {
-        buckets = values;
+    internal event Action<StatisticsDailyActivity?>? DailyHovered;
+    internal event Action<StatisticsDailyActivity>? DailySelected;
+    internal void SetData(IReadOnlyList<StatisticsTrendBucket> values, bool labelIntervalStart = false) {
+        if (values.Count == 0) {
+            SetSamples([], null);
+            return;
+        }
+        DateTimeOffset start = values[0].Start;
+        double span = Math.Max(1, (values[^1].End - start).Ticks);
+        double days = (values[^1].End - start).TotalDays;
+        string format = days > 365 ? "yyyy" : days > 2 ? "M/d" : "HH:mm";
+        var points = values.Select(value => {
+            DateTimeOffset center = value.Start.AddTicks((value.End - value.Start).Ticks / 2);
+            DateTime date = (labelIntervalStart ? value.Start : center).LocalDateTime;
+            return new PlotSample(date.ToString(format), value.Count, (center - start).Ticks / span, (value.End - start).Ticks / span);
+        }).ToArray();
+        SetSamples(points, index => Hovered?.Invoke(index is int at ? values[at] : null));
+    }
+    internal void SetDailyData(IReadOnlyList<StatisticsDailyActivity> values) {
+        var points = values.Select((value, index) => new PlotSample(value.Day.ToString("M/d"), value.ActiveMinutes,
+            (index + .5) / values.Count, (index + 1d) / values.Count)).ToArray();
+        SetSamples(points, index => DailyHovered?.Invoke(index is int at ? values[at] : null),
+            index => DailySelected?.Invoke(values[index]));
+    }
+    private void SetSamples(PlotSample[] points, Action<int?>? onHover, Action<int>? onSelect = null) {
+        samples = points;
+        reportHover = onHover;
+        reportSelection = onSelect;
         hovered = null;
         InvalidateVisual();
     }
@@ -315,15 +511,15 @@ internal sealed class StatisticsTrendView(bool chinese) : FrameworkElement {
         var line = (Brush)resources["LineBrush"];
         double left = 52, right = ActualWidth - 10, top = 12, bottom = ActualHeight - 30;
         double width = right - left, height = bottom - top;
-        long maximum = buckets.Count == 0 ? 0 : buckets.Max(bucket => bucket.Count);
+        long maximum = samples.Length == 0 ? 0 : samples.Max(sample => sample.Count);
         var scale = AxisScale(maximum);
         for (double tick = 0; tick <= scale.Maximum; tick += scale.Step) {
             double y = bottom - height * tick / scale.Maximum;
             context.DrawLine(new Pen(line, .6), new(left, y), new(right, y));
             Label(context, tick.ToString("N0", CultureInfo.CurrentCulture), new(0, y - 7), muted);
         }
-        if (buckets.Count == 0) return;
-        var points = Points(left, width, bottom, height, scale.Maximum);
+        if (samples.Length == 0) return;
+        var points = samples.Select(sample => new Point(left + width * sample.Center, bottom - height * sample.Count / scale.Maximum)).ToArray();
         if (maximum > 0) {
             if (points.Length > 1) {
                 var outline = Curve(points, bottom, false);
@@ -342,12 +538,9 @@ internal sealed class StatisticsTrendView(bool chinese) : FrameworkElement {
                 context.DrawEllipse(accent, null, points[0], 3.5, 3.5);
             }
         }
-        foreach (int index in new[] {0, buckets.Count / 2, buckets.Count - 1}.Distinct()) {
-            var date = Midpoint(buckets[index]).LocalDateTime;
-            double days = (buckets[^1].End - buckets[0].Start).TotalDays;
-            string text = date.ToString(days > 365 ? "yyyy" : days > 2 ? "M/d" : "HH:mm");
+        foreach (int index in new[] {0, samples.Length / 2, samples.Length - 1}.Distinct()) {
             double x = Math.Clamp(points[index].X - 18, left, right - 36);
-            Label(context, text, new(x, bottom + 10), muted);
+            Label(context, samples[index].Label, new(x, bottom + 10), muted);
         }
         if (hovered is int selected && selected < points.Length) {
             Point point = points[selected];
@@ -359,15 +552,6 @@ internal sealed class StatisticsTrendView(bool chinese) : FrameworkElement {
         if (maximum == 0)
             Label(context, chinese ? "暂无按键记录" : "No activity yet", new(left + width / 2 - 50, top + height / 2 - 10), muted);
     }
-
-    private Point[] Points(double left, double width, double bottom, double height, double maximum) {
-        double span = (buckets[^1].End - buckets[0].Start).TotalSeconds;
-        return buckets.Select(bucket => new Point(
-            left + width * (span > 0 ? (Midpoint(bucket) - buckets[0].Start).TotalSeconds / span : .5),
-            bottom - height * bucket.Count / maximum)).ToArray();
-    }
-    private static DateTimeOffset Midpoint(StatisticsTrendBucket bucket) =>
-        bucket.Start.AddTicks((bucket.End - bucket.Start).Ticks / 2);
 
     // A monotone cubic never introduces a negative count or rises above either
     // endpoint. Harmonic tangents retain continuous motion between samples.
@@ -403,28 +587,34 @@ internal sealed class StatisticsTrendView(bool chinese) : FrameworkElement {
     }
     internal void HoverAt(Point position) {
         double width = ActualWidth - 62;
+        double x = position.X - 52;
         int? index = null;
-        if (width > 0 && buckets.Count > 0) {
-            double x = position.X - 52;
-            if (x >= 0 && x <= width) {
-                long span = (buckets[^1].End - buckets[0].Start).Ticks;
-                long offset = Math.Min(span, (long)(x / width * span));
-                var time = buckets[0].Start.AddTicks(offset);
-                index = buckets.Count - 1;
-                for (int at = 0; at < buckets.Count; at++)
-                    if (time < buckets[at].End) { index = at; break; }
-            }
+        if (width > 0 && samples.Length > 0 && x >= 0 && x <= width) {
+            double fraction = x / width;
+            index = samples.Length - 1;
+            for (int at = 0; at < samples.Length; at++)
+                if (fraction < samples[at].End) { index = at; break; }
         }
         if (hovered == index) return;
         hovered = index;
         InvalidateVisual();
-        Hovered?.Invoke(index is int selected ? buckets[selected] : null);
+        reportHover?.Invoke(index);
+    }
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e) {
+        base.OnMouseLeftButtonUp(e);
+        if (reportSelection is null) return;
+        SelectAt(e.GetPosition(this));
+        e.Handled = hovered is not null;
+    }
+    internal void SelectAt(Point position) {
+        HoverAt(position);
+        if (hovered is int selected) reportSelection?.Invoke(selected);
     }
     protected override void OnMouseLeave(MouseEventArgs e) {
         base.OnMouseLeave(e);
         hovered = null;
         InvalidateVisual();
-        Hovered?.Invoke(null);
+        reportHover?.Invoke(null);
     }
     private void Label(DrawingContext context, string text, Point origin, Brush brush) =>
         context.DrawText(new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,

@@ -39,6 +39,35 @@ enum StatisticsTrendInterval: Hashable {
     case minutes(Int), hours(Int), day, week, month, years(Int)
 }
 
+enum StatisticsDayRange: Int, CaseIterable {
+    case week = 7
+    case month = 30
+
+    func start(through date: Date, calendar: Calendar = .current) -> Date {
+        let first = calendar.date(byAdding: .day, value: 1 - rawValue, to: date) ?? date
+        return calendar.startOfDay(for: first)
+    }
+}
+
+struct StatisticsActiveMinutePoint: Identifiable, Equatable {
+    let date: Date
+    let activeMinutes: Int
+    var id: Date { date }
+}
+
+enum StatisticsLookback {
+    case elapsed
+    case calendarDays(Int)
+}
+
+struct StatisticsComparison {
+    let from: Date
+    let to: Date
+    let total: Int
+    let activeMinutes: Int
+    let hasHistory: Bool
+}
+
 struct StatisticsTrendBucket: Identifiable, Equatable {
     let start: Date
     let end: Date

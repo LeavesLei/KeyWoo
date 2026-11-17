@@ -1,9 +1,11 @@
 import AVFoundation
 import AudioAtomics
+import AudioToolbox
 import Combine
 import CryptoKit
 import Foundation
 import Darwin
+import zlib
 
 enum KeyboardSoundQuality: String, CaseIterable, Identifiable, Sendable {
     case original, hiFi
@@ -22,6 +24,7 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
     case bluePBT, brownABS, blackABS
     case typewriter, bubble, woodblock, paper, raindrop, brick, arcade, laser, streetBeat
     case macbookPro, hermes, mahjongTiles, woodDesk
+    case rainy75, whiteFox, unicomp, technicsYellow, laneAlps
     var id: String { rawValue }
     var category: KeyboardSoundCategory {
         switch self {
@@ -57,6 +60,11 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .hermes: return L("Hermes 打字机")
         case .mahjongTiles: return L("麻将牌实录")
         case .woodDesk: return L("木桌轻叩")
+        case .rainy75: return L("Rainy 75 客制化")
+        case .whiteFox: return L("WhiteFox · Hako 紫轴")
+        case .unicomp: return L("Unicomp · 屈曲弹簧")
+        case .technicsYellow: return L("Technics · 佳达隆黄轴")
+        case .laneAlps: return L("LANE 700 · Alps 轴")
         }
     }
     var subtitle: String {
@@ -86,15 +94,20 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .hermes: return L("金属字锤、空格与行尾铃")
         case .mahjongTiles: return L("真实牌面轻碰，大键更扎实")
         case .woodDesk: return L("指尖叩木，轻重有别")
+        case .rainy75: return L("柔厚触底，带短促铝壳共鸣")
+        case .whiteFox: return L("利落段落，清晰的触底颗粒")
+        case .unicomp: return L("复古弹簧声，清脆有金属余韵")
+        case .technicsYellow: return L("顺滑线性，低沉紧实的老键盘声")
+        case .laneAlps: return L("老式电信键盘，短促干脆")
         }
     }
     var characterTags: [String] {
         switch self {
-        case .red, .black, .blackABS: return [L("线性"), L("实录")]
+        case .red, .black, .blackABS, .technicsYellow: return [L("线性"), L("实录")]
         case .blue, .bluePBT: return [L("点击"), L("实录")]
-        case .brown, .brownABS, .oreo, .purple, .panda: return [L("段落"), L("实录")]
-        case .topre, .macbookPro, .woodDesk: return [L("柔和"), L("实录")]
-        case .hermes: return [L("复古"), L("实录")]
+        case .brown, .brownABS, .oreo, .purple, .panda, .whiteFox: return [L("段落"), L("实录")]
+        case .topre, .macbookPro, .woodDesk, .rainy75: return [L("柔和"), L("实录")]
+        case .hermes, .unicomp, .laneAlps: return [L("复古"), L("实录")]
         case .mahjongTiles: return [L("硬质"), L("实录")]
         case .mahjong, .brick: return [L("硬质"), L("合成")]
         case .typewriter: return [L("复古"), L("合成")]
@@ -125,6 +138,11 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .laser: return "bolt.fill"
         case .streetBeat: return "music.note"
         case .macbookPro: return "laptopcomputer"
+        case .rainy75: return "cloud.rain"
+        case .whiteFox: return "diamond.lefthalf.filled"
+        case .unicomp: return "waveform"
+        case .technicsYellow: return "square.stack"
+        case .laneAlps: return "keyboard"
         }
     }
     var isRecorded: Bool {
@@ -140,6 +158,10 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .panda: return "Thomas Lai / kbsim"
         case .macbookPro, .hermes, .woodDesk: return "Joseph Sardin / BigSoundBank"
         case .mahjongTiles: return "Detective_Lemons / Freesound"
+        case .rainy75: return "Techrul / Freesound"
+        case .whiteFox: return "grcekh / Freesound"
+        case .unicomp: return "SamsterBirdies / Freesound"
+        case .technicsYellow, .laneAlps: return "zrrion / Freesound"
         default: return isRecorded ? "Hải Nguyễn / Mechvibes" : L("键舞合成音效")
         }
     }
@@ -150,6 +172,11 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         case .hermes: return "https://bigsoundbank.com/typewriter-key-s2842.html"
         case .mahjongTiles: return "https://freesound.org/people/Detective_Lemons/sounds/785585/"
         case .woodDesk: return "https://bigsoundbank.com/impatient-finger-tapping-2-s1428.html"
+        case .rainy75: return "https://freesound.org/people/Techrul/sounds/815614/"
+        case .whiteFox: return "https://freesound.org/people/grcekh/sounds/546167/"
+        case .unicomp: return "https://freesound.org/people/SamsterBirdies/sounds/489423/"
+        case .technicsYellow: return "https://freesound.org/people/zrrion/sounds/665075/"
+        case .laneAlps: return "https://freesound.org/people/zrrion/sounds/469014/"
         default: return isRecorded ? "https://github.com/hainguyents13/mechvibes" : nil
         }
     }
@@ -157,6 +184,10 @@ enum KeyboardSoundStyle: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .panda: return L("五种普通键录音，空格、回车、退格分别采录；其余键复用普通键。")
         case .macbookPro: return L("从一段 MacBook Pro 打字录音挑选成对的触底与回弹。按键按音色分组，原录音未标键位。")
+        case .whiteFox:
+            return L("从原作者的逐键试听中分离触底和回弹，再按音色分组。原录音未标注键位。")
+        case .rainy75, .unicomp, .technicsYellow, .laneAlps:
+            return L("从原作者的打字录音选出多组真实敲击，按音色分组；每段敲击在按下时完整播放。")
         case .hermes: return L("Hermes Precisa 305 实录。空格用原机空格声，回车用原机行尾铃，其余键轮换真实字锤声。")
         case .mahjongTiles, .woodDesk: return L("从实物录音选取独立短音。大键用另一组真实敲击，松开时静音。")
         case .mahjong: return L("程序合成的瓷牌拟音，不是实物录音。")
@@ -451,15 +482,11 @@ private final class KeyboardSoundBank: @unchecked Sendable {
 
     private static func loadClips(pack: Pack, root: URL, path: String, sha256: String) throws -> [Clip] {
         let url = root.appendingPathComponent(path)
-        let data = try Data(contentsOf: url)
+        let data = try recordingData(at: url)
         guard data.count < 25_000_000,
               SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == sha256 else { throw LoadingFailure.invalid }
-        let file = try AVAudioFile(forReading: url)
-        guard file.length == AVAudioFramePosition(pack.frames), file.processingFormat.sampleRate == rate,
-              file.processingFormat.channelCount == 2,
-              let pcm = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(pack.frames)) else { throw LoadingFailure.invalid }
-        try file.read(into: pcm)
-        guard Int(pcm.frameLength) == pack.frames, let channels = pcm.floatChannelData else { throw LoadingFailure.invalid }
+        let pcm = try decodeRecording(data, frames: pack.frames)
+        guard let channels = pcm.floatChannelData else { throw LoadingFailure.invalid }
         for frame in 0..<pack.frames {
             guard channels[0][frame].isFinite, channels[1][frame].isFinite,
                   abs(channels[0][frame]) <= 0.32, abs(channels[1][frame]) <= 0.32 else { throw LoadingFailure.invalid }
@@ -474,6 +501,72 @@ private final class KeyboardSoundBank: @unchecked Sendable {
             result.append(Clip(samples: pointer, frames: entry.frames, channels: 2))
         }
         return result
+    }
+
+    // Shipping bundles compress WAV bytes on disk. The manifest still hashes
+    // the original WAV, and the mixer only sees verified, decoded PCM.
+    private static func recordingData(at url: URL) throws -> Data {
+        let compressedURL = url.appendingPathExtension("gz")
+        guard FileManager.default.fileExists(atPath: compressedURL.path) else {
+            return try Data(contentsOf: url, options: .mappedIfSafe)
+        }
+        let compressed = try Data(contentsOf: compressedURL, options: .mappedIfSafe)
+        guard (18..<25_000_000).contains(compressed.count) else { throw LoadingFailure.invalid }
+        return try compressed.withUnsafeBytes { input in
+            let size = Int(UInt32(littleEndian: input.loadUnaligned(fromByteOffset: input.count - 4, as: UInt32.self)))
+            guard (44..<25_000_000).contains(size) else { throw LoadingFailure.invalid }
+            var output = Data(count: size)
+            let written = output.withUnsafeMutableBytes { destination -> Int in
+                var stream = z_stream()
+                guard inflateInit2_(&stream, 15 + 16, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size)) == Z_OK else { return 0 }
+                defer { inflateEnd(&stream) }
+                stream.next_in = UnsafeMutablePointer(mutating: input.bindMemory(to: UInt8.self).baseAddress)
+                stream.avail_in = uInt(input.count)
+                stream.next_out = destination.bindMemory(to: UInt8.self).baseAddress
+                stream.avail_out = uInt(size)
+                guard inflate(&stream, Z_FINISH) == Z_STREAM_END, stream.avail_in == 0 else { return 0 }
+                return Int(stream.total_out)
+            }
+            guard written == size else { throw LoadingFailure.invalid }
+            return output
+        }
+    }
+
+    private static func decodeRecording(_ data: Data, frames: Int) throws -> AVAudioPCMBuffer {
+        let source = Unmanaged.passRetained(data as NSData)
+        defer { source.release() }
+        var fileID: AudioFileID?
+        let opened = AudioFileOpenWithCallbacks(source.toOpaque(), { context, position, requested, destination, actual in
+            let bytes = Unmanaged<NSData>.fromOpaque(context).takeUnretainedValue()
+            guard position >= 0, position <= bytes.length else { return kAudioFilePositionError }
+            let count = min(Int(requested), bytes.length - Int(position))
+            if count > 0 { bytes.getBytes(destination, range: NSRange(location: Int(position), length: count)) }
+            actual.pointee = UInt32(count)
+            return noErr
+        }, nil, { context in
+            Int64(Unmanaged<NSData>.fromOpaque(context).takeUnretainedValue().length)
+        }, nil, kAudioFileWAVEType, &fileID)
+        guard opened == noErr, let fileID else { throw LoadingFailure.invalid }
+        defer { AudioFileClose(fileID) }
+
+        var file: ExtAudioFileRef?
+        guard ExtAudioFileWrapAudioFileID(fileID, false, &file) == noErr, let file else { throw LoadingFailure.invalid }
+        defer { ExtAudioFileDispose(file) }
+        var sourceFormat = AudioStreamBasicDescription()
+        var formatSize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
+        var sourceFrames: Int64 = 0
+        var lengthSize = UInt32(MemoryLayout<Int64>.size)
+        guard ExtAudioFileGetProperty(file, kExtAudioFileProperty_FileDataFormat, &formatSize, &sourceFormat) == noErr,
+              sourceFormat.mSampleRate == rate, sourceFormat.mChannelsPerFrame == 2,
+              ExtAudioFileGetProperty(file, kExtAudioFileProperty_FileLengthFrames, &lengthSize, &sourceFrames) == noErr,
+              sourceFrames == frames, let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 2),
+              let pcm = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames)) else { throw LoadingFailure.invalid }
+        var clientFormat = format.streamDescription.pointee
+        guard ExtAudioFileSetProperty(file, kExtAudioFileProperty_ClientDataFormat, formatSize, &clientFormat) == noErr else { throw LoadingFailure.invalid }
+        var decoded = AVAudioFrameCount(frames)
+        pcm.frameLength = decoded
+        guard ExtAudioFileRead(file, &decoded, pcm.mutableAudioBufferList) == noErr, decoded == frames else { throw LoadingFailure.invalid }
+        return pcm
     }
 
     private struct Noise {

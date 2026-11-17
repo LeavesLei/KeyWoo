@@ -13,7 +13,8 @@ namespace KeyWoo.Windows;
 internal static class InterfaceVerification {
     internal sealed record Result(bool Passed,bool NavigationPassed,bool RuleEditingPassed,bool DraftPreservationPassed,
         bool ThemeAndLanguagePassed,bool PreviewAvailabilityPassed,bool FullRowDisclosurePassed,
-        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,bool NarrowLayoutPassed,bool EffectsActivationPassed,int NativeScreenshots);
+        bool VisibleLabelsPassed,bool DarkTextContrastPassed,bool RuleColumnLayoutPassed,bool NarrowLayoutPassed,
+        bool EffectsActivationPassed,bool BottomGlowDefaultPassed,bool NewSoundCatalogPassed,int NativeScreenshots);
     internal static Result Run(string report,SampleBank bank) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-interface-"+Guid.NewGuid().ToString("N"));
         string screenshotDirectory=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(report))!,"tests","interface");
@@ -23,7 +24,7 @@ internal static class InterfaceVerification {
         for(int index=0;index<180;index++)store.Record(new PhysicalKey(0x41,0x1e),DateTimeOffset.Now.AddMinutes(-30+index%24));
         var settings=new Settings{Language="zh",Appearance="light",Preset="red",Volume=1,Rules=[new(0x14,KeyModifiers.None,0x1b)]};
         var resources=System.Windows.Application.Current.Resources;
-        string[] names=["PageBrush","SidebarBrush","CardBrush","RaisedBrush","SelectedBrush","TextBrush","MutedBrush","LineBrush","AccentBrush"];
+        string[] names=["PageBrush","SidebarBrush","ToolbarBrush","CardBrush","RaisedBrush","SelectedBrush","TextBrush","MutedBrush","LineBrush","AccentBrush","OnAccentBrush"];
         object?[] previous=names.Select(name=>resources.Contains(name)?resources[name]:null).ToArray();
         MainWindow? window=null;int screenshots=0;
         try {
@@ -37,6 +38,19 @@ internal static class InterfaceVerification {
             }
             Click(root,"navigation-4");Layout(root);
             Require(FindAll<CheckBox>(root).Count(control=>AutomationProperties.GetAutomationId(control)=="key-burst-enabled")==1,"Desktop effects must have a single configuration home.");
+            var edgeGlow=Find<Button>(root,"desktop-style-edgeGlow");
+            var keyBurst=Find<Button>(root,"desktop-style-burst");
+            var followAudio=Find<CheckBox>(root,"rhythm-follow-audio");
+            Require(edgeGlow.ActualWidth>0&&keyBurst.ActualWidth>0&&edgeGlow.TranslatePoint(new Point(),root).X<keyBurst.TranslatePoint(new Point(),root).X,
+                "Bottom Glow must be the first visible effect option.");
+            Require(settings.DesktopStyle=="edgeGlow"&&AutomationProperties.GetItemStatus(edgeGlow)=="已选择"&&
+                Find<CheckBox>(root,"key-burst-enabled").IsChecked==false&&followAudio.IsVisible&&followAudio.IsChecked==false,
+                "Fresh settings must select Bottom Glow and leave visual effects and audio capture opt-in.");
+            var effectDetails=Find<Expander>(root,"effects-more-options");
+            VerifyDisclosure(effectDetails);
+            Layout(root);
+            Require(Find<CheckBox>(root,"key-burst-flashes").IsVisible,"The full-width effects disclosure must reveal the flashes control.");
+            effectDetails.IsExpanded=false;
             Click(root,"desktop-style-edgeGlow");Layout(root);
             Require(settings.KeyBurstEnabled&&settings.DesktopStyle=="edgeGlow"&&Find<CheckBox>(root,"key-burst-enabled").IsChecked==true,"Selecting Bottom Glow must enable the effect, not leave an inert selection.");
             Require(AutomationProperties.GetItemStatus(Find<Button>(root,"desktop-style-edgeGlow"))=="已选择","The chosen effect must have a clear selected state.");
@@ -44,17 +58,16 @@ internal static class InterfaceVerification {
             Require(!settings.KeyBurstEnabled,"The desktop effect switch must turn effects off.");
             Click(root,"key-burst-preview");Require(settings.KeyBurstEnabled,"Enable and preview must also enable subsequent keyboard feedback.");
             Click(root,"pause-all");Require(!Find<Button>(root,"key-burst-preview").IsEnabled,"The effect preview must respect the master pause.");
-            Click(root,"desktop-style-burst");Require(settings.DesktopStyle=="burst"&&!Find<Button>(root,"key-burst-preview").IsEnabled,"Choosing a style while paused must preserve pause and prepare the selected effect.");
+            Click(root,"desktop-style-burst");Layout(root);
+            Require(settings.DesktopStyle=="burst"&&!Find<Button>(root,"key-burst-preview").IsEnabled&&!followAudio.IsVisible,
+                "Choosing Key Burst while paused must preserve pause and hide the Bottom Glow audio control.");
             Click(root,"pause-all");Require(Find<Button>(root,"key-burst-preview").IsEnabled,"Resuming must restore effect preview availability.");
             Click(root,"navigation-0");Layout(root);
+            VerifySoundCatalog(root,settings,bank,Path.ChangeExtension(screenshotBase,".interface-light-sound-search.png"));screenshots++;
             VerifyPopup(Find<ComboBox>(root,"recording-version"),Path.ChangeExtension(screenshotBase,".interface-light-recording-menu.png"));screenshots++;
             var practice=Find<TextBox>(root,"practice-input");practice.Text="KeyWoo practice stays local.";
             Find<ComboBox>(root,"sound-category").SelectedIndex=1;
-            var sources=FindAll<Expander>(root).First(expander=>expander.Header?.ToString()=="声音来源");
-            sources.ApplyTemplate();
-            var disclosure=FindVisual<ToggleButton>(sources);
-            Require(disclosure is not null&&disclosure.ActualWidth>=sources.ActualWidth-2,"Disclosure headers must use the full available row width.");
-            disclosure!.IsChecked=true;Require(sources.IsExpanded,"The disclosure toggle must expand its content.");
+            VerifyDisclosure(Find<Expander>(root,"sound-recording-details"));
             Click(root,"navigation-2");Layout(root);
             Require(!Find<Button>(root,"remapping-delete").IsEnabled&&!Find<Button>(root,"remapping-edit").IsEnabled,"Rule actions must be unavailable until a rule is selected.");
             Find<ComboBox>(root,"remapping-source").SelectedValue=0x41;
@@ -94,12 +107,69 @@ internal static class InterfaceVerification {
             foreach(string id in new[]{"key-burst-preview","desktop-style-burst","desktop-style-edgeGlow","key-burst-intensity","key-burst-opacity"})RequireReachable(root,Find<FrameworkElement>(root,id));
             Find<Slider>(root,"key-burst-opacity").BringIntoView();Pump();root.UpdateLayout();
             SaveActual(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow-animation.png"));screenshots++;
-            return new(true,true,true,true,true,true,true,true,true,true,true,true,screenshots);
+            Click(root,"navigation-0");Pump();root.UpdateLayout();
+            foreach(string id in new[]{"sound-preview","recording-version","sound-category","sound-catalog-search"})RequireReachable(root,Find<FrameworkElement>(root,id));
+            SaveActual(root,Path.ChangeExtension(screenshotBase,".interface-dark-narrow-sounds.png"));screenshots++;
+            return new(Passed:true, NavigationPassed:true, RuleEditingPassed:true, DraftPreservationPassed:true,
+                ThemeAndLanguagePassed:true, PreviewAvailabilityPassed:true, FullRowDisclosurePassed:true,
+                VisibleLabelsPassed:true, DarkTextContrastPassed:true, RuleColumnLayoutPassed:true, NarrowLayoutPassed:true,
+                EffectsActivationPassed:true, BottomGlowDefaultPassed:true, NewSoundCatalogPassed:true, NativeScreenshots:screenshots);
         } finally {
             window?.DisposeVerification();
             for(int index=0;index<names.Length;index++)if(previous[index] is object value)resources[names[index]]=value;else resources.Remove(names[index]);
             if(Directory.Exists(directory))Directory.Delete(directory,true);
         }
+    }
+    private static void VerifySoundCatalog(FrameworkElement root,Settings settings,SampleBank bank,string screenshot) {
+        var selectedTitle=Find<TextBlock>(root,"current-sound-title");
+        var recording=Find<ComboBox>(root,"recording-version");
+        var category=Find<ComboBox>(root,"sound-category");
+        Require(category.Items.Count==2&&category.SelectedIndex==0,"Recorded keyboards must be the first of the two sound-library categories.");
+        foreach(string id in new[]{"rainy75","whiteFox","unicomp","technicsYellow","laneAlps"}) {
+            var preset=bank.Presets.Single(entry=>entry.Id==id);
+            Require(preset.Category==SoundCategory.RecordedKeyboard&&bank.HiFiPacks.ContainsKey(id),$"The catalog must have both recordings for {id}.");
+            var button=Find<Button>(root,"preset-"+id);
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Require(settings.Preset==id&&selectedTitle.Text==(preset.TitleZh??preset.Title)&&
+                AutomationProperties.GetItemStatus(button)=="已选择"&&recording.IsVisible,
+                $"Selecting {id} must update the current sound, selection marker and recording selector.");
+            foreach(bool hiFi in new[]{true,false}) {
+                recording.SelectedValue=hiFi;
+                Require(settings.HiFiEnabled==hiFi&&recording.SelectedValue is bool selected&&selected==hiFi,
+                    $"The recording selector must switch playback quality for {id}.");
+            }
+        }
+        var search=Find<TextBox>(root,"sound-catalog-search");
+        search.Text="whitefox";
+        Layout(root);
+        Require(PresetControls(root).SequenceEqual(new[]{"preset-whiteFox"}),"Searching by board name must narrow the displayed catalog to WhiteFox.");
+        RequireReachable(root,Find<Button>(root,"preset-whiteFox"));
+        Save(root,screenshot);
+        search.Text="No-such-recording";
+        Layout(root);
+        Require(!PresetControls(root).Any()&&Find<Border>(root,"sound-catalog-empty").IsVisible,
+            "An unmatched search must have a visible empty state.");
+        Click(root,"sound-search-clear");Layout(root);
+        Require(search.Text.Length==0&&PresetControls(root).Contains("preset-rainy75"),"Clearing search must restore the full keyboard catalog.");
+        category.SelectedIndex=1;Layout(root);
+        string[] fun=PresetControls(root).ToArray();
+        Require(fun.Contains("preset-mahjongTiles")&&fun.Contains("preset-streetBeat")&&!fun.Contains("preset-rainy75"),
+            "The fun catalog must group recorded effects and synthesized sounds.");
+        Click(root,"sound-category-current");Layout(root);
+        Require(category.SelectedIndex==0&&PresetControls(root).Contains("preset-laneAlps"),"Jumping to the current sound must restore its category.");
+        Click(root,"preset-red");
+        ScrollAncestor(search)?.ScrollToTop();Pump();Layout(root);
+    }
+    private static IEnumerable<string> PresetControls(DependencyObject root) => FindAll<Button>(root)
+        .Where(button=>button.IsVisible)
+        .Select(AutomationProperties.GetAutomationId)
+        .Where(id=>id.StartsWith("preset-",StringComparison.Ordinal));
+    private static void VerifyDisclosure(Expander expander) {
+        expander.ApplyTemplate();
+        var header=FindVisual<ToggleButton>(expander);
+        Require(header is not null&&header.ActualWidth>=expander.ActualWidth-2,"Disclosure headers must use the full available row width.");
+        header!.IsChecked=true;
+        Require(expander.IsExpanded,"The disclosure toggle must expand its content.");
     }
     private static void RequireReachable(FrameworkElement root,FrameworkElement control) {
         control.BringIntoView();Pump();root.UpdateLayout();

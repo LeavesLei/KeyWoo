@@ -26,8 +26,11 @@ try {
     }
     $icon = Join-Path $artifacts 'KeyWoo.ico'
     & (Join-Path $PSScriptRoot 'make-icon.ps1') -Source (Join-Path $repo 'Resources/KeyWooIcon.png') -Destination $icon
-    & dotnet publish windows/KeyWoo.Windows/KeyWoo.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true "-p:Version=$Version" "-p:ApplicationIcon=$icon" -o $staging
+    & dotnet publish windows/KeyWoo.Windows/KeyWoo.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PackageKeyboardSounds=true "-p:Version=$Version" "-p:ApplicationIcon=$icon" -o $staging
     if ($LASTEXITCODE -ne 0) { throw 'Windows publish failed.' }
+    $soundSource = Join-Path $repo 'Sources/KeyDance/Resources/KeyboardSounds'
+    & python (Join-Path $repo 'scripts/package-keyboard-sounds.py') $soundSource (Join-Path $staging 'Assets/KeyboardSounds')
+    if ($LASTEXITCODE -ne 0) { throw 'Keyboard sound packaging failed.' }
     Copy-Item (Join-Path $repo 'README.md') (Join-Path $staging 'README.md')
     Copy-Item (Join-Path $repo 'README.en.md') (Join-Path $staging 'README.en.md')
     $notices = Get-Content -Raw (Join-Path $repo 'THIRD-PARTY-NOTICES.md')
@@ -49,7 +52,12 @@ try {
     $app = Start-Process -FilePath (Join-Path $staging 'KeyWoo.exe') -ArgumentList @('--verify-assets', ('"' + $report + '"')) -Wait -PassThru
     if ($app.ExitCode -ne 0 -or -not (Test-Path $report)) { throw 'Packaged executable failed its no-device asset/PCM self-check.' }
     $result = Get-Content -Raw $report | ConvertFrom-Json
-    if (-not $result.passed -or @($result.presets.PSObject.Properties).Count -ne 25 -or @($result.hiFiPresets.PSObject.Properties).Count -ne 15) { throw 'Packaged asset self-check did not pass for all 25 sounds and 15 recorded Hi-Fi variants.' }
+    $expectedPresets = @('manifest.json', 'synthetic-manifest.json', 'street-beat-manifest.json') | ForEach-Object {
+        (Get-Content -Raw (Join-Path $soundSource $_) | ConvertFrom-Json).packs.PSObject.Properties.Name
+    }
+    $expectedHiFi = (Get-Content -Raw (Join-Path $soundSource 'hifi-manifest.json') | ConvertFrom-Json).packs.PSObject.Properties.Name
+    if (-not $result.passed -or (Compare-Object $expectedPresets $result.presets.PSObject.Properties.Name) -or
+        (Compare-Object $expectedHiFi $result.hiFiPresets.PSObject.Properties.Name)) { throw 'Packaged asset self-check did not cover the complete sound catalogue.' }
     if (-not $result.keyBurst.Passed) { throw 'Packaged Key Burst drawing and overlay self-check failed.' }
     if (-not $result.edgeGlow.Passed) { throw 'Packaged bottom glow, audio decoding and overlay self-check failed.' }
     if (-not $result.statistics.Passed) { throw 'Packaged statistics interaction and rendering self-check failed.' }

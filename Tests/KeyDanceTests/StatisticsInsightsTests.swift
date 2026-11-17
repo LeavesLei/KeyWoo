@@ -143,6 +143,145 @@ struct StatisticsInsightsTests {
         let hours = store.insights(from: start, to: end, calendar: calendar("America/Los_Angeles"), trendInterval: .hours(1))
         #expect(hours.trend.count == 23)
         #expect(hours.trend.map(\.count).reduce(0, +) == 8)
+        let hourlyActivity = store.hourlyActivity(on: start, through: end, calendar: calendar("America/Los_Angeles"))
+        #expect(hourlyActivity.count == 23)
+        #expect(hourlyActivity.filter { $0.activeMinutes > 0 }.map(\.date) == [
+            date("2026-03-08T01:00:00-08:00"), date("2026-03-08T03:00:00-07:00")
+        ])
+    }
+
+    @Test @MainActor func dailyActivityUsesExistingMinutesAndIncludesEmptyCalendarDays() throws {
+        let zone = calendar()
+        let now = date("2026-11-10T09:00:30+08:00")
+        let (store, url) = try fixture([
+            (date("2026-10-11T23:59:00+08:00"), [0: 9]),
+            (date("2026-10-12T00:00:00+08:00"), [0: 50, 49: 20]),
+            (date("2026-11-04T00:00:00+08:00"), [0: 2]),
+            (date("2026-11-05T00:00:00+08:00"), [0: 0]),
+            (date("2026-11-09T23:59:00+08:00"), [0: 6]),
+            (date("2026-11-10T00:00:00+08:00"), [0: 5]),
+            (date("2026-11-10T09:00:00+08:00"), [49: 7]),
+            (date("2026-11-10T09:01:00+08:00"), [0: 12])
+        ])
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let month = store.dailyActivity(through: now, range: .month, calendar: zone)
+        let week = store.dailyActivity(through: now, range: .week, calendar: zone)
+        #expect(month.count == 30)
+        #expect(month.first?.date == date("2026-10-12T00:00:00+08:00"))
+        #expect(month.first?.activeMinutes == 1)
+        #expect(week == Array(month.suffix(7)))
+        #expect(week.map(\.activeMinutes) == [1, 0, 0, 0, 0, 1, 2])
+        #expect(week.last?.date == zone.startOfDay(for: now))
+        let monthStart = StatisticsDayRange.month.start(through: now, calendar: zone)
+        let main = store.insights(from: monthStart, to: now, calendar: zone, trendInterval: .day)
+        #expect(main.trend.map(\.activeMinutes) == month.map(\.activeMinutes))
+        #expect(main.total == 90)
+
+        let today = store.hourlyActivity(on: now, through: now, calendar: zone)
+        #expect(today.map(\.activeMinutes) == [1, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+        #expect(today.last?.date == date("2026-11-10T09:00:00+08:00"))
+        #expect(store.hourlyActivity(on: date("2026-11-11T00:00:00+08:00"), through: now, calendar: zone).isEmpty)
+    }
+
+    @Test @MainActor func dailyActivityKeepsRepeatedLocalMinutesAndStopsAtMidnight() throws {
+        let zone = calendar("America/Los_Angeles")
+        let (store, url) = try fixture([
+            (date("2026-11-01T01:15:00-07:00"), [0: 3]),
+            (date("2026-11-01T01:15:00-08:00"), [0: 5]),
+            (date("2026-11-02T00:00:00-08:00"), [0: 7])
+        ])
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let midnight = date("2026-11-02T00:00:00-08:00")
+        let atMidnight = store.dailyActivity(through: midnight, range: .week, calendar: zone)
+        try #require(atMidnight.count == 7)
+        #expect(atMidnight.last?.date == midnight)
+        #expect(atMidnight.map(\.activeMinutes) == [0, 0, 0, 0, 0, 2, 0])
+        #expect(atMidnight[6].date.timeIntervalSince(atMidnight[5].date) == 25 * 3600)
+        let yesterday = store.hourlyActivity(on: atMidnight[5].date, through: midnight, calendar: zone)
+        #expect(yesterday.count == 25)
+        #expect(yesterday.filter { $0.activeMinutes > 0 }.map(\.date) == [
+            date("2026-11-01T01:00:00-07:00"), date("2026-11-01T01:00:00-08:00")
+        ])
+        #expect(yesterday.map(\.activeMinutes).reduce(0, +) == 2)
+        let afterMidnight = store.dailyActivity(through: midnight.addingTimeInterval(1), range: .week, calendar: zone)
+        #expect(afterMidnight.last?.activeMinutes == 1)
+    }
+
+    @Test @MainActor func comparisonUsesThePreviousCalendarPeriodAtTheSameLocalTime() throws {
+        let zone = calendar()
+        let today = date("2026-11-13T00:00:00+08:00")
+        let now = date("2026-11-13T10:15:30+08:00")
+        let (store, url) = try fixture([
+            (date("2026-09-15T00:00:00+08:00"), [0: 1]),
+            (date("2026-11-12T10:15:00+08:00"), [0: 4, 49: 2]),
+            (date("2026-11-12T10:16:00+08:00"), [0: 500]),
+            (today, [0: 9])
+        ])
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let previousDay = try #require(store.comparison(from: today, to: now, lookback: .calendarDays(1), calendar: zone))
+        #expect(previousDay.from == date("2026-11-12T00:00:00+08:00"))
+        #expect(previousDay.to == date("2026-11-12T10:16:00+08:00"))
+        #expect(previousDay.hasHistory && previousDay.total == 6 && previousDay.activeMinutes == 1)
+
+        let weekStart = StatisticsDayRange.week.start(through: now, calendar: zone)
+        let previousWeek = try #require(store.comparison(from: weekStart, to: now, lookback: .calendarDays(7), calendar: zone))
+        #expect(previousWeek.from == date("2026-10-31T00:00:00+08:00"))
+        #expect(previousWeek.to == date("2026-11-06T10:16:00+08:00"))
+        #expect(previousWeek.hasHistory && previousWeek.total == 0 && previousWeek.activeMinutes == 0)
+
+        let monthStart = StatisticsDayRange.month.start(through: now, calendar: zone)
+        let previousMonth = try #require(store.comparison(from: monthStart, to: now, lookback: .calendarDays(30), calendar: zone))
+        #expect(previousMonth.from == date("2026-09-15T00:00:00+08:00"))
+        #expect(previousMonth.to == date("2026-10-14T10:16:00+08:00"))
+        #expect(previousMonth.hasHistory && previousMonth.total == 1 && previousMonth.activeMinutes == 1)
+
+        let older = try #require(store.comparison(from: previousMonth.from, to: previousMonth.to,
+                                                   lookback: .calendarDays(30), calendar: zone))
+        #expect(!older.hasHistory)
+    }
+
+    @Test @MainActor func elapsedComparisonUsesAdjacentWholeMinutesAndRefreshesWhenBaselineChanges() throws {
+        let zone = calendar("UTC")
+        let first = date("2026-11-13T09:00:00Z")
+        let from = first.addingTimeInterval(150)
+        let to = first.addingTimeInterval(200)
+        let (store, url) = try fixture([(first, [0: 2]), (first.addingTimeInterval(120), [0: 5])])
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let baseline = try #require(store.comparison(from: from, to: to, lookback: .elapsed, calendar: zone))
+        #expect(baseline.from == first && baseline.to == first.addingTimeInterval(120))
+        #expect(baseline.hasHistory && baseline.total == 2 && baseline.activeMinutes == 1)
+        #expect(store.total(from: from, to: to) == 5)
+
+        store.record(keyCode: 49, at: first.addingTimeInterval(60))
+        let updated = try #require(store.comparison(from: from, to: to, lookback: .elapsed, calendar: zone))
+        #expect(updated.total == 3 && updated.activeMinutes == 2)
+        let beforeFirstRecord = try #require(store.comparison(from: first, to: first.addingTimeInterval(60),
+                                                               lookback: .elapsed, calendar: zone))
+        #expect(!beforeFirstRecord.hasHistory)
+        #expect(store.comparison(from: to, to: from, lookback: .elapsed, calendar: zone) == nil)
+    }
+
+    @Test @MainActor func calendarComparisonKeepsWallClockAfterDaylightSavingChange() throws {
+        let zone = calendar("America/Los_Angeles")
+        let from = date("2026-11-01T00:00:00-07:00")
+        let to = date("2026-11-01T10:15:00-08:00")
+        let (store, url) = try fixture([(date("2026-10-30T12:00:00-07:00"), [0: 1]),
+                                        (date("2026-10-31T10:14:00-07:00"), [0: 2]),
+                                        (date("2026-10-31T10:15:00-07:00"), [0: 5])])
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let baseline = try #require(store.comparison(from: from, to: to, lookback: .calendarDays(1), calendar: zone))
+        #expect(baseline.from == date("2026-10-31T00:00:00-07:00"))
+        #expect(baseline.to == date("2026-10-31T10:15:00-07:00"))
+        #expect(baseline.hasHistory && baseline.total == 2 && baseline.activeMinutes == 1)
+
+        let transition = try #require(store.comparison(from: from, to: date("2026-11-01T01:59:30-07:00"),
+                                                        lookback: .calendarDays(1), calendar: zone))
+        #expect(transition.to == date("2026-10-31T02:00:00-07:00"))
     }
 
     @Test @MainActor func centuriesOfSparseHistoryStayBoundedAndConserveTotals() throws {

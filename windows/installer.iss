@@ -47,7 +47,7 @@ ChangesEnvironment=no
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; AfterInstall: TrackReplacedRecording
 
 [Icons]
 Name: "{autoprograms}\KeyWoo"; Filename: "{app}\KeyWoo.exe"
@@ -58,3 +58,32 @@ Filename: "{app}\KeyWoo.exe"; Description: "{cm:LaunchProgram,KeyWoo}"; Flags: n
 
 ; User settings and statistics live outside {app}, under LocalAppData\KeyWoo.
 ; Deliberately no UninstallDelete section: upgrades/uninstalls preserve them.
+
+[Code]
+var ReplacedRecordings: TArrayOfString;
+
+procedure TrackReplacedRecording;
+var Filename, PreviousFilename, SoundRoot: String;
+    Count: Integer;
+begin
+  Filename := ExpandConstant(CurrentFilename);
+  SoundRoot := ExpandConstant('{app}\Assets\KeyboardSounds\');
+  if (Pos(Lowercase(SoundRoot), Lowercase(Filename)) <> 1) or
+     (Lowercase(Copy(Filename, Length(Filename) - 6, 7)) <> '.wav.gz') then
+    exit;
+  PreviousFilename := Copy(Filename, 1, Length(Filename) - 3);
+  if not FileExists(PreviousFilename) then
+    exit;
+  Count := GetArrayLength(ReplacedRecordings);
+  SetArrayLength(ReplacedRecordings, Count + 1);
+  ReplacedRecordings[Count] := PreviousFilename;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var Index: Integer;
+begin
+  if CurStep = ssDone then
+    for Index := 0 to GetArrayLength(ReplacedRecordings) - 1 do
+      if FileExists(ReplacedRecordings[Index] + '.gz') and not DeleteFile(ReplacedRecordings[Index]) then
+        Log('Could not remove old uncompressed sound: ' + ReplacedRecordings[Index]);
+end;

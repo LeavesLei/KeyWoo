@@ -1,5 +1,9 @@
 import SwiftUI
 
+extension RhythmVisualStyle {
+    static let presentationOrder: [Self] = [.edgeGlow] + allCases.filter { $0 != .edgeGlow }
+}
+
 @MainActor
 final class EffectsPresentationState: ObservableObject {
     @Published var detailsExpanded = false
@@ -10,6 +14,7 @@ final class EffectsPresentationState: ObservableObject {
 struct DesktopEffectsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var presentation: EffectsPresentationState
+    @FocusState private var focusedStyle: RhythmVisualStyle?
 
     private var canPreview: Bool { model.isEnabled && !model.monitor.secureInputActive }
     private var status: String {
@@ -20,39 +25,60 @@ struct DesktopEffectsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 146), spacing: 12), count: 4), spacing: 12) {
-                ForEach(RhythmVisualStyle.allCases) { style in
-                    styleCard(style)
-                }
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            styleChooser
             controls
         }
     }
 
+    private var styleChooser: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { statusLabel; Spacer(minLength: 8); effectActions }
+                VStack(alignment: .leading, spacing: 10) { statusLabel; effectActions }
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 126), spacing: 10), count: 4), spacing: 10) {
+                ForEach(RhythmVisualStyle.presentationOrder) { style in
+                    styleCard(style)
+                }
+            }
+        }
+        .padding(18)
+        .cardStyle()
+    }
+
     private func styleCard(_ style: RhythmVisualStyle) -> some View {
         let selected = model.rhythmStyle == style
+        let focused = focusedStyle == style
+        let shape = RoundedRectangle(cornerRadius: 9)
         return Button { model.activateRhythmStyle(style) } label: {
-            VStack(spacing: 13) {
+            VStack(spacing: 9) {
                 EffectThumbnail(style: style)
-                    .frame(height: 94)
+                    .frame(height: 58)
                     .accessibilityHidden(true)
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Text(style.title).font(.system(size: 13, weight: .semibold))
                         .lineLimit(1).minimumScaleFactor(0.8)
                     Spacer(minLength: 0)
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? Palette.accent : Palette.line)
-                        .accessibilityHidden(true)
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Palette.accent)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
-            .padding(14)
+            .padding(9)
             .foregroundStyle(selected ? Palette.accent : Palette.ink)
-            .background(Palette.surface, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? Palette.accent.opacity(0.8) : Palette.line.opacity(0.6), lineWidth: selected ? 1.5 : 0.8))
+            .background(selected ? Palette.accent.opacity(0.07) : Palette.surface, in: shape)
+            .overlay {
+                shape.strokeBorder(selected || focused ? Palette.accent : Palette.line.opacity(0.7),
+                                   lineWidth: focused ? 1.5 : 0.8)
+                    .allowsHitTesting(false)
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(SettingsActionRowStyle())
+        .focused($focusedStyle, equals: style)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityLabel(style.title)
         .accessibilityValue(L(selected ? "已选择" : "未选择"))
@@ -62,35 +88,20 @@ struct DesktopEffectsView: View {
     }
 
     private var controls: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) { statusLabel; Spacer(minLength: 8); effectActions }
-                VStack(alignment: .leading, spacing: 12) { statusLabel; effectActions }
-            }
-            Divider().overlay(Palette.line.opacity(0.5))
+        VStack(alignment: .leading, spacing: 0) {
             sliderRow("动画幅度", value: intensityPosition, range: ControlScale.rhythmIntensity.displayRange,
                       percent: intensityPosition.wrappedValue, identifier: "rhythm-intensity",
                       explanation: "只改变画面起伏，不影响声音或音量。")
+            Divider().overlay(Palette.line.opacity(0.5))
             sliderRow("特效透明度", value: $model.rhythmOpacity, range: AppModel.rhythmOpacityRange,
                       percent: model.rhythmOpacity, identifier: "rhythm-opacity",
                       explanation: "数值越低越淡，100% 保持原始亮度。")
 
             if model.rhythmStyle == .edgeGlow {
                 Divider().overlay(Palette.line.opacity(0.5))
-                if #available(macOS 14.2, *) {
-                    HStack(spacing: 4) {
-                        Toggle(L("跟随电脑声音"), isOn: $model.rhythmFollowsAudio)
-                            .font(.system(size: 13))
-                            .accessibilityIdentifier("rhythm-follow-audio")
-                        InfoHelpButton(title: "跟随电脑声音", message: "低音推动柔光，中音带动流动，高音点亮细节；打字效果会自然叠加。首次开启需允许系统音频录制，声音只在本机即时分析，不保存录音。", identifier: "rhythm-follow-audio-help")
-                        Spacer(minLength: 0)
-                    }
-                    if model.rhythmFollowsAudio && model.rhythmEnabled { audioStatus }
-                } else {
-                    Text(L("跟随电脑声音需要 macOS 14.2 或更新版本。"))
-                        .font(.caption).foregroundStyle(Palette.muted)
-                }
+                systemAudioControls
             }
+            Divider().overlay(Palette.line.opacity(0.5))
             DisclosureGroup(L("更多选项"), isExpanded: $presentation.detailsExpanded) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 4) {
@@ -117,8 +128,30 @@ struct DesktopEffectsView: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("effects-more-options")
         }
-        .padding(22)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 4)
         .cardStyle()
+    }
+
+    @ViewBuilder private var systemAudioControls: some View {
+        if #available(macOS 14.2, *) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 4) {
+                    Text(L("跟随电脑声音")).font(.system(size: 13))
+                    InfoHelpButton(title: "跟随电脑声音", message: "低音推动柔光，中音带动流动，高音点亮细节；打字效果会自然叠加。首次开启需允许系统音频录制，声音只在本机即时分析，不保存录音。", identifier: "rhythm-follow-audio-help")
+                    Spacer(minLength: 0)
+                    Toggle(L("跟随电脑声音"), isOn: $model.rhythmFollowsAudio)
+                        .toggleStyle(.switch).labelsHidden()
+                        .accessibilityIdentifier("rhythm-follow-audio")
+                }
+                if model.rhythmFollowsAudio && model.rhythmEnabled { audioStatus }
+            }
+            .frame(minHeight: 48)
+        } else {
+            Text(L("跟随电脑声音需要 macOS 14.2 或更新版本。"))
+                .font(.caption).foregroundStyle(Palette.muted)
+                .frame(minHeight: 48)
+        }
     }
 
     private var statusLabel: some View {
@@ -163,6 +196,7 @@ struct DesktopEffectsView: View {
                 .font(.system(size: 12)).monospacedDigit().foregroundStyle(Palette.muted)
                 .frame(width: 46, alignment: .trailing)
         }
+        .frame(minHeight: 48)
     }
 
     private var intensityPosition: Binding<Double> {
@@ -193,48 +227,48 @@ struct DesktopEffectsView: View {
 
 private struct EffectThumbnail: View {
     let style: RhythmVisualStyle
-    private let glow = Color(red: 0.99, green: 0.65, blue: 0.55)
+    private let glow = Palette.accent
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                RoundedRectangle(cornerRadius: 8).fill(Color(red: 0.12, green: 0.115, blue: 0.12))
+                RoundedRectangle(cornerRadius: 6).fill(Palette.raisedSurface)
                 switch style {
                 case .energy:
-                    HStack(alignment: .bottom, spacing: 5) {
+                    HStack(alignment: .bottom, spacing: 4) {
                         ForEach(0..<9) { index in
-                            RoundedRectangle(cornerRadius: 3)
+                            RoundedRectangle(cornerRadius: 2)
                                 .fill(glow.opacity(0.5 + Double(index % 3) * 0.2))
-                                .frame(width: 8, height: CGFloat([18, 27, 42, 33, 55, 39, 48, 28, 20][index]))
+                                .frame(width: 5, height: CGFloat([12, 17, 26, 20, 34, 24, 30, 17, 13][index]))
                         }
                     }
                 case .pulse:
                     ForEach(0..<3) { index in
                         Circle().stroke(glow.opacity(0.8 - Double(index) * 0.24), lineWidth: 2)
-                            .frame(width: CGFloat(24 + index * 22), height: CGFloat(24 + index * 22))
+                            .frame(width: CGFloat(14 + index * 14), height: CGFloat(14 + index * 14))
                     }
-                    Circle().fill(glow).frame(width: 9, height: 9)
+                    Circle().fill(glow).frame(width: 5, height: 5)
                 case .burst:
                     ForEach(Array(["A", "S", "D"].enumerated()), id: \.offset) { index, key in
-                        Text(key).font(.system(size: 17, weight: .medium, design: .rounded))
+                        Text(key).font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundStyle(glow)
-                            .frame(width: 29, height: 31)
+                            .frame(width: 21, height: 23)
                             .background(glow.opacity(0.10), in: RoundedRectangle(cornerRadius: 5))
                             .rotationEffect(.degrees(Double(index - 1) * 12))
-                            .offset(x: CGFloat(index - 1) * 34, y: index == 1 ? -12 : 10)
+                            .offset(x: CGFloat(index - 1) * 25, y: index == 1 ? -7 : 7)
                     }
                 case .edgeGlow:
                     RoundedRectangle(cornerRadius: 5)
-                        .stroke(.white.opacity(0.25), lineWidth: 1)
-                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .stroke(Palette.line, lineWidth: 1)
+                        .padding(.horizontal, 14).padding(.vertical, 9)
                     Ellipse().fill(glow.opacity(0.65))
-                        .frame(width: geometry.size.width * 0.65, height: 17)
-                        .blur(radius: 12).offset(y: 28)
+                        .frame(width: geometry.size.width * 0.65, height: 12)
+                        .blur(radius: 8).offset(y: 16)
                     Capsule().fill(glow)
-                        .frame(width: geometry.size.width * 0.48, height: 2).offset(y: 32)
+                        .frame(width: geometry.size.width * 0.48, height: 2).offset(y: 19)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
 }

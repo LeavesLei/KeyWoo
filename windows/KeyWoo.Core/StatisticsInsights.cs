@@ -23,6 +23,8 @@ public sealed class HeatmapScale {
 
 public enum StatisticsInterval { Auto, FiveMinutes, FifteenMinutes, Hour, Day, Week, Month, Years }
 public sealed record StatisticsTrendBucket(DateTimeOffset Start, DateTimeOffset End, long Count);
+public sealed record StatisticsDailyActivity(DateOnly Day, int ActiveMinutes);
+public sealed record StatisticsComparison(DateTimeOffset From, DateTimeOffset To, long Total, int ActiveMinutes);
 public sealed record StatisticsSnapshot(long Revision, DateTimeOffset From, DateTimeOffset To,
     IReadOnlyList<KeyCount> Counts, long Total, int ActiveMinutes, long PeakMinuteCount,
     DateTimeOffset? PeakMinute, StatisticsInterval Interval, IReadOnlyList<StatisticsTrendBucket> Trend) {
@@ -69,7 +71,7 @@ internal sealed class StatisticsTrendPlan {
                     StatisticsInterval.FiveMinutes => start.AddMinutes(5),
                     StatisticsInterval.FifteenMinutes => start.AddMinutes(15),
                     StatisticsInterval.Hour => start.AddHours(1),
-                    StatisticsInterval.Day => ResolveLocal(anchor.AddDays(1), zone),
+                    StatisticsInterval.Day => ResolveLocal(anchor.Date.AddDays(1), zone),
                     StatisticsInterval.Week => ResolveLocal(anchor.AddDays(7), zone),
                     StatisticsInterval.Month => ResolveLocal(anchor.AddMonths(1), zone),
                     _ => ResolveLocal(anchor.AddYears(yearStep), zone)
@@ -95,7 +97,7 @@ internal sealed class StatisticsTrendPlan {
         }
         return plan;
     }
-    private static DateTimeOffset ResolveLocal(DateTime value, TimeZoneInfo zone) {
+    internal static DateTimeOffset ResolveLocal(DateTime value, TimeZoneInfo zone) {
         value = DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
         while (zone.IsInvalidTime(value)) value = value.AddMinutes(1);
         TimeSpan offset = zone.IsAmbiguousTime(value) ? zone.GetAmbiguousTimeOffsets(value).Max() : zone.GetUtcOffset(value);

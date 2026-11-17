@@ -12,10 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 def receipt():
     def git(*args):
         return subprocess.check_output(["git", *args], cwd=ROOT)
-    paths = sorted(filter(None, git("ls-files", "-z").decode().split("\0")))
+    paths = sorted(set(filter(None, git("ls-files", "--cached", "--others", "--exclude-standard", "-z").decode().split("\0"))))
     files = {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in paths}
     return {"sourceCommit": git("rev-parse", "HEAD").decode().strip(),
-            "sourceDirty": bool(git("status", "--porcelain", "--untracked-files=no").strip()),
+            "sourceDirty": bool(git("status", "--porcelain", "--untracked-files=normal").strip()),
             "sourceTreeSHA256": hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()}
 
 

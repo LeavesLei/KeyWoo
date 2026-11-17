@@ -1,12 +1,12 @@
-# 键舞 / KeyWoo 1.0.4 — Windows
+# 键舞 / KeyWoo 1.0.5 — Windows
 
 原生 WPF 键盘音效版。提供真实键盘录音、实录拟音与趣味合成音效，音量滑块显示 0–100%（内部最大增益 16 倍），支持全局物理键反馈、逐键次数统计、软件改键、组合快捷键、媒体控制、中英文与系统/浅色/深色外观。
 
 ## 运行
 
-下载后运行 `KeyWoo-1.0.4-win-x64-setup.exe`，安装到当前用户，无需管理员权限。开始菜单中可以打开 KeyWoo；安装末页可选立即运行，也可勾选桌面快捷方式。卸载可通过 Windows「设置 → 应用」，保留个人设置和统计。升级前请从 KeyWoo 托盘菜单退出。应用未做 Authenticode 签名，Windows 可能显示未知发布者提醒。
+下载后运行 `KeyWoo-1.0.5-win-x64-setup.exe`，安装到当前用户，无需管理员权限。开始菜单中可以打开 KeyWoo；安装末页可选立即运行，也可勾选桌面快捷方式。卸载可通过 Windows「设置 → 应用」，保留个人设置和统计。升级前请从 KeyWoo 托盘菜单退出。应用未做 Authenticode 签名，Windows 可能显示未知发布者提醒。
 
-便携版可以将 `KeyWoo-1.0.4-win-x64.zip` **完整解压**到一个文件夹后打开 `KeyWoo.exe`。两种包均自包含，无需另装 .NET；`Assets` 和 `Licenses` 文件夹应留在程序旁边。目标为 Windows 11 x64。没有发布 ARM64 包，也没有声称在 Windows 10 或实体 Windows 声卡/键盘上完成测试。
+便携版可以将 `KeyWoo-1.0.5-win-x64.zip` **完整解压**到一个文件夹后打开 `KeyWoo.exe`。两种包均自包含，无需另装 .NET；`Assets` 和 `Licenses` 文件夹应留在程序旁边。目标为 Windows 11 x64。没有发布 ARM64 包，也没有声称在 Windows 10 或实体 Windows 声卡/键盘上完成测试。
 
 单实例运行。关闭窗口后保留托盘图标；托盘菜单可打开、暂停或退出。全局暂停同时暂停声音、统计和改键。锁屏时释放映射输出并暂停，解锁后恢复此前状态。记录物理扫描码的分钟级次数，不保存文字、按键顺序、窗口标题或应用名。
 
@@ -52,7 +52,7 @@ dotnet test windows/KeyWoo.Tests/KeyWoo.Tests.csproj -c Release
 ./windows/build.ps1 -VerifyInstaller
 ```
 
-`build.ps1` 运行纯 CPU 测试，自包含发布到新的 staging 目录，启动最终 EXE 的 `--verify-assets` 路径验证 25 套音色及 15 套实录的 Hi-Fi 版本，并检查键阵爆破、底部泛光、统计和界面交互，以及原生悬浮窗。再逐文件核对 ZIP 并编译当前用户安装器。自检无需键盘钩子或声卡。输出 ZIP、安装 EXE、SHA-256 manifest 和自检结果到 `windows/artifacts/`。
+`build.ps1` 运行纯 CPU 测试，自包含发布到新的 staging 目录，启动最终 EXE 的 `--verify-assets` 路径验证 30 套音色及 20 套实录的 Hi-Fi 版本，并检查键阵爆破、底部泛光、统计和界面交互，以及原生悬浮窗。再逐文件核对 ZIP 并编译当前用户安装器。自检无需键盘钩子或声卡。输出 ZIP、安装 EXE、SHA-256 manifest 和自检结果到 `windows/artifacts/`。
 
 GitHub Actions 使用 `-VerifyInstaller`：在临时 Windows runner 上安装到独立路径，检查开始菜单与当前用户卸载注册，重复安装验证升级，运行安装后的资源自检，再卸载并检查设置和统计未被删除。验证脚本拒绝在已有 KeyWoo 配置/安装的环境运行，也拒绝直接在非 GitHub Actions 的个人电脑上执行。CI runner 不等于实体声卡或键盘验收。
 

@@ -1,8 +1,8 @@
 {
   "archive": {
-    "bytes": 75831847,
+    "bytes": 76409386,
     "format": "zip",
-    "sha256": "413883d04bf3c1c4a0eafc8c4562af68871820bbc784366cd5d9e649c222a587"
+    "sha256": "1e463110d61891c9946eff06264015e4593cffa369fd7703f3293598fa0e6275"
   },
   "files": [
     {
@@ -66,6 +66,11 @@
       "sha256": "6341f27cf540ffafecd98839ca60afb9b9e738db341d49177972652ce8b78349"
     },
     {
+      "bytes": 165072,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/laneAlps/samples.wav",
+      "sha256": "c287b2025cd0c577a0f26bf181227440ed552658a145ee6bccb5a71e13b778e7"
+    },
+    {
       "bytes": 1043344,
       "path": "Sources/KeyDance/Resources/KeyboardSounds/laser/samples.wav",
       "sha256": "a8c6af895d8544c053058c5298ac1665b811bf9acf70662387184247c84e55f9"
@@ -111,9 +116,19 @@
       "sha256": "66ae60e269dfed83d74dc51bee4962949808739448bbab4803f21cc19c70b0c7"
     },
     {
+      "bytes": 175216,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/rainy75/samples.wav",
+      "sha256": "5391442fbd0aea54a0ff92cb2fd862f00056db566afd2cc35bffb8abdc133e28"
+    },
+    {
       "bytes": 1626544,
       "path": "Sources/KeyDance/Resources/KeyboardSounds/red/samples.wav",
       "sha256": "93b615762beb6f1878b287a6cf369c36a0e6d66e46a2fd38cf670b8aac854da4"
+    },
+    {
+      "bytes": 171536,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/technicsYellow/samples.wav",
+      "sha256": "d5edbe8eea37c636dad38e4b9f6bfe56a4cdc506cbf7b00f15f1093e36d7a4a5"
     },
     {
       "bytes": 2121308,
@@ -124,6 +139,16 @@
       "bytes": 1007512,
       "path": "Sources/KeyDance/Resources/KeyboardSounds/typewriter/samples.wav",
       "sha256": "22f173c6443efbc31733ce3824b71fb02fa55536200f517e2d34a3dac788d44c"
+    },
+    {
+      "bytes": 178744,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/unicomp/samples.wav",
+      "sha256": "4e3500c84c0b0159bcb36a503ebfb5e52d83ea9d9df7e6763f2b3f27e5e4054e"
+    },
+    {
+      "bytes": 365640,
+      "path": "Sources/KeyDance/Resources/KeyboardSounds/whiteFox/samples.wav",
+      "sha256": "18945ff70f1b1def2c9ce068cc41c0cbe595419d9312cef3c3c92ffaa834cb86"
     },
     {
       "bytes": 226088,
@@ -181,87 +206,87 @@
     {
       "bytes": 4194304,
       "file": "keywoo-assets-003.part",
-      "sha256": "2f404abf55165299748aaf602c3c11885495c0f255d369383b24ac00b7728c23"
+      "sha256": "94b355a88f9c1b43549b28b6dfaf3cabcccc7f15196d9efe7248fb38d46557ae"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-004.part",
-      "sha256": "fa29e92be2ab234b27680874d3f3f6254d0851d8fc97d6b88ef77435a57b7e31"
+      "sha256": "c0faae2c34b973cb0cf8cd2f49597a5c11f7916564de9956086d385ada687788"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-005.part",
-      "sha256": "8a7d801e42e7e4ef78fe43171edc41f662a0b4ce47720b592546f377a2d0c0df"
+      "sha256": "e8d1df4c6fd2af46e0883b5840d672bb7a2f9cf7110306dcb0506bf2c0e68e51"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-006.part",
-      "sha256": "4b8f43a479328ffe9b4fb602876e1d59b31783bce8f2292472df4081999c2723"
+      "sha256": "bcffa8fec0e9464eb1a00261163674466b7e08a03bdeb37461744385e0a8b03e"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-007.part",
-      "sha256": "b1ae29158a78cebdfb5f44aea4e48def32c321ce1cc825135bb54ccdd8ddcdf4"
+      "sha256": "893c3bf8b9e62b8b0ab72af2392c52b4be420c4d10cd2a1a4fca549fd58e6e4c"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-008.part",
-      "sha256": "297fac5d6ac604648229b28cbccb30ca23f08f812a0602c9146ba05c319f8961"
+      "sha256": "6b80d9212d60adbf09f019f82b743e4a981d361766516112347697d80760d95f"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-009.part",
-      "sha256": "1a86b24df33247d05488c825f11212c58cae84d1ea54698a9c592c5434992fa6"
+      "sha256": "aba421511b5f885a19e6fb163303b18673ec3d04b6f16c091af3745655b809d6"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-010.part",
-      "sha256": "8b68b0049cc0f2533b8ebff5118ca587d8c9b7042a45b5225296585660ba6818"
+      "sha256": "030a734d5802d3f84ee23adbd945b9a28cc458780452764998a561c5c473abae"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-011.part",
-      "sha256": "910a4cdf4b1a7f5942cdcbaa1c8c2ab0f2b5b1a16c462d35030bfd3c54271650"
+      "sha256": "c6ad9b58afc9e3668bf289f3ad4fa3beb8a2c0fe1fc607e893c5c7a84cd807cf"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-012.part",
-      "sha256": "d3f83aaf7fb2e0bdbb8fc491c4aa0eac2bb21fc7e167f32cbb3d4711bb2d1b45"
+      "sha256": "15c53f54ea94f14f9d0693b86bbed780723ccf7d350b51a3ece7ea9719c0ae17"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-013.part",
-      "sha256": "f70300cd39c4fe54155d2aff9b46cb035340c422124a296055e187df3c0a0fc0"
+      "sha256": "80ea2a25ad7928ee354cecd0d42c0aa7b0d6168d510127f48fee24a5a3a95668"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-014.part",
-      "sha256": "6083d49fc75fc531195d1f59886c2d0929381011a7cf81ca1bd7d9b188a0addd"
+      "sha256": "9265899ac998dd4760025071ea2a24286d933180ad1df278b404bac7d4b9f8fa"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-015.part",
-      "sha256": "2ea6fbb67085edda19c5667581c44645a038abca915cded38ce5537dad76151e"
+      "sha256": "bd8536a5826145ca2689c327cbbb01eaeefe4494976ed23cd8591a9bd1b64409"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-016.part",
-      "sha256": "ba17eb07d32eb2e1311f68d6f2cbbeb953f57e11b6c96d9cc60dc90869c5b9ad"
+      "sha256": "0a7a0406c31b076347de29c67f18cd0e91d7bab3ecec9ddc918de52b8da4939f"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-017.part",
-      "sha256": "7f20923109ff669df3c36ff557bd8f03abc9ebe215b104c2428d738a2e55846b"
+      "sha256": "ade2880a4721abc097cca8e02e39b3b0d8d0bf26fc67d45daa2d03fe4c013016"
     },
     {
       "bytes": 4194304,
       "file": "keywoo-assets-018.part",
-      "sha256": "677bfcf8edf09a1fa0aa66d7060b3377b6ecc836176ecb66001699ba76b2a17a"
+      "sha256": "a806db534f06c55a1035ba68142197b50b72fe2f43a298e32edab2972139108c"
     },
     {
-      "bytes": 334375,
+      "bytes": 911914,
       "file": "keywoo-assets-019.part",
-      "sha256": "06395e453ba6bb7f2f047fe4e33911da775c42522bd2294f0c286a33d6be8adf"
+      "sha256": "9ed9ea769fa40185aee57463da9f0aff57ffe6965acdefb47269adaef5a5950d"
     }
   ],
   "schema": 1

@@ -2,7 +2,7 @@
 
 [简体中文](INSTALL.md)
 
-Choose the file for your computer under **Assets**. [KeyWoo v1.0.4 release](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.4)
+Choose the file for your computer under **Assets**. [KeyWoo v1.0.5 release](https://github.com/LeavesLei/KeyWoo/releases/tag/v1.0.5)
 
 | Computer | Download |
 | --- | --- |

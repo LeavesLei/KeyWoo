@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class KeyboardSoundPresentationState: ObservableObject {
     @Published var category: KeyboardSoundCategory
+    @Published var query = ""
     @Published var keyboardExpanded = false
     @Published var extraKeysExpanded = false
     @Published var sourceExpanded = false
@@ -17,6 +18,13 @@ struct KeyboardSoundSpaceView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var presentation: KeyboardSoundPresentationState
     @FocusState private var practiceFocused: Bool
+    @FocusState private var searchFocused: Bool
+    @FocusState private var previewFocused: Bool
+
+    private static let presetOrder = Dictionary(uniqueKeysWithValues: [
+        "rainy75", "whiteFox", "unicomp", "technicsYellow", "laneAlps", "macbookPro", "topre", "oreo", "panda", "purple", "red", "blue", "brown", "black",
+        "streetBeat", "mahjongTiles", "hermes", "woodDesk", "mahjong"
+    ].enumerated().map { ($0.element, $0.offset) })
 
     init(model: AppModel, presentation: KeyboardSoundPresentationState) {
         self.model = model
@@ -31,63 +39,80 @@ struct KeyboardSoundSpaceView: View {
     }
 
     private var styles: [KeyboardSoundStyle] {
-        let order = ["macbookPro", "topre", "oreo", "panda", "purple", "red", "blue", "brown", "black",
-                     "streetBeat", "mahjongTiles", "hermes", "woodDesk", "mahjong"]
-        return KeyboardSoundStyle.allCases.filter { $0.category == presentation.category }.sorted {
-            let first = order.firstIndex(of: $0.rawValue) ?? order.count
-            let second = order.firstIndex(of: $1.rawValue) ?? order.count
-            return first == second ? $0.rawValue < $1.rawValue : first < second
+        let terms = presentation.query.split(whereSeparator: \.isWhitespace).map(String.init)
+        return KeyboardSoundStyle.allCases.filter { style in
+            guard style.category == presentation.category else { return false }
+            guard !terms.isEmpty else { return true }
+            let searchable = ([style.title, style.subtitle, style.rawValue] + style.characterTags).joined(separator: " ")
+            return terms.allSatisfy { searchable.localizedStandardContains($0) }
+        }.sorted {
+            let first = Self.presetOrder[$0.rawValue, default: Int.max]
+            let second = Self.presetOrder[$1.rawValue, default: Int.max]
+            if first != second { return first < second }
+            return $0.title.localizedStandardCompare($1.title) == .orderedAscending
         }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 28) {
             currentSound
             catalog
-            optionalTools
         }
     }
 
     private var currentSound: some View {
         let style = model.keyboardSoundStyle
-        return VStack(alignment: .leading, spacing: 18) {
+        return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 14) {
                 Image(systemName: style.symbol)
-                    .font(.system(size: 23, weight: .medium))
-                    .frame(width: 48, height: 48)
+                    .font(.system(size: 22, weight: .medium))
+                    .frame(width: 54, height: 54)
                     .foregroundStyle(Palette.accent)
                     .background(Palette.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L("当前音色"))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Palette.muted)
                     Text(style.title)
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 23, weight: .semibold))
                         .tracking(-0.35)
                         .lineLimit(2)
                         .accessibilityAddTraits(.isHeader)
-                    Text(style.characterTags.joined(separator: " · "))
+                    Text(style.subtitle)
                         .font(.system(size: 12))
                         .foregroundStyle(Palette.muted)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .trailing, spacing: 8) {
-                    previewButton
-                    if model.canChooseKeyboardSoundQuality { qualityControl }
-                }
-                // Keep the library still when moving between recordings and
-                // synthesized sounds, which do not offer a quality selector.
-                .frame(width: 195, alignment: .trailing)
-                .frame(minHeight: 70, alignment: .topTrailing)
+                previewButton
             }
             if let reason = previewUnavailableReason {
-                Text(reason)
+                Label(reason, systemImage: "pause.circle")
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.muted)
                     .accessibilityIdentifier("keyboard-sound-preview-status")
             }
-            volume
+            Divider().overlay(Palette.line.opacity(0.60)).accessibilityHidden(true)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 16) {
+                    volume.frame(minWidth: 350)
+                    if model.canChooseKeyboardSoundQuality {
+                        Rectangle().fill(Palette.line.opacity(0.6)).frame(width: 1, height: 22)
+                            .accessibilityHidden(true)
+                        qualityControl
+                    }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    volume
+                    if model.canChooseKeyboardSoundQuality { qualityControl }
+                }
+            }
             practice
+            optionalTools
         }
-        .padding(22)
+        .padding(20)
         .cardStyle()
     }
 
@@ -95,22 +120,26 @@ struct KeyboardSoundSpaceView: View {
         Button { model.previewSound() } label: {
             Label(L("试听"), systemImage: "play.fill")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Palette.onAccent)
-                .padding(.horizontal, 18)
+                .foregroundStyle(canPreview ? Palette.onAccent : Palette.muted)
+                .padding(.horizontal, 15)
                 .frame(minHeight: 34)
-                .background(Palette.accent, in: RoundedRectangle(cornerRadius: 8))
+                .background(canPreview ? Palette.accent : Palette.raisedSurface,
+                            in: RoundedRectangle(cornerRadius: 8))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Palette.onAccent.opacity(previewFocused ? 0.8 : 0), lineWidth: 1.5)
+                        .allowsHitTesting(false)
+                }
                 .contentShape(Rectangle())
         }
         .buttonStyle(KeyboardSoundPresetButtonStyle())
+        .focused($previewFocused)
         .disabled(!canPreview)
-        .opacity(canPreview ? 1 : 0.45)
         .accessibilityLabel(L("试听当前音效"))
         .accessibilityIdentifier("keyboard-sound-preview")
         .help(previewUnavailableReason ?? L("同一段短打字 · 不计入统计"))
     }
 
-    /// A/B quality is a frequent action. Keep it visible beside Preview rather
-    /// than burying it in recording details or duplicating a labelled row.
     private var qualityControl: some View {
         HStack(spacing: 2) {
             Picker(L("录音版本"), selection: $model.keyboardSoundQuality) {
@@ -126,45 +155,50 @@ struct KeyboardSoundSpaceView: View {
 
     private var optionalTools: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DisclosureGroup(L("屏幕键盘"), isExpanded: $presentation.keyboardExpanded) {
+            Divider().overlay(Palette.line.opacity(0.60)).accessibilityHidden(true)
+            DisclosureGroup(isExpanded: $presentation.keyboardExpanded) {
                 practiceKeyboard.padding(.top, 6).padding(.bottom, 14)
+            } label: {
+                Label(L("屏幕键盘"), systemImage: "keyboard")
             }
             .accessibilityIdentifier("sound-screen-keyboard")
-            DisclosureGroup(L("声音细节"), isExpanded: $presentation.sourceExpanded) {
+            Divider().overlay(Palette.line.opacity(0.45)).accessibilityHidden(true)
+            DisclosureGroup(isExpanded: $presentation.sourceExpanded) {
                 source.padding(.top, 6).padding(.bottom, 10)
+            } label: {
+                Label(L("声音细节"), systemImage: "info.circle")
             }
             .accessibilityIdentifier("sound-recording-details")
         }
+        .disclosureGroupStyle(FullRowDisclosureStyle())
         .font(.system(size: 12))
         .foregroundStyle(Palette.muted)
     }
 
     private var catalog: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack {
-                HStack(spacing: 4) {
+        let visibleStyles = styles
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     Text(L("音色"))
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .accessibilityAddTraits(.isHeader)
-                    InfoHelpButton(title: "选择音色", message: "点击任意音色即可选用，并播放一小段试听。暂停时仍可切换音色，继续运行后生效。录音来源可在下方查看。", identifier: "sound-catalog-help")
+                    InfoHelpButton(title: "选择音色", message: "点击音色选用并试听。可按名称、轴体或材质搜索。", identifier: "sound-catalog-help")
                 }
                 Spacer()
-                if presentation.category != model.keyboardSoundStyle.category {
+                if !visibleStyles.contains(model.keyboardSoundStyle) {
                     Button {
                         presentation.category = model.keyboardSoundStyle.category
+                        presentation.query = ""
                     } label: {
-                        Label(L("当前音色"), systemImage: "arrow.uturn.backward")
-                            .font(.system(size: 12))
-                            .padding(.horizontal, 6)
-                            .frame(minHeight: 30)
-                            .contentShape(Rectangle())
+                        Label(L("显示当前音色"), systemImage: "arrow.uturn.backward")
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Palette.accent)
-                    .help(L("回到当前音色所在分类"))
-                    .accessibilityLabel(L("回到当前音色所在分类"))
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                     .accessibilityIdentifier("sound-category-current")
                 }
+            }
+            HStack(spacing: 12) {
                 Picker(L("音色分类"), selection: $presentation.category) {
                     ForEach(KeyboardSoundCategory.allCases) { item in
                         Text(item.title).tag(item)
@@ -174,16 +208,68 @@ struct KeyboardSoundSpaceView: View {
                 .frame(width: 225)
                 .labelsHidden()
                 .accessibilityIdentifier("sound-category")
+                Spacer(minLength: 0)
+                soundSearch.frame(maxWidth: 260)
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 186), spacing: 10)], spacing: 10) {
-                ForEach(styles) { style in
-                    KeyboardSoundPresetCard(style: style, selected: model.keyboardSoundStyle == style, canPreview: canPreview) {
-                        model.keyboardSoundStyle = style
-                        if canPreview { model.previewSound() }
+            if visibleStyles.isEmpty {
+                ContentUnavailableView {
+                    Label(L("没有匹配的音色"), systemImage: "magnifyingglass")
+                } actions: {
+                    Button(L("清除搜索")) { presentation.query = "" }
+                        .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, minHeight: 160)
+                .cardStyle()
+                .accessibilityIdentifier("sound-catalog-empty")
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 196), spacing: 8)], spacing: 8) {
+                    ForEach(visibleStyles) { style in
+                        KeyboardSoundPresetCard(style: style, selected: model.keyboardSoundStyle == style, canPreview: canPreview) {
+                            if model.keyboardSoundStyle != style { model.keyboardSoundStyle = style }
+                            if canPreview { model.previewSound() }
+                        }
                     }
                 }
+                .accessibilityIdentifier("sound-catalog")
             }
         }
+    }
+
+    private var soundSearch: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Palette.muted)
+                .accessibilityHidden(true)
+            TextField(L("搜索音色"), text: $presentation.query)
+                .textFieldStyle(.plain)
+                .focused($searchFocused)
+                .accessibilityIdentifier("sound-catalog-search")
+            if !presentation.query.isEmpty {
+                Button {
+                    presentation.query = ""
+                    searchFocused = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill").frame(width: 26, height: 28).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Palette.muted)
+                .accessibilityLabel(L("清除搜索"))
+                .help(L("清除搜索"))
+            }
+        }
+        .font(.system(size: 12))
+        .padding(.leading, 10)
+        .padding(.trailing, 4)
+        .frame(minHeight: 32)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(searchFocused ? Palette.accent.opacity(0.75) : Palette.line, lineWidth: searchFocused ? 1.2 : 0.7)
+                .allowsHitTesting(false)
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(TapGesture().onEnded { searchFocused = true })
+        .onExitCommand { if searchFocused { presentation.query = "" } }
     }
 
     private var volume: some View {
@@ -318,14 +404,10 @@ struct KeyboardSoundSpaceView: View {
 
     private var source: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(L(model.keyboardSoundStyle.title)).font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Palette.ink)
-                Text(L(model.keyboardSoundStyle.sourceLabel)).font(.system(size: 10))
-            }
-            Text(model.keyboardSoundStyle.subtitle)
-                .font(.system(size: 12)).foregroundStyle(Palette.ink)
-            Text(L(model.keyboardSoundStyle.sourceDescription))
+            Text(model.keyboardSoundStyle.sourceLabel)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Palette.ink)
+            Text(model.keyboardSoundStyle.sourceDescription)
                 .font(.system(size: 12)).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
             if let value = model.keyboardSoundStyle.sourceURL, let url = URL(string: value) {
                 Link(destination: url) {
@@ -346,16 +428,18 @@ private struct KeyboardSoundPresetCard: View {
     let canPreview: Bool
     let select: () -> Void
     @State private var hovered = false
+    @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: select) {
             HStack(spacing: 10) {
                 Image(systemName: style.symbol)
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 28, height: 32)
+                    .font(.system(size: 13, weight: .medium))
+                    .frame(width: 30, height: 30)
                     .foregroundStyle(selected ? Palette.accent : Palette.muted)
-                    .background(Palette.raisedSurface.opacity(selected ? 0 : 0.65), in: RoundedRectangle(cornerRadius: 7))
+                    .background(selected ? Palette.accent.opacity(0.09) : Palette.raisedSurface,
+                                in: RoundedRectangle(cornerRadius: 7))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(style.title)
@@ -369,31 +453,44 @@ private struct KeyboardSoundPresetCard: View {
                 }
                 Image(systemName: selected ? "checkmark.circle.fill" : "play.fill")
                     .font(.system(size: selected ? 14 : 10, weight: .semibold))
-                    .foregroundStyle(selected ? Palette.accent : Palette.muted)
-                    .opacity(selected || (hovered && canPreview) ? 1 : 0)
+                    .foregroundStyle(selected || hovered ? Palette.accent : Palette.muted)
+                    .opacity(indicatorOpacity)
                     .frame(width: 16)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-            .background(selected ? Palette.accent.opacity(0.09) : hovered ? Palette.raisedSurface : Palette.surface,
-                        in: RoundedRectangle(cornerRadius: 9))
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 65, alignment: .leading)
+            .background(selected ? Palette.accent.opacity(0.07) : hovered ? Palette.raisedSurface : Palette.surface,
+                        in: RoundedRectangle(cornerRadius: 10))
             .overlay {
-                RoundedRectangle(cornerRadius: 9)
-                    .strokeBorder(selected ? Palette.accent.opacity(0.65) : Palette.line, lineWidth: selected ? 1 : 0.7)
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(borderColor, lineWidth: focused ? 1.4 : 0.8)
                     .allowsHitTesting(false)
             }
-            .contentShape(Rectangle())
+            .contentShape(RoundedRectangle(cornerRadius: 10))
         }
-            .buttonStyle(KeyboardSoundPresetButtonStyle())
-            .onHover { hovered = $0 }
-            .accessibilityAddTraits(selected ? .isSelected : [])
-            .accessibilityLabel(Lf("%@ 音效", L(style.title)))
-            .accessibilityValue(selected ? L("已选择") : L("未选择"))
-            .accessibilityHint(Text("\(style.sourceLabel). \(style.subtitle). \(L(canPreview ? "试听并选用" : "选用音色，暂不试听"))"))
-            .accessibilityIdentifier("keyboard-preset-\(style.rawValue)")
-            .help(L(canPreview ? "试听并选用" : "选用音色，暂不试听"))
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: selected)
+        .buttonStyle(KeyboardSoundPresetButtonStyle())
+        .focused($focused)
+        .onHover { hovered = $0 }
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityLabel(Lf("%@ 音效", style.title))
+        .accessibilityValue(selected ? L("已选择") : L("未选择"))
+        .accessibilityHint(Text("\(style.sourceLabel). \(style.subtitle)"))
+        .accessibilityIdentifier("keyboard-preset-\(style.rawValue)")
+        .help(L(canPreview ? "试听并选用" : "选用音色，暂不试听"))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.13), value: selected)
+    }
+
+    private var borderColor: Color {
+        if focused { return Palette.accent }
+        if selected { return Palette.accent.opacity(0.55) }
+        return Palette.line
+    }
+
+    private var indicatorOpacity: Double {
+        if selected { return 1 }
+        guard canPreview else { return 0 }
+        return hovered ? 1 : 0.64
     }
 }
 
@@ -407,6 +504,7 @@ private struct KeyboardSoundPresetButtonStyle: ButtonStyle {
 private struct KeyboardSoundOutputMeter: View {
     @ObservedObject var audio: KeyboardSoundEngine
     let enabled: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
@@ -415,7 +513,7 @@ private struct KeyboardSoundOutputMeter: View {
                     .frame(width: geometry.size.width * min(1, max(0, audio.outputLevel)))
             }
         }.frame(height: 4)
-            .animation(.easeOut(duration: 0.10), value: audio.outputLevel)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: audio.outputLevel)
             .accessibilityLabel(L("击键反馈"))
             .accessibilityValue(L(!enabled ? "已暂停" : audio.outputLevel > 0.02 ? "正在发声" : "安静"))
     }

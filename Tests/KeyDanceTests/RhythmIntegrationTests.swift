@@ -247,7 +247,7 @@ struct RhythmIntegrationTests {
         let defaults = RhythmDefaults(["rhythmStyle": "unknown", "rhythmEnabled": true])
         let (model, root) = try fixture(defaults)
         defer { model.shutdown(); try? FileManager.default.removeItem(at: root) }
-        #expect(model.rhythmStyle == .energy && model.rhythmFeedback.visualStyle == .energy)
+        #expect(model.rhythmStyle == .edgeGlow && model.rhythmFeedback.visualStyle == .edgeGlow)
         #expect(model.rhythmFlashes && model.rhythmFeedback.flashesEnabled)
         model.receiveKey(0)
         let volume = model.keyboardVolume

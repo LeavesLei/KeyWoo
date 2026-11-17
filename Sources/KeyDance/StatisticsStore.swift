@@ -20,6 +20,7 @@ final class StatisticsStore: ObservableObject {
     private let storageURL: URL
     private var minutes: [Int: [UInt16: Int]] = [:]
     private var sortedMinutes: [Int] = []
+    private var comparisonCache: (range: Range<Int>, total: Int, activeMinutes: Int)?
     // Short-lived rate meter: only per-second totals, never key IDs or an ordered event log.
     private var recentSeconds: [Int: Int] = [:]
     private var newestRecentSecond: Int?
@@ -61,6 +62,7 @@ final class StatisticsStore: ObservableObject {
             sortedMinutes.insert(minute, at: lowerBound(of: minute))
         }
         minutes[minute, default: [:]][keyCode, default: 0] += 1
+        if comparisonCache?.range.contains(minute) == true { comparisonCache = nil }
         sessionCounts[keyCode, default: 0] += 1
         recordRecentSecond(at: date)
         revision &+= 1
@@ -85,6 +87,74 @@ final class StatisticsStore: ObservableObject {
     func activeMinuteCount(from: Date, to: Date) -> Int {
         guard let range = Self.minuteRange(from: from, to: to) else { return 0 }
         return indexedMinutes(in: range).count
+    }
+
+    func comparison(from: Date, to: Date, lookback: StatisticsLookback,
+                    calendar: Calendar = .current) -> StatisticsComparison? {
+        guard let current = Self.minuteRange(from: from, to: to) else { return nil }
+        let previous: Range<Int>
+        switch lookback {
+        case .elapsed:
+            previous = (current.lowerBound - current.count)..<current.lowerBound
+        case .calendarDays(let days):
+            let currentStart = Self.date(forMinute: current.lowerBound)
+            guard days > 0,
+                  let start = calendar.date(byAdding: .day, value: -days, to: currentStart),
+                  let end = calendar.date(byAdding: .day, value: -days, to: to),
+                  let range = Self.minuteRange(from: calendar.startOfDay(for: start), to: min(end, currentStart))
+            else { return nil }
+            previous = range
+        }
+
+        let start = Self.date(forMinute: previous.lowerBound)
+        let end = Self.date(forMinute: previous.upperBound)
+        // Archives contain presses, so periods that start before the first
+        // recorded minute have no complete comparison baseline.
+        let hasHistory = sortedMinutes.first.map { $0 <= previous.lowerBound } ?? false
+        guard hasHistory else {
+            return StatisticsComparison(from: start, to: end, total: 0, activeMinutes: 0, hasHistory: false)
+        }
+
+        if let cached = comparisonCache, cached.range == previous {
+            return StatisticsComparison(from: start, to: end, total: cached.total,
+                                        activeMinutes: cached.activeMinutes, hasHistory: true)
+        }
+        let active = indexedMinutes(in: previous)
+        let total = active.reduce(0) { total, minute in
+            total + (minutes[minute]?.values.reduce(0, +) ?? 0)
+        }
+        comparisonCache = (previous, total, active.count)
+        return StatisticsComparison(from: start, to: end, total: total, activeMinutes: active.count, hasHistory: true)
+    }
+
+    func dailyActivity(through date: Date, range: StatisticsDayRange,
+                       calendar: Calendar = .current) -> [StatisticsActiveMinutePoint] {
+        guard date.timeIntervalSince1970.isFinite else { return [] }
+        var start = range.start(through: date, calendar: calendar)
+        var days: [StatisticsActiveMinutePoint] = []
+        for _ in 0..<range.rawValue {
+            guard start <= date, let day = calendar.dateInterval(of: .day, for: start), day.end > start else { break }
+            let count = activeMinuteCount(from: start, to: min(date, day.end))
+            days.append(StatisticsActiveMinutePoint(date: start, activeMinutes: count))
+            start = day.end
+        }
+        return days
+    }
+
+    func hourlyActivity(on date: Date, through now: Date,
+                        calendar: Calendar = .current) -> [StatisticsActiveMinutePoint] {
+        guard date.timeIntervalSince1970.isFinite, now.timeIntervalSince1970.isFinite,
+              let day = calendar.dateInterval(of: .day, for: date) else { return [] }
+        var start = day.start
+        var hours: [StatisticsActiveMinutePoint] = []
+        while start < day.end, start <= now {
+            guard let hour = calendar.dateInterval(of: .hour, for: start), hour.end > start else { break }
+            let end = min(hour.end, day.end)
+            let count = activeMinuteCount(from: start, to: min(now, end))
+            hours.append(StatisticsActiveMinutePoint(date: start, activeMinutes: count))
+            start = end
+        }
+        return hours
     }
 
     /// Derive the statistics screen in one pass over occupied selected minutes.
@@ -314,6 +384,10 @@ final class StatisticsStore: ObservableObject {
 
     private static func minute(for date: Date) -> Int {
         Int(floor(date.timeIntervalSince1970 / 60))
+    }
+
+    private static func date(forMinute minute: Int) -> Date {
+        Date(timeIntervalSince1970: Double(minute) * 60)
     }
 
     private static func minuteRange(from: Date, to: Date) -> Range<Int>? {

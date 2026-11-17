@@ -210,7 +210,7 @@ final class AppModel: ObservableObject {
         rhythmIntensity = Self.validRhythmIntensity(defaults.object(forKey: "rhythmIntensity") == nil ? 1 : defaults.double(forKey: "rhythmIntensity"))
         rhythmOpacity = Self.validRhythmOpacity((defaults.object(forKey: "rhythmOpacity") as? NSNumber)?.doubleValue ?? 1)
         rhythmClickThrough = defaults.bool(forKey: "rhythmClickThrough")
-        rhythmStyle = RhythmVisualStyle(rawValue: defaults.string(forKey: "rhythmStyle") ?? "energy") ?? .energy
+        rhythmStyle = defaults.string(forKey: "rhythmStyle").flatMap(RhythmVisualStyle.init(rawValue:)) ?? .edgeGlow
         rhythmFlashes = defaults.object(forKey: "rhythmFlashes") == nil ? true : defaults.bool(forKey: "rhythmFlashes")
         rhythmFollowsAudio = defaults.bool(forKey: "rhythmFollowsAudio")
         language = AppLanguage(rawValue: defaults.string(forKey: "appLanguage") ?? "zh-Hans") ?? .simplifiedChinese

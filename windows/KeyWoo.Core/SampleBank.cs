@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -27,7 +28,7 @@ public sealed class SampleBank {
     public const int SampleRate=48000;
     public const string DefaultPreset="topre";
     public const string StreetBeatPreset="streetBeat";
-    private static readonly string[] PreferredOrder=[DefaultPreset,"oreo","panda","purple","red","blue","bluePBT","brown","brownABS","black","blackABS",
+    private static readonly string[] PreferredOrder=[DefaultPreset,"rainy75","whiteFox","unicomp","technicsYellow","laneAlps","oreo","panda","purple","red","blue","bluePBT","brown","brownABS","black","blackABS",
         StreetBeatPreset,"mahjong","typewriter","bubble","woodblock","paper","raindrop","brick","arcade","laser"];
     public IReadOnlyList<SoundPreset> Presets { get; }
     public IReadOnlyDictionary<string,SamplePack> Packs { get; }
@@ -104,7 +105,7 @@ public sealed class SampleBank {
             or InvalidOperationException or KeyNotFoundException or OverflowException) { return null; }
     }
     private static SampleClip[] ReadClips(string folder,string id,string filename,JsonElement pack,string? expectedHash) {
-        byte[] file=File.ReadAllBytes(Path.Combine(folder,id,filename));
+        byte[] file = ReadRecording(Path.Combine(folder, id, filename));
         if(!Convert.ToHexString(SHA256.HashData(file)).Equals(expectedHash,StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException($"Recording checksum mismatch: {id}/{filename}");
         float[] pcm=DecodeWave(file);
@@ -114,6 +115,27 @@ public sealed class SampleBank {
             if(start<0||frames<=0||frames>SampleRate||start>pcm.Length/2-frames)throw new InvalidDataException("Invalid clip range");
             return new SampleClip(pcm.AsSpan(start*2,frames*2).ToArray());
         }).ToArray();
+    }
+    private static byte[] ReadRecording(string path) {
+        const int maximumBytes = 25_000_000;
+        string compressedPath = path + ".gz";
+        bool compressed = File.Exists(compressedPath);
+        var file = new FileInfo(compressed ? compressedPath : path);
+        if (file.Length >= maximumBytes) throw new InvalidDataException("Recording is too large");
+        if (!compressed) return File.ReadAllBytes(path);
+        using var source = file.OpenRead();
+        if (source.Length < 18) throw new InvalidDataException("Truncated compressed recording");
+        source.Seek(-4, SeekOrigin.End);
+        Span<byte> footer = stackalloc byte[4];
+        source.ReadExactly(footer);
+        uint size = BinaryPrimitives.ReadUInt32LittleEndian(footer);
+        if (size < 44 || size >= maximumBytes) throw new InvalidDataException("Invalid recording size");
+        source.Position = 0;
+        byte[] decoded = new byte[(int)size];
+        using var gzip = new GZipStream(source, CompressionMode.Decompress);
+        gzip.ReadExactly(decoded);
+        if (gzip.ReadByte() != -1) throw new InvalidDataException("Recording exceeds its declared size");
+        return decoded;
     }
     private static void Calibrate(SamplePack pack) {
         pack.Loudness=KeyboardLoudness.Calibrate(pack);

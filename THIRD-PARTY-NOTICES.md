@@ -12,6 +12,7 @@ The KeyWoo project itself has not been assigned an open-source license.
 | kbsim / Thomas Lai | Holy Panda only | MIT |
 | BigSoundBank / Joseph Sardin | MacBook Pro, Hermes typewriter, wooden-desk taps | CC0 1.0 |
 | Freesound / Detective_Lemons | Mahjong tiles falling on corkboard | CC0 1.0 |
+| Freesound / Techrul, grcekh, SamsterBirdies and zrrion | Rainy 75, WhiteFox, Unicomp, Technics and LANE 700 keyboard recordings | CC0 1.0 |
 
 The [full sound notices](Sources/KeyDance/Resources/KeyboardSounds/THIRD-PARTY-NOTICES.md)
 identify each source, pinned repository commit, recording attribution and edits.

@@ -56,6 +56,47 @@
       "bytes": 82407,
       "sha256": "2655e1c6d8d6680a88c00c0f4d9641704bbcd1ec3962664b9425e70745a143bb"
     }
+,
+    "rainy75.mp3": {
+      "url": "https://cdn.freesound.org/previews/815/815614_15899953-hq.mp3",
+      "page": "https://freesound.org/people/Techrul/sounds/815614/",
+      "author": "Techrul / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 1434912,
+      "sha256": "c426ec057d1d2e52dd6cb97cf12269c9c5c76bc32eab003fe9fd3741737f13b0"
+    },
+    "whiteFox.mp3": {
+      "url": "https://cdn.freesound.org/previews/546/546167_12206738-hq.mp3",
+      "page": "https://freesound.org/people/grcekh/sounds/546167/",
+      "author": "grcekh / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 3390649,
+      "sha256": "c72aea6e089a572e3a466305523b3ad4ab96be437c42c1e51ac1c4254943e1b3"
+    },
+    "unicomp.mp3": {
+      "url": "https://cdn.freesound.org/previews/489/489423_5487341-hq.mp3",
+      "page": "https://freesound.org/people/SamsterBirdies/sounds/489423/",
+      "author": "SamsterBirdies / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 3315651,
+      "sha256": "5dc0c6d263caa55e38f7230d15d8b686bfa99736b989e39421855b1030309ead"
+    },
+    "technicsYellow.mp3": {
+      "url": "https://cdn.freesound.org/previews/665/665075_2686637-hq.mp3",
+      "page": "https://freesound.org/people/zrrion/sounds/665075/",
+      "author": "zrrion / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 1259285,
+      "sha256": "0f70bd54f17941eeb8f2d7cb5b1d1b362c55f25322e0421448a9d04d072e5a16"
+    },
+    "laneAlps.mp3": {
+      "url": "https://cdn.freesound.org/previews/469/469014_2686637-hq.mp3",
+      "page": "https://freesound.org/people/zrrion/sounds/469014/",
+      "author": "zrrion / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 596322,
+      "sha256": "7d201e7a9f0ae31d2a09151214e98837d9012201f7e64547e35f91eb3e559c61"
+    }
   },
   "packs": {
     "macbookPro": {
@@ -159,6 +200,132 @@
         "backspace": [
           {"file": "wood-table.ogg", "windowMs": [3238, 3334], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5},
           {"file": "wood-table.ogg", "windowMs": [3718, 3814], "sourceKey": "Fingertip on wooden table", "fadeOutMS": 5}
+        ]
+      }
+    },
+    "rainy75": {
+      "title": "Rainy 75",
+      "titleZh": "Rainy 75 客制化",
+      "category": "keyboard",
+      "takes": {
+        "ordinary": [
+          {"file": "rainy75.mp3", "windowMs": [38612, 38709], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "rainy75.mp3", "windowMs": [39063, 39128], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "rainy75.mp3", "windowMs": [50091, 50178], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "rainy75.mp3", "windowMs": [55398, 55517], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "space": [
+          {"file": "rainy75.mp3", "windowMs": [6657, 6769], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "rainy75.mp3", "windowMs": [6934, 7056], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "enter": [
+          {"file": "rainy75.mp3", "windowMs": [39855, 39961], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "rainy75.mp3", "windowMs": [47627, 47714], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "backspace": [
+          {"file": "rainy75.mp3", "windowMs": [3759, 3876], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "rainy75.mp3", "windowMs": [16388, 16486], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ]
+      }
+    },
+    "whiteFox": {
+      "title": "WhiteFox · Hako Violet",
+      "titleZh": "WhiteFox · Hako 紫轴",
+      "category": "keyboard",
+      "splitContacts": true,
+      "takes": {
+        "ordinary": [
+          {"file": "whiteFox.mp3", "windowMs": [162521, 162778], "sourceKey": "Unlabeled key", "fadeOutMS": 4},
+          {"file": "whiteFox.mp3", "windowMs": [163789, 163998], "sourceKey": "Unlabeled key", "fadeOutMS": 4},
+          {"file": "whiteFox.mp3", "windowMs": [167366, 167576], "sourceKey": "Unlabeled key", "fadeOutMS": 4},
+          {"file": "whiteFox.mp3", "windowMs": [168804, 168968], "sourceKey": "Unlabeled key", "fadeOutMS": 4}
+        ],
+        "space": [
+          {"file": "whiteFox.mp3", "windowMs": [161727, 162043], "sourceKey": "Unlabeled key", "fadeOutMS": 4},
+          {"file": "whiteFox.mp3", "windowMs": [165131, 165320], "sourceKey": "Unlabeled key", "fadeOutMS": 4}
+        ],
+        "enter": [
+          {"file": "whiteFox.mp3", "windowMs": [156486, 156838], "sourceKey": "Unlabeled key", "fadeOutMS": 4},
+          {"file": "whiteFox.mp3", "windowMs": [157048, 157321], "sourceKey": "Unlabeled key", "fadeOutMS": 4}
+        ],
+        "backspace": [
+          {"file": "whiteFox.mp3", "windowMs": [163230, 163515], "sourceKey": "Unlabeled key", "fadeOutMS": 4},
+          {"file": "whiteFox.mp3", "windowMs": [164587, 164868], "sourceKey": "Unlabeled key", "fadeOutMS": 4}
+        ]
+      }
+    },
+    "unicomp": {
+      "title": "Unicomp · Buckling Spring",
+      "titleZh": "Unicomp · 屈曲弹簧",
+      "category": "keyboard",
+      "takes": {
+        "ordinary": [
+          {"file": "unicomp.mp3", "windowMs": [2515, 2600], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "unicomp.mp3", "windowMs": [16151, 16241], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "unicomp.mp3", "windowMs": [21705, 21796], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "unicomp.mp3", "windowMs": [30277, 30378], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "space": [
+          {"file": "unicomp.mp3", "windowMs": [29349, 29451], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "unicomp.mp3", "windowMs": [39643, 39762], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "enter": [
+          {"file": "unicomp.mp3", "windowMs": [20182, 20276], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "unicomp.mp3", "windowMs": [32896, 33023], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "backspace": [
+          {"file": "unicomp.mp3", "windowMs": [16872, 16997], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "unicomp.mp3", "windowMs": [27864, 27953], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ]
+      }
+    },
+    "technicsYellow": {
+      "title": "Technics · Gateron Yellow",
+      "titleZh": "Technics · 佳达隆黄轴",
+      "category": "keyboard",
+      "takes": {
+        "ordinary": [
+          {"file": "technicsYellow.mp3", "windowMs": [8034, 8139], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "technicsYellow.mp3", "windowMs": [14829, 14930], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "technicsYellow.mp3", "windowMs": [31721, 31813], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "technicsYellow.mp3", "windowMs": [34618, 34706], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "space": [
+          {"file": "technicsYellow.mp3", "windowMs": [8312, 8418], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "technicsYellow.mp3", "windowMs": [36797, 36887], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "enter": [
+          {"file": "technicsYellow.mp3", "windowMs": [9429, 9564], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "technicsYellow.mp3", "windowMs": [30679, 30790], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "backspace": [
+          {"file": "technicsYellow.mp3", "windowMs": [12539, 12677], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "technicsYellow.mp3", "windowMs": [27262, 27349], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ]
+      }
+    },
+    "laneAlps": {
+      "title": "LANE 700 · Alps SKCC",
+      "titleZh": "LANE 700 · Alps 轴",
+      "category": "keyboard",
+      "takes": {
+        "ordinary": [
+          {"file": "laneAlps.mp3", "windowMs": [1245, 1354], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "laneAlps.mp3", "windowMs": [5098, 5185], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "laneAlps.mp3", "windowMs": [7164, 7252], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "laneAlps.mp3", "windowMs": [19837, 19929], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "space": [
+          {"file": "laneAlps.mp3", "windowMs": [3521, 3638], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "laneAlps.mp3", "windowMs": [8771, 8865], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "enter": [
+          {"file": "laneAlps.mp3", "windowMs": [5533, 5621], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "laneAlps.mp3", "windowMs": [20382, 20472], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
+        ],
+        "backspace": [
+          {"file": "laneAlps.mp3", "windowMs": [1445, 1543], "sourceKey": "Unlabeled key", "fadeOutMS": 5},
+          {"file": "laneAlps.mp3", "windowMs": [7507, 7596], "sourceKey": "Unlabeled key", "fadeOutMS": 5}
         ]
       }
     }

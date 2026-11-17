@@ -1,13 +1,10 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Globalization;
-using System.Text;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 using KeyWoo.Core;
@@ -34,7 +31,6 @@ public sealed partial class MainWindow : Window {
     private AudioOutput? audio;
     private SampleBank? soundBank;
     private Action? refreshSoundCatalog;
-    private SoundCategory? browsedSoundCategory;
     private CancellationTokenSource? preview;
     private bool enabled=true,building,closing,started,hookReady,resumeAfterUnlock,sessionLocked;
     private readonly bool verificationOnly;
@@ -49,7 +45,7 @@ public sealed partial class MainWindow : Window {
     private readonly List<Button> soundPreviewButtons=[];
     private readonly Dictionary<int,Button> navigationButtons=[];
     private readonly Dictionary<int,ScrollViewer> pageScrollers=[];
-    private TextBlock? pageTitle,currentSound,soundAvailability,mappingFeedback,mappingState;
+    private TextBlock? pageTitle,mappingFeedback,mappingState;
     private Button? removeRule,editRule,saveRule,cancelRule;
     private InputRule? editingRule;
     private Border? errorNotice;
@@ -122,10 +118,6 @@ public sealed partial class MainWindow : Window {
         }
         catch(Exception ex){enabled=false;audio?.Mixer.Reset();ShowError(T("全局输入启动失败：","Global input could not start: ")+ex.Message);UpdatePause();}
     }
-    private ScrollViewer PageScroll(int index,UIElement child) {
-        var scroll=new ScrollViewer{Content=child,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Padding=new Thickness(0,0,8,4)};
-        pageScrollers[index]=scroll;return scroll;
-    }
     private TextBlock Text(string content,double size=14,bool muted=false)=>new(){Text=content,FontSize=size,Foreground=Brush(muted?"MutedBrush":"TextBrush"),TextWrapping=TextWrapping.Wrap};
     private StackPanel Panel()=>new(){Margin=new Thickness(0)};
     private Button MakeButton(string title,RoutedEventHandler click) {var b=new Button{Content=title};b.Click+=click;return b;}
@@ -140,154 +132,6 @@ public sealed partial class MainWindow : Window {
         if(detail is not null){var help=Help(detail);DockPanel.SetDock(help,Dock.Right);row.Children.Add(help);}
         var label=Text(title,15);label.FontWeight=FontWeights.SemiBold;row.Children.Add(label);return row;
     }
-    private sealed record SoundGroup(SoundCategory Category,string Label,SoundPreset[] Presets);
-    private UIElement Sounds() {
-        var panel=Panel();var grid=new UniformGrid{Columns=3};
-        var category=new ComboBox{DisplayMemberPath=nameof(SoundGroup.Label),Width=220,HorizontalAlignment=HorizontalAlignment.Left,Margin=new Thickness(0,0,0,0)};
-        AutomationProperties.SetAutomationId(category,"sound-category");
-        var current=Panel();
-        currentSound=Text("",20);currentSound.FontWeight=FontWeights.SemiBold;currentSound.Margin=new Thickness(0,0,0,12);current.Children.Add(currentSound);
-        var versionRow=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,0,0,12)};
-        string versionTitle=T("录音版本","Recording version");
-        var versionLabel=Text(versionTitle,13,true);
-        versionLabel.VerticalAlignment=VerticalAlignment.Center;
-        versionLabel.Margin=new Thickness(0,0,12,0);
-        versionRow.Children.Add(versionLabel);
-        var version=new ComboBox {
-            ItemsSource=new KeyValuePair<bool,string>[]{new(false,T("原音","Original")),new(true,T("Hi-Fi 高保真","Hi-Fi"))},
-            DisplayMemberPath="Value",SelectedValuePath="Key",SelectedValue=settings.HiFiEnabled,Width=150
-        };
-        AutomationProperties.SetAutomationId(version,"recording-version");
-        AutomationProperties.SetName(version,versionTitle);
-        version.SelectionChanged+=async(_,_)=>{
-            if(building||version.SelectedValue is not bool hiFi||settings.HiFiEnabled==hiFi)return;
-            settings.HiFiEnabled=hiFi;
-            if(audio is not null)audio.Mixer.HiFiEnabled=hiFi;
-            SaveSoon();
-            await PreviewSequence();
-        };
-        versionRow.Children.Add(version);
-        void UpdateVersionVisibility()=>versionRow.Visibility=soundBank?.HiFiPacks.ContainsKey(settings.Preset)==true
-            ?Visibility.Visible:Visibility.Collapsed;
-        void FillPresets() {
-            grid.Children.Clear();
-            presetButtons.Clear();
-            if(category.SelectedItem is not SoundGroup group)return;
-            foreach(var preset in group.Presets) {
-                string id=preset.Id;
-                var label=new StackPanel();label.Children.Add(Text(PresetName(preset),15));
-                label.Children.Add(Text(preset.Category==SoundCategory.Synthesized?T("合成拟音","Synthesized"):T("真实录音","Recorded"),11,true));
-                var button=MakeButton("",async(_,_)=>{
-                    settings.Preset=id;
-                    if(audio is not null)audio.Mixer.Style=id;
-                    UpdatePresets();UpdateVersionVisibility();SaveSoon();
-                    await PreviewSequence();
-                });
-                button.Content=label;button.MinHeight=78;button.Margin=new Thickness(0,0,8,8);button.HorizontalContentAlignment=HorizontalAlignment.Left;
-                button.ToolTip=T("选择并试听此音色。暂停时只切换音色。","Select and preview this sound. While paused, only the selection changes.");
-                AutomationProperties.SetAutomationId(button,"preset-"+id);presetButtons[id]=button;grid.Children.Add(button);
-            }
-            UpdatePresets();
-        }
-        category.SelectionChanged+=(_,_)=>{if(category.SelectedItem is SoundGroup group)browsedSoundCategory=group.Category;FillPresets();};
-        refreshSoundCatalog=()=>{
-            var groups=soundBank?.Presets.GroupBy(p=>p.Category)
-                .Select(g=>new SoundGroup(g.Key,$"{SoundCategoryName(g.Key)} · {g.Count()}",g.ToArray())).ToArray()??[];
-            category.ItemsSource=groups;
-            category.SelectedItem=groups.FirstOrDefault(g=>g.Category==browsedSoundCategory)??groups.FirstOrDefault(g=>g.Presets.Any(p=>p.Id==settings.Preset))??groups.FirstOrDefault();
-            UpdateVersionVisibility();
-        };
-        refreshSoundCatalog();
-        current.Children.Add(versionRow);
-        current.Children.Add(VolumeControl());
-        soundAvailability=Text("",11,true);current.Children.Add(soundAvailability);panel.Children.Add(Card(current));
-        var catalog=Panel();var catalogHeader=new DockPanel{Margin=new Thickness(0,0,0,14)};
-        DockPanel.SetDock(category,Dock.Right);catalogHeader.Children.Add(category);
-        var catalogTitle=Text(T("音色库","Sound library"),15);catalogTitle.FontWeight=FontWeights.SemiBold;catalogTitle.VerticalAlignment=VerticalAlignment.Center;catalogHeader.Children.Add(catalogTitle);
-        catalog.Children.Add(catalogHeader);catalog.Children.Add(grid);panel.Children.Add(Card(catalog));
-        var practicePanel=Panel();var practiceHeader=SectionTitle(T("试打","Try typing"));
-        var clearPractice=MakeButton(T("清空","Clear"),(_,_)=>{if(practice is not null)practice.Clear();});clearPractice.Padding=new Thickness(9,4,9,4);clearPractice.Margin=new Thickness(0);
-        DockPanel.SetDock(clearPractice,Dock.Right);practiceHeader.Children.Insert(0,clearPractice);practicePanel.Children.Add(practiceHeader);
-        practice=new TextBox{AcceptsReturn=true,MinHeight=50,MaxHeight=120,FontSize=14,Margin=new Thickness(0,8,0,8),VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
-        AutomationProperties.SetAutomationId(practice,"practice-input");practicePanel.Children.Add(practice);
-        var keyboardPanel=Panel();
-        foreach(var row in new[]{new[]{(81,16),(87,17),(69,18),(82,19),(84,20),(89,21),(85,22),(73,23),(79,24),(80,25)},new[]{(65,30),(83,31),(68,32),(70,33),(71,34),(72,35),(74,36),(75,37),(76,38)},new[]{(90,44),(88,45),(67,46),(86,47),(66,48),(78,49),(77,50)},new[]{(9,15),(32,57),(13,28),(8,14)}}) {
-            var keys=new UniformGrid{Columns=row.Length,Margin=new Thickness(0,0,0,6)};
-            foreach(var (vk,scan) in row) {
-                var key=new PhysicalKey(vk,scan);var b=MakeButton(KeyboardKeys.Name(vk,Chinese),async(_,_)=>await PreviewKey(key.MacCode));soundPreviewButtons.Add(b);b.Padding=new Thickness(4,8,4,8);b.FontSize=12;b.Margin=new Thickness(0,0,5,0);keyButtons[key.Id]=b;keys.Children.Add(b);
-            }
-            keyboardPanel.Children.Add(keys);
-        }
-        keyboardPanel.Children.Add(Text(T("点击键帽试听不计入统计。","Clicking a key previews it without counting."),11,true));
-        var keyboard=new Expander{Header=T("屏幕键盘","On-screen keyboard"),Content=keyboardPanel,Margin=new Thickness(0,0,0,0)};
-        practicePanel.Children.Add(keyboard);
-        current.Children.Add(new Border{Height=1,Background=Brush("LineBrush"),Margin=new Thickness(0,14,0,16)});
-        current.Children.Add(practicePanel);
-        var sources=new Expander{Header=T("声音来源","Sound sources")};var sourcePanel=Panel();sourcePanel.Margin=new Thickness(0,12,0,0);
-        sourcePanel.Children.Add(Text(T("键盘实录、实录拟音和趣味合成与 macOS 版共用采样。部分录音在同类键之间复用。","Windows and macOS share the keyboard recordings, recorded foley and synthesized sounds. Some packs reuse recordings across similar keys."),12,true));
-        sourcePanel.Children.Add(MakeButton(T("查看来源与许可证","View sources and licenses"),(_,_)=>OpenFile(Path.Combine(AppContext.BaseDirectory,"Assets","KeyboardSounds","THIRD-PARTY-NOTICES.md"))));sources.Content=sourcePanel;panel.Children.Add(sources);return panel;
-    }
-
-    private DockPanel VolumeControl() {
-        var panel = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
-        var previewButton = MakeButton(T("试听", "Preview"), async (_, _) => await PreviewSequence());
-        soundPreviewButtons.Add(previewButton);AutomationProperties.SetAutomationId(previewButton,"sound-preview");
-        DockPanel.SetDock(previewButton, Dock.Right);
-        panel.Children.Add(previewButton);
-        var restore = MakeButton(T("推荐", "Recommended"), (_, _) => { });
-        restore.ToolTip = T("恢复推荐音量（6.25%）", "Restore recommended volume (6.25%)");
-        AutomationProperties.SetAutomationId(restore,"keyboard-volume-reset");
-        DockPanel.SetDock(restore,Dock.Right);
-        panel.Children.Add(restore);
-        string title = T("音量", "Volume");
-        string Percent(double stored) => ControlScale.KeyboardVolume.DisplayValue(stored).ToString("0.##%",CultureInfo.CurrentCulture);
-        var valueLabel = Text(Percent(settings.Volume), 13, true);
-        valueLabel.Width = 72;
-        valueLabel.VerticalAlignment = VerticalAlignment.Center;
-        DockPanel.SetDock(valueLabel, Dock.Right);
-        panel.Children.Add(valueLabel);
-        var label = Text(title);
-        label.Width = 72;
-        label.VerticalAlignment = VerticalAlignment.Center;
-        label.ToolTip = T("0% 到 100% 均匀调节；0% 静音并保留统计。", "A linear 0–100% scale. Zero mutes audio and keeps statistics active.");
-        DockPanel.SetDock(label, Dock.Left);
-        panel.Children.Add(label);
-        var slider = new Slider {
-            Minimum = 0, Maximum = 1, SmallChange = .01, LargeChange = .05,
-            Value = ControlScale.KeyboardVolume.DisplayValue(settings.Volume),
-            TickPlacement = TickPlacement.None, TickFrequency = .25,
-            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 18, 0)
-        };
-        AutomationProperties.SetAutomationId(slider, "keyboard-volume");
-        AutomationProperties.SetName(slider, $"{title} {valueLabel.Text}");
-        slider.ValueChanged += (_, _) => {
-            if (building) return;
-            settings.Volume = ControlScale.KeyboardVolume.StoredValue(slider.Value);
-            valueLabel.Text = Percent(settings.Volume);
-            AutomationProperties.SetName(slider, $"{title} {valueLabel.Text}");
-            if (audio is not null) audio.Mixer.Volume = (float)settings.Volume;
-            SaveSoon();
-        };
-        restore.Click+=(_,_)=>slider.Value=ControlScale.KeyboardVolume.DisplayValue(1);
-        panel.Children.Add(slider);
-        return panel;
-    }
-    private string SoundCategoryName(SoundCategory category)=>category switch {
-        SoundCategory.RecordedKeyboard=>T("键盘实录","Recorded keyboards"),
-        SoundCategory.RecordedFoley=>T("实录拟音","Recorded foley"),
-        _=>T("趣味合成","Synthesized sounds")
-    };
-    private string PresetName(SoundPreset preset)=>preset.Id switch {"topre"=>T("Topre 静电容","Topre"),"oreo"=>"Everglide Oreo","panda"=>"Holy Panda","purple"=>T("Everglide 水晶紫","Everglide Crystal Purple"),"red"=>T("Cherry 红轴 · ABS","Cherry Red · ABS"),"blue"=>T("Cherry 青轴 · ABS","Cherry Blue · ABS"),"brown"=>T("Cherry 茶轴 · PBT","Cherry Brown · PBT"),"black"=>T("Cherry 黑轴 · PBT","Cherry Black · PBT"),"bluePBT"=>T("Cherry 青轴 · PBT","Cherry Blue · PBT"),"brownABS"=>T("Cherry 茶轴 · ABS","Cherry Brown · ABS"),"blackABS"=>T("Cherry 黑轴 · ABS","Cherry Black · ABS"),"typewriter"=>T("打字机","Typewriter"),"bubble"=>T("泡泡","Bubble"),"woodblock"=>T("木鱼","Woodblock"),"paper"=>T("纸笺","Paper"),"raindrop"=>T("水滴","Raindrop"),"brick"=>T("积木","Brick"),"arcade"=>T("街机","Arcade"),"laser"=>T("激光","Laser"),"mahjong"=>T("麻将","Mahjong"),_=>Chinese?preset.TitleZh??preset.Title:preset.Title};
-    private void UpdatePresets(){foreach(var (id,b) in presetButtons){b.BorderBrush=Brush(id==settings.Preset?"AccentBrush":"LineBrush");b.Background=Brush(id==settings.Preset?"SelectedBrush":"CardBrush");b.BorderThickness=new Thickness(id==settings.Preset?2:1);}UpdateSoundSummary();}
-    private void UpdateSoundSummary() {
-        var selected=soundBank?.Presets.FirstOrDefault(p=>p.Id==settings.Preset);
-        if(currentSound is not null)currentSound.Text=selected is null?T("正在加载音色…","Loading sounds…"):PresetName(selected);
-        bool available=enabled&&!sessionLocked&&audio is not null;
-        foreach(var button in soundPreviewButtons){button.IsEnabled=available;button.ToolTip=available?null:T("继续运行后即可试听。","Resume KeyWoo to preview sounds.");}
-        if(soundAvailability is not null)soundAvailability.Text=!enabled?T("已暂停。继续后可试听与记录按键。","Paused. Resume to preview sounds and count key presses.")
-            :audio is null?T("正在连接声音…","Connecting audio…")
-            :T("音色选择后立即生效 · 试打文字不会保存","Sound changes apply immediately · Practice text is never saved");
-    }
     // Match macOS for A/B comparison and the 96 BPM Street Beat demonstration.
     private static readonly (int Time,int[] Keys)[] RecordingPreview =
         [(0,[0]),(140,[1]),(280,[2]),(540,[49]),(850,[36]),(1150,[51])];
@@ -298,9 +142,9 @@ public sealed partial class MainWindow : Window {
     private Task PreviewSequence()=>PlayPreview(audio?.Mixer.Style==SampleBank.StreetBeatPreset?StreetBeatPreview:RecordingPreview);
     private Task PreviewKey(int code)=>PlayPreview([(0,[code])],Environment.TickCount);
     private async Task PlayPreview((int Time,int[] Keys)[] pattern,int take=0) {
+        if(!CanPreviewSound||audio is not { } output)return;
         preview?.Cancel();preview?.Dispose();preview=new CancellationTokenSource();var token=preview.Token;
-        if(!enabled||audio is null)return;
-        var mixer=audio.Mixer;
+        var mixer=output.Mixer;
         int generation=mixer.CancelPreview();
         var clock=System.Diagnostics.Stopwatch.StartNew();
         try {
@@ -423,13 +267,6 @@ public sealed partial class MainWindow : Window {
     private void UpdateRules()=>ruleGrid.ItemsSource=settings.Rules.Select(r=>new RuleRow(r,KeyboardKeys.Chord(r.Source,r.Modifiers,Chinese),KeyboardKeys.Chord(r.Target,r.TargetModifiers,Chinese))).ToArray();
     private async Task RulesChanged(){UpdateRules();await ConfigureHook();UpdateMappingState();SaveSoon();}
     private async Task ConfigureHook(){if(!hookReady||closing)return;try{await hook.ConfigureAsync(enabled,settings.MappingEnabled,settings.Rules.ToArray());}catch(Exception ex){ShowError(ex.Message);}}
-    private void ApplyTheme() {
-        bool dark=settings.Appearance=="dark";
-        if(settings.Appearance=="system")try{dark=(int?)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize","AppsUseLightTheme",1)==0;}catch{dark=false;}
-        foreach(var (name,light,night) in new[]{("PageBrush","#F8F6F3","#181615"),("SidebarBrush","#F1ECE6","#211E1D"),("CardBrush","#FFFDFA","#292523"),("RaisedBrush","#F5F0EA","#322D2A"),("SelectedBrush","#F3E2DA","#4B3029"),("TextBrush","#29221F","#F5EFE8"),("MutedBrush","#665B54","#B8ACA4"),("LineBrush","#E2DAD1","#453C37"),("AccentBrush","#A34332","#FCA58D")})
-            System.Windows.Application.Current.Resources[name]=new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark?night:light));
-        Background=Brush("PageBrush");Foreground=Brush("TextBrush");
-    }
     private void Refresh() {
         int budget=1024;
         while(budget-->0&&presses.TryDequeue(out var item)){Interlocked.Decrement(ref queuedPresses);statistics.Record(item.Key,item.At);highlights[item.Key.Id]=DateTimeOffset.UtcNow;}
@@ -466,8 +303,8 @@ public sealed partial class MainWindow : Window {
     internal void RebuildVerification(){if(!verificationOnly)throw new InvalidOperationException("This operation is only available to the isolated UI verifier.");Build();}
     internal void DisposeVerification(){if(!verificationOnly)throw new InvalidOperationException("This operation is only available to the isolated UI verifier.");closing=true;updateTimer.Stop();saveTimer.Stop();preview?.Cancel();systemAudio.StateChanged-=UpdateSystemAudioState;systemAudio.Dispose();keyBurst.Dispose();hook.Dispose();tray.Dispose();Close();}
     private void ShowError(string message){currentError=message;error.Text=message;if(errorNotice is not null)errorNotice.Visibility=Visibility.Visible;}
-    private void ShowAudioError(string message){audioError=T("声音连接中断：","Audio disconnected: ")+message;ShowError(audioError);}
-    private void ClearAudioError(){if(audioError is not null&&currentError==audioError){currentError=null;error.Text="";if(errorNotice is not null)errorNotice.Visibility=Visibility.Collapsed;}audioError=null;}
+    private void ShowAudioError(string message){audioError=T("声音连接中断：","Audio disconnected: ")+message;ShowError(audioError);UpdateSoundSummary();}
+    private void ClearAudioError(){if(audioError is not null&&currentError==audioError){currentError=null;error.Text="";if(errorNotice is not null)errorNotice.Visibility=Visibility.Collapsed;}audioError=null;UpdateSoundSummary();}
     private void OpenFile(string path){try{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path){UseShellExecute=true});}catch(Exception ex){ShowError(ex.Message);}}
     private void SetupTray() {
         tray.Text=Chinese?"键舞":"KeyWoo";
@@ -493,10 +330,10 @@ public sealed partial class MainWindow : Window {
     });
     private void PowerChanged(object sender,PowerModeChangedEventArgs e)=>Dispatcher.InvokeAsync(()=>{
         if(closing)return;
-        if(e.Mode==PowerModes.Suspend){powerSuspended=true;UpdateKeyBurst();}
+        if(e.Mode==PowerModes.Suspend){powerSuspended=true;preview?.Cancel();UpdateSoundSummary();UpdateKeyBurst();}
         else if(e.Mode==PowerModes.Resume){
             powerSuspended=false;UpdateKeyBurst();
-            try{audio?.Restart();}catch(Exception error){ShowAudioError(error.Message);}
+            try{if(audio is not null){audio.Restart();ClearAudioError();}else UpdateSoundSummary();}catch(Exception error){ShowAudioError(error.Message);}
         }
     });
     private void PreferencesChanged(object sender,UserPreferenceChangedEventArgs e){if(settings.Appearance=="system")Dispatcher.InvokeAsync(Build);}

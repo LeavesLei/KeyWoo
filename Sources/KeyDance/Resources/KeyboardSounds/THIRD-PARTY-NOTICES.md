@@ -1,6 +1,6 @@
 # Recorded keyboard sounds used by KeyWoo / 键舞
 
-The catalogue uses twelve keyboard recordings and three recorded foley presets
+The catalogue uses seventeen keyboard recordings and three recorded foley presets
 from the sources below. Nine other effects use original KeyWoo synthesis.
 
 ## Mechvibes — Hải Nguyễn
@@ -68,6 +68,30 @@ recording, released under [CC0 1.0 Universal](https://creativecommons.org/public
 KeyWoo uses eight short excerpts from the public high-quality preview, with
 separate selections for ordinary keys, Space, Return and Backspace.
 
+## Additional keyboards — Freesound
+
+These five recordings were published by their recordists under
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+KeyWoo uses short excerpts of the public high-quality previews.
+
+- **Rainy 75** uses [Typing on a rainy 75](https://freesound.org/people/Techrul/sounds/815614/)
+  by Techrul. The recordist identifies the keyboard and does not name the fitted switches.
+- **WhiteFox · Hako Violet** uses [Keyboard Typing 10](https://freesound.org/people/grcekh/sounds/546167/)
+  by grcekh, recorded with a Yeti Nano. The final section contains individual
+  keys. KeyWoo separates press and release where two contacts have a clear
+  quiet interval between them.
+- **Unicomp · Buckling Spring** uses [Typing on a keyboard](https://freesound.org/people/SamsterBirdies/sounds/489423/)
+  by SamsterBirdies, recorded on a Unicomp buckling spring keyboard with a BOYA BY-M1.
+- **Technics · Gateron Yellow** uses [Keyboard typing sounds: Unidentified Technics keyboard](https://freesound.org/people/zrrion/sounds/665075/)
+  by zrrion. The keyboard uses lubricated Gateron Yellow switches with swapped MX tops.
+- **LANE 700 · Alps SKCC** uses [Keyboard Typing Sounds](https://freesound.org/people/zrrion/sounds/469014/)
+  by zrrion, recorded on a LANE 700 System telecommunications keyboard with Alps SKCCBJ switches.
+
+The source takes have no physical key labels. KeyWoo uses distinct recorded
+variants for ordinary keys, Space, Return and Backspace, grouped by sound.
+Rainy 75, Unicomp, Technics and LANE 700 play their selected excerpts on press
+with no additional sound on release.
+
 ## Processing and limitations
 
 `SOURCE-FILES.json` preserves every downloaded source URL, byte count, and SHA-256.
@@ -105,8 +129,8 @@ physical material recordings.
 
 ## Community research boundary
 
-ZF / zFrontier and other keyboard communities were consulted for sound
-preferences and vocabulary only. No sounds or video audio were copied from
-those discussions. The independently licensed source repositories above are
-the sources of the recorded presets. The Mechvibes samples come from the pinned
-official repository packs listed here.
+Listening and selection references include [zFrontier](https://m.zfrontier.com/lab/keyboardTester),
+[Rainy 75 owner impressions on PTT](https://www.ptt.cc/bbs/Key_Mou_Pad/M.1700302103.A.2A9.html),
+[Unicomp owner impressions on Geekhack](https://geekhack.org/index.php?topic=97077.0)
+and the [Mechvibes community downloads chart](https://mechvibes.com/leaderboard/sound-packs).
+The downloadable app uses the original licensed recordings listed above.

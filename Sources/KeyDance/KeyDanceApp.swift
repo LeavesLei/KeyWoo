@@ -53,7 +53,7 @@ struct KeyDanceApp: App {
             CommandMenu(L("特效")) {
                 Toggle(L("桌面特效"), isOn: $model.rhythmEnabled)
                 Picker(L("显示样式"), selection: Binding(get: { model.rhythmStyle }, set: { model.activateRhythmStyle($0) })) {
-                    ForEach(RhythmVisualStyle.allCases) { style in Text(style.title).tag(style) }
+                    ForEach(RhythmVisualStyle.presentationOrder) { style in Text(style.title).tag(style) }
                 }
                 Button(L("演示特效")) { model.previewRhythm() }.disabled(!model.isEnabled || model.monitor.secureInputActive)
                 if model.rhythmStyle != .edgeGlow {
@@ -143,7 +143,7 @@ struct MenuBarView: View {
         Toggle(L("桌面特效"), isOn: $model.rhythmEnabled)
         if model.rhythmEnabled {
             Picker(L("显示样式"), selection: Binding(get: { model.rhythmStyle }, set: { model.activateRhythmStyle($0) })) {
-                ForEach(RhythmVisualStyle.allCases) { style in Text(style.title).tag(style) }
+                ForEach(RhythmVisualStyle.presentationOrder) { style in Text(style.title).tag(style) }
             }
             if model.rhythmStyle != .edgeGlow {
                 Toggle(L("鼠标穿透"), isOn: $model.rhythmClickThrough)

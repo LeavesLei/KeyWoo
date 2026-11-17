@@ -11,7 +11,8 @@ namespace KeyWoo.Windows;
 /// <summary>Exercise the shipped statistics controls and paint using isolated synthetic minute aggregates.</summary>
 internal static class StatisticsVerification {
     internal sealed record Result(bool Passed, bool HeatmapTooltipPassed, bool PinnedSelectionPassed,
-        bool SearchPassed, bool EmptyStatePassed, bool TrendRenderingPassed, bool NativeCurveRenderingPassed, bool DarkModePassed);
+        bool SearchPassed, bool EmptyStatePassed, bool TrendRenderingPassed, bool NativeCurveRenderingPassed, bool DarkModePassed,
+        bool MonthlyRangePassed, bool ActiveMinuteChartsPassed, bool HistoryComparisonPassed);
     internal static Result Run(string report) {
         string directory=Path.Combine(Path.GetTempPath(),"KeyWoo-stats-"+Guid.NewGuid().ToString("N"));
         var store=new StatisticsStore(Path.Combine(directory,"statistics.json"));
@@ -19,6 +20,9 @@ internal static class StatisticsVerification {
         var a=new PhysicalKey(0x41,0x1e);var space=new PhysicalKey(0x20,0x39);
         for(int index=0;index<120;index++)store.Record(a,at.AddMinutes(index%15));
         for(int index=0;index<900;index++)store.Record(space,at.AddMinutes(index%15));
+        for (int index = 0; index < 500; index++) store.Record(a, at.AddMinutes(-60 + index % 5));
+        var oldTime = new DateTimeOffset(DateTime.Today.AddDays(-24).AddHours(12));
+        for (int index = 0; index < 5; index++) store.Record(a, oldTime.AddMinutes(index % 3));
         var state=new StatisticsPresentation{Period="hour"};
         var panel=new StatisticsPanel(store,false,state,message=>throw new InvalidDataException(message));
         Layout(panel);
@@ -32,20 +36,63 @@ internal static class StatisticsVerification {
         search.Text="";Layout(panel);Save(panel,Path.ChangeExtension(report,".statistics-light.png"));
         var chart=Find<StatisticsTrendView>(panel,"statistics-activity");
         Require(chart.ActualWidth>300&&chart.ActualHeight>100,"The trend must occupy the available chart width.");
+        Require(Find<TextBlock>(panel, "statistics-total-change").Text == "+" + 1.04.ToString("P1", CultureInfo.CurrentCulture) &&
+            Find<TextBlock>(panel, "statistics-active-change").Text == "+" + 2d.ToString("P1", CultureInfo.CurrentCulture) &&
+            Find<TextBlock>(panel, "statistics-comparison-period").Text.StartsWith("Compared with ", StringComparison.Ordinal),
+            "The overview must compare both the selected press count and active minutes to the previous period.");
         VerifyCurve(report);
+        Find<Button>(panel, "statistics-period-month").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(state.Period == "month" && key.ToolTip is string monthCount && monthCount.Contains("625"),
+            "The monthly range must include press counts older than one week.");
+        Require(Find<TextBlock>(panel, "statistics-comparison-period").Text == "Not enough recorded history to compare",
+            "Missing earlier history must display as unavailable rather than zero.");
+        VerifyActiveMinutes(panel, state, store, oldTime, report);
         var empty=new StatisticsPanel(new StatisticsStore(Path.Combine(directory,"empty.json")),false,new(),message=>throw new InvalidDataException(message));
         Layout(empty);Require(Find<StackPanel>(empty,"statistics-ranking").Children.Count==1,"An empty range must show a clear empty state.");
         var resources=System.Windows.Application.Current.Resources;
         string[] names=["PageBrush","CardBrush","TextBrush","MutedBrush","LineBrush","AccentBrush"];
         object[] original=names.Select(name=>resources[name]).ToArray();
         try {
-            string[] values=["#17191D","#24272D","#F0F2F5","#ADB5C3","#414650","#8BB5FF"];
+            string[] values=["#181615","#292523","#F5EFE8","#B8ACA4","#453C37","#FCA58C"];
             for(int index=0;index<names.Length;index++)resources[names[index]]=new SolidColorBrush((Color)ColorConverter.ConvertFromString(values[index]));
             var dark=new StatisticsPanel(store,true,new(){Period="hour"},message=>throw new InvalidDataException(message));
             Layout(dark);Save(dark,Path.ChangeExtension(report,".statistics-dark.png"));
             Require(Find<Button>(dark,"statistics-key-30").ToolTip is string darkTooltip&&darkTooltip.Contains("120"),"The Chinese dark interface must retain its count details.");
+            Require(RenderChart(Find<StatisticsTrendView>(dark,"statistics-activity")).ColoredPixels>100,
+                "The activity curve must remain visible with the dark theme accent.");
         } finally {for(int index=0;index<names.Length;index++)resources[names[index]]=original[index];}
-        return new(true,true,true,true,true,true,true,true);
+        return new(true,true,true,true,true,true,true,true,true,true,true);
+    }
+    private static void VerifyActiveMinutes(StatisticsPanel panel, StatisticsPresentation state, StatisticsStore store,
+        DateTimeOffset oldTime, string report) {
+        var date = Find<ComboBox>(panel, "statistics-active-date");
+        Require(date.Items.Count == 7 && date.SelectedIndex == 0, "Hourly activity must default to today in the 7-day view.");
+        Find<Button>(panel, "statistics-active-30-days").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(date.Items.Count == 30 && state.Period == "month", "The activity window must change independently of the press-count range.");
+        Layout(panel);
+        var daily = Find<StatisticsTrendView>(panel, "statistics-daily-active-minutes");
+        var selected = DateOnly.FromDateTime(oldTime.LocalDateTime);
+        int daysAgo = DateOnly.FromDateTime(DateTime.Today).DayNumber - selected.DayNumber;
+        daily.SelectAt(new Point(52 + (daily.ActualWidth - 62) * ((29.5 - daysAgo) / 30), 50));
+        Require(state.ActivityDay == selected && date.SelectedIndex == daysAgo, "Clicking a daily point must select its date in the hourly view.");
+        var dailyText = Find<TextBlock>(panel, "statistics-daily-active-detail");
+        Require(dailyText.Text.Contains("3 min"), "Daily hover must report distinct recorded minutes.");
+        var hourly = Find<StatisticsTrendView>(panel, "statistics-hourly-active-minutes");
+        var hours = store.HourlyActivity(selected, DateTimeOffset.Now);
+        var active = hours.Single(hour => hour.Count > 0);
+        var midpoint = active.Start + (active.End - active.Start) / 2;
+        double fraction = (midpoint - hours[0].Start).TotalSeconds / (hours[^1].End - hours[0].Start).TotalSeconds;
+        hourly.HoverAt(new Point(52 + (hourly.ActualWidth - 62) * fraction, 50));
+        Require(Find<TextBlock>(panel, "statistics-hourly-active-detail").Text.Contains("3 min"),
+            "Hourly hover must report the selected day's active minutes for the hovered hour.");
+        var dailyFrame = RenderChart(daily);
+        var hourlyFrame = RenderChart(hourly);
+        Require(dailyFrame.ColoredPixels > 100 && hourlyFrame.ColoredPixels > 100, "Both activity curves must render positive minute counts.");
+        SaveChart(dailyFrame.Bitmap, Path.ChangeExtension(report, ".statistics-active-daily.png"));
+        SaveChart(hourlyFrame.Bitmap, Path.ChangeExtension(report, ".statistics-active-hourly.png"));
+        Find<Button>(panel, "statistics-active-7-days").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(date.Items.Count == 7 && date.SelectedIndex == 0 && state.ActivityDay is null,
+            "An older selected date must return to today when it falls outside the 7-day view.");
     }
     private static void VerifyCurve(string report) {
         var start=DateTimeOffset.Now;
@@ -80,10 +127,14 @@ internal static class StatisticsVerification {
         var bitmap=new RenderTargetBitmap(680,208,96,96,PixelFormats.Pbgra32);
         bitmap.Render(view);
         var bytes=new byte[680*208*4];bitmap.CopyPixels(bytes,680*4,0);
+        var accent=((SolidColorBrush)System.Windows.Application.Current.Resources["AccentBrush"]).Color;
         int colored=0;
         for(int y=12;y<176;y++)for(int x=60;x<665;x++) {
             int index=(y*680+x)*4;
-            if(bytes[index+3]>0&&bytes[index]>=12&&bytes[index]>bytes[index+1]*1.1&&bytes[index]>bytes[index+2]*1.25)colored++;
+            int alpha=bytes[index+3];
+            // Compare the visible stroke against the theme's premultiplied BGRA color.
+            if(alpha>=96&&Math.Abs(bytes[index]*255-accent.B*alpha)<=510&&
+                Math.Abs(bytes[index+1]*255-accent.G*alpha)<=510&&Math.Abs(bytes[index+2]*255-accent.R*alpha)<=510)colored++;
         }
         return new(bitmap,bytes,colored);
     }

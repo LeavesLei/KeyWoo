@@ -35,7 +35,10 @@ function Run-Checked([string]$File, [string[]]$Arguments) {
 $result = @{ passed=$false; version=$Version; perUser=$true; hardwareKeyboardTested=$false; devicePlaybackTested=$false }
 try {
     foreach ($phase in @('install', 'upgrade')) {
+        $legacyWave = Join-Path $install 'Assets/KeyboardSounds/blue/samples.wav'
+        if ($phase -eq 'upgrade') { [IO.File]::WriteAllText($legacyWave, 'Legacy audio fixture') }
         Run-Checked $Installer @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',("/DIR=`"$install`""),("/LOG=`"$(Join-Path $ReportDirectory "$phase.log")`""))
+        if (Test-Path -LiteralPath $legacyWave) { throw 'Installer left a superseded uncompressed recording.' }
         if (-not (Test-Path (Join-Path $install 'KeyWoo.exe'))) { throw 'Installed executable is missing.' }
         if (-not (Test-Path $registration) -or (Get-ItemProperty $registration).DisplayVersion -ne $Version) { throw 'Per-user uninstall registration has an incorrect version.' }
         if (-not (Test-Path $shortcut)) { throw 'Start menu shortcut is missing.' }
@@ -51,13 +54,22 @@ try {
     $report = Join-Path $ReportDirectory 'installed-assets.json'
     Run-Checked (Join-Path $install 'KeyWoo.exe') @('--verify-assets',("`"$report`""))
     $assets = Get-Content -Raw $report | ConvertFrom-Json
-    if (-not $assets.passed -or @($assets.presets.PSObject.Properties).Count -ne 25 -or @($assets.hiFiPresets.PSObject.Properties).Count -ne 15) { throw 'Installed app asset self-check failed.' }
+    $soundSource = Join-Path $SourceDirectory 'Assets/KeyboardSounds'
+    $expectedPresets = @('manifest.json', 'synthetic-manifest.json', 'street-beat-manifest.json') | ForEach-Object {
+        (Get-Content -Raw (Join-Path $soundSource $_) | ConvertFrom-Json).packs.PSObject.Properties.Name
+    }
+    $expectedHiFi = (Get-Content -Raw (Join-Path $soundSource 'hifi-manifest.json') | ConvertFrom-Json).packs.PSObject.Properties.Name
+    if (-not $assets.passed -or (Compare-Object $expectedPresets $assets.presets.PSObject.Properties.Name) -or
+        (Compare-Object $expectedHiFi $assets.hiFiPresets.PSObject.Properties.Name)) { throw 'Installed app asset self-check failed.' }
     if (-not $assets.keyBurst.Passed) { throw 'Installed Key Burst drawing and overlay self-check failed.' }
     if (-not $assets.edgeGlow.Passed) { throw 'Installed bottom glow and system-audio self-check failed.' }
     if (-not $assets.statistics.Passed) { throw 'Installed statistics interaction and rendering self-check failed.' }
+    if (-not $assets.ui.Passed) { throw 'Installed workspace interaction and rendering self-check failed.' }
     $result.installedKeyBurstVerified=[bool]$assets.keyBurst.Passed
     $result.installedEdgeGlowVerified=[bool]$assets.edgeGlow.Passed
     $result.installedStatisticsVerified=[bool]$assets.statistics.Passed
+    $result.installedInterfaceVerified=[bool]$assets.ui.Passed
+    $result.legacyWaveCleanupPassed=$true
     $result.installedPresetCount=@($assets.presets.PSObject.Properties).Count
     $result.installedHiFiPresetCount=@($assets.hiFiPresets.PSObject.Properties).Count
     Run-Checked (Join-Path $install 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/LOG=`"$(Join-Path $ReportDirectory 'uninstall.log')`""))

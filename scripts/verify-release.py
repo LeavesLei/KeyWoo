@@ -5,9 +5,12 @@ Requires macOS package read-back checks and Windows installation/upgrade/uninsta
 checks. These are build gates, not a claim of physical Windows audio/keyboard QA.
 """
 import argparse
+import gzip
 import hashlib
+import io
 import json
 from pathlib import Path
+import zipfile
 
 
 def digest(path):
@@ -18,15 +21,45 @@ def digest(path):
     return result.hexdigest()
 
 
-def sound_hashes(files, prefix):
+def sound_catalogue(archive, files, prefix, archive_prefix=""):
     catalogues = {"manifest.json", "synthetic-manifest.json", "hifi-manifest.json", "street-beat-manifest.json"}
     hashes = {}
-    for item in files:
-        if item["path"].startswith(prefix):
+    expected = {}
+    preset_count = hi_fi_count = 0
+    with zipfile.ZipFile(archive) as bundle:
+        for item in files:
+            if not item["path"].startswith(prefix):
+                continue
             relative = item["path"][len(prefix):]
-            if relative.endswith(".wav") or relative in catalogues:
-                hashes[relative] = item["sha256"]
-    return hashes
+            if relative not in catalogues and not relative.endswith((".wav", ".wav.gz")):
+                continue
+            data = bundle.read(archive_prefix + item["path"])
+            if hashlib.sha256(data).hexdigest() != item["sha256"]:
+                raise ValueError("Packaged sound asset differs from manifest: " + relative)
+            if relative in catalogues:
+                packs = json.loads(data)["packs"]
+                for pack in packs.values():
+                    if pack["file"] in expected:
+                        raise ValueError("Duplicate sound catalogue entry: " + pack["file"])
+                    expected[pack["file"]] = pack["sha256"]
+                if relative == "hifi-manifest.json":
+                    hi_fi_count = len(packs)
+                else:
+                    preset_count += len(packs)
+            if relative.endswith(".wav.gz"):
+                relative = relative.removesuffix(".gz")
+                with gzip.GzipFile(fileobj=io.BytesIO(data)) as compressed:
+                    data = compressed.read(25_000_000)
+                if len(data) == 25_000_000:
+                    raise ValueError("Packaged recording is too large: " + relative)
+            if relative in hashes:
+                raise ValueError("Duplicate packaged sound asset: " + relative)
+            hashes[relative] = hashlib.sha256(data).hexdigest()
+    if not {"manifest.json", "synthetic-manifest.json"} <= hashes.keys() or expected != {
+            path: value for path, value in hashes.items() if path.endswith(".wav")
+    }:
+        raise ValueError("Packaged sounds do not match their catalogues")
+    return hashes, preset_count, hi_fi_count
 
 
 def verify(folder, version):
@@ -37,24 +70,19 @@ def verify(folder, version):
         raise ValueError("Platform version/build mismatch")
     if not mac.get("sourceCommit") or mac["sourceCommit"] != win.get("sourceCommit") or mac.get("sourceDirty") is not False:
         raise ValueError("Both platform packages must come from the same clean committed source")
-    # Older releases predate the generated sound assets. For the newer
-    # catalogue, both platforms must have the extra preset and 15 companions.
-    mac_sounds = sound_hashes(mac["appFiles"], "Contents/Resources/KeyboardSounds/")
-    win_sounds = sound_hashes(win["files"], "Assets/KeyboardSounds/")
+    mac_sounds, preset_count, hi_fi_count = sound_catalogue(
+        folder / (prefix + "-mac-arm64.zip"), mac["appFiles"], "Contents/Resources/KeyboardSounds/", "KeyWoo.app/")
+    win_sounds, win_count, win_hi_fi_count = sound_catalogue(
+        folder / win["archive"], win["files"], "Assets/KeyboardSounds/")
     if mac_sounds != win_sounds:
         differing = sorted(path for path in mac_sounds.keys() | win_sounds.keys()
                            if mac_sounds.get(path) != win_sounds.get(path))
         raise ValueError("Platform audio assets differ: " + ", ".join(differing))
-    has_street_beat = "streetBeat/samples.wav" in mac_sounds
-    hi_fi_count = sum(path.endswith("/samples-hifi.wav") for path in mac_sounds)
-    expected_hi_fi = 15 if has_street_beat else 0
-    if hi_fi_count != expected_hi_fi or win.get("packagedHiFiPresetCount", 0) != expected_hi_fi:
+    if hi_fi_count != win_hi_fi_count or win.get("packagedHiFiPresetCount", 0) != hi_fi_count:
         raise ValueError("Platform Hi-Fi sound catalogues are incomplete or differ")
-    if has_street_beat and not {"hifi-manifest.json", "street-beat-manifest.json"} <= mac_sounds.keys():
-        raise ValueError("Generated audio catalogues are missing")
     if not (mac["archiveContentsVerified"] and mac["diskImageContentsVerified"] and
             win["archiveContentsVerified"] and win["installerTested"] and
-            win["packagedPresetCount"] == 24 + int(has_street_beat)):
+            win["packagedPresetCount"] == win_count == preset_count):
         raise ValueError("Package verification gates have not passed")
     expected = {item["file"]: item["sha256"] for item in mac["artifacts"]}
     expected.update({win["archive"]: win["sha256"], win["installer"]: win["installerSha256"]})

@@ -57735,6 +57735,7051 @@
       "mappedKeys": 102,
       "titleZh": "木桌轻叩",
       "category": "recordedFoley"
+    },
+    "rainy75": {
+      "title": "Rainy 75",
+      "sampleRate": 48000,
+      "channels": 2,
+      "file": "rainy75/samples.wav",
+      "sha256": "5391442fbd0aea54a0ff92cb2fd862f00056db566afd2cc35bffb8abdc133e28",
+      "frames": 43793,
+      "gain": 1.0006634858355146,
+      "sourceMedianPeak": 0.170279860496521,
+      "sourceMaximumPeak": 0.30979445576667786,
+      "outputMaximumPeak": 0.31,
+      "clips": [
+        {
+          "startFrame": 0,
+          "frames": 4061,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 38612,
+            "sourceEndMS": 38709,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 595,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.008783305794076131,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 4061,
+          "frames": 2711,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 39063,
+            "sourceEndMS": 39128,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 409,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 25,
+            "onsetThreshold": 0.01056143596226351,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 6772,
+          "frames": 3854,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 50091,
+            "sourceEndMS": 50178,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 322,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 25,
+            "onsetThreshold": 0.009267259698060148,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 10626,
+          "frames": 5131,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 55398,
+            "sourceEndMS": 55517,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 581,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.009141553279147825,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 15757,
+          "frames": 4791,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 6657,
+            "sourceEndMS": 6769,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 585,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.005832777144709581,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 20548,
+          "frames": 5390,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 6934,
+            "sourceEndMS": 7056,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 466,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 26,
+            "onsetThreshold": 0.006970576600409016,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 25938,
+          "frames": 4508,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 39855,
+            "sourceEndMS": 39961,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 580,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.012889941060539943,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 30446,
+          "frames": 3611,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 47627,
+            "sourceEndMS": 47714,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 565,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.018162874489288692,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 34057,
+          "frames": 5616,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 3759,
+            "sourceEndMS": 3876,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 0,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 20,
+            "onsetThreshold": 0.004882102124530197,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 39673,
+          "frames": 4120,
+          "provenance": {
+            "sourceFile": "rainy75.mp3",
+            "sourceStartMS": 16388,
+            "sourceEndMS": 16486,
+            "sourceSampleRate": 48000,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 584,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.007011602568337804,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        }
+      ],
+      "keys": {
+        "0": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "1": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "2": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "3": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "4": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "5": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "6": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "7": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "8": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "9": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "11": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "12": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "13": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "14": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "15": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "16": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "17": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "18": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "19": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "20": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "21": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "22": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "23": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "24": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "25": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "26": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "27": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "28": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "29": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "30": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "31": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "32": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "33": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "34": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "35": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "36": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "37": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "38": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "39": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "40": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "41": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "42": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "43": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "44": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "45": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "46": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "47": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "48": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "49": {
+          "down": [
+            4,
+            5
+          ],
+          "up": [],
+          "sourceKey": "space"
+        },
+        "50": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "51": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "53": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "54": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "55": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "56": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "57": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "58": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "59": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "60": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "61": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "62": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "63": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "65": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "67": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "69": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "71": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "75": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "76": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "78": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "81": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "82": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "83": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "84": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "85": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "86": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "87": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "88": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "89": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "91": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "92": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "96": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "97": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "98": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "99": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "100": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "101": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "103": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "109": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "111": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "114": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "115": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "116": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "117": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "118": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "119": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "120": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "121": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "122": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "123": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "124": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "125": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "126": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        }
+      },
+      "fallback": {
+        "down": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "up": [],
+        "sourceKey": "ordinary"
+      },
+      "separateReleaseKeys": 0,
+      "mappedKeys": 102,
+      "titleZh": "Rainy 75 客制化",
+      "category": "keyboard"
+    },
+    "whiteFox": {
+      "title": "WhiteFox · Hako Violet",
+      "sampleRate": 48000,
+      "channels": 2,
+      "file": "whiteFox/samples.wav",
+      "sha256": "18945ff70f1b1def2c9ce068cc41c0cbe595419d9312cef3c3c92ffaa834cb86",
+      "frames": 91399,
+      "gain": 0.9515237379643791,
+      "sourceMedianPeak": 0.19967972675749765,
+      "sourceMaximumPeak": 0.21741970410115438,
+      "outputMaximumPeak": 0.20688000955343966,
+      "clips": [
+        {
+          "startFrame": 0,
+          "frames": 5286,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 162521,
+            "sourceEndMS": 162778,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 12336,
+            "earlyPeak": 0.11390700681103527,
+            "latePeak": 0.06327605802070088,
+            "splitFrame": 5322,
+            "quietGapFrames": 8365,
+            "firstEnergyFraction": 0.6902896842854696,
+            "secondEnergyFraction": 0.30971031571453045,
+            "trimStartFrames": 36,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.013668840817324232,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 5286,
+          "frames": 2835,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 162521,
+            "sourceEndMS": 162778,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 12336,
+            "earlyPeak": 0.11390700681103527,
+            "latePeak": 0.06327605802070088,
+            "splitFrame": 5322,
+            "quietGapFrames": 8365,
+            "firstEnergyFraction": 0.6902896842854696,
+            "secondEnergyFraction": 0.30971031571453045,
+            "trimStartFrames": 4179,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.007593126962484106,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 8121,
+          "frames": 3675,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 163789,
+            "sourceEndMS": 163998,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 10032,
+            "earlyPeak": 0.1292185914470964,
+            "latePeak": 0.064057399405452,
+            "splitFrame": 4174,
+            "quietGapFrames": 5003,
+            "firstEnergyFraction": 0.6652254516232237,
+            "secondEnergyFraction": 0.33477454837677634,
+            "trimStartFrames": 499,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.015506230973651568,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 11796,
+          "frames": 3414,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 163789,
+            "sourceEndMS": 163998,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 10032,
+            "earlyPeak": 0.1292185914470964,
+            "latePeak": 0.064057399405452,
+            "splitFrame": 4174,
+            "quietGapFrames": 5003,
+            "firstEnergyFraction": 0.6652254516232237,
+            "secondEnergyFraction": 0.33477454837677634,
+            "trimStartFrames": 2444,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.00768688792865424,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 15210,
+          "frames": 3936,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 167366,
+            "sourceEndMS": 167576,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 10080,
+            "earlyPeak": 0.11662274262223629,
+            "latePeak": 0.051674373605056376,
+            "splitFrame": 4370,
+            "quietGapFrames": 5548,
+            "firstEnergyFraction": 0.8220021730535952,
+            "secondEnergyFraction": 0.17799782694640479,
+            "trimStartFrames": 434,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.013994729114668354,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 19146,
+          "frames": 3505,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 167366,
+            "sourceEndMS": 167576,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 10080,
+            "earlyPeak": 0.11662274262223629,
+            "latePeak": 0.051674373605056376,
+            "splitFrame": 4370,
+            "quietGapFrames": 5548,
+            "firstEnergyFraction": 0.8220021730535952,
+            "secondEnergyFraction": 0.17799782694640479,
+            "trimStartFrames": 2205,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 25,
+            "onsetThreshold": 0.006200924832606765,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 22651,
+          "frames": 2710,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 168804,
+            "sourceEndMS": 168968,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 7872,
+            "earlyPeak": 0.1316974629318782,
+            "latePeak": 0.08165693668245341,
+            "splitFrame": 3099,
+            "quietGapFrames": 1828,
+            "firstEnergyFraction": 0.746012629459886,
+            "secondEnergyFraction": 0.253987370540114,
+            "trimStartFrames": 389,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.015838231736607356,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 25361,
+          "frames": 4494,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 168804,
+            "sourceEndMS": 168968,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 7872,
+            "earlyPeak": 0.1316974629318782,
+            "latePeak": 0.08165693668245341,
+            "splitFrame": 3099,
+            "quietGapFrames": 1828,
+            "firstEnergyFraction": 0.746012629459886,
+            "secondEnergyFraction": 0.253987370540114,
+            "trimStartFrames": 279,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 10,
+            "onsetThreshold": 0.01381082025383049,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 29855,
+          "frames": 6800,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 161727,
+            "sourceEndMS": 162043,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 15168,
+            "earlyPeak": 0.1408643003964272,
+            "latePeak": 0.0430191502495499,
+            "splitFrame": 7389,
+            "quietGapFrames": 9208,
+            "firstEnergyFraction": 0.9183943169802916,
+            "secondEnergyFraction": 0.08160568301970836,
+            "trimStartFrames": 589,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.016903716047571262,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 36655,
+          "frames": 3239,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 161727,
+            "sourceEndMS": 162043,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 15168,
+            "earlyPeak": 0.1408643003964272,
+            "latePeak": 0.0430191502495499,
+            "splitFrame": 7389,
+            "quietGapFrames": 9208,
+            "firstEnergyFraction": 0.9183943169802916,
+            "secondEnergyFraction": 0.08160568301970836,
+            "trimStartFrames": 4540,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.005162298029945988,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 39894,
+          "frames": 4154,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 165131,
+            "sourceEndMS": 165320,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 9072,
+            "earlyPeak": 0.09650404983763966,
+            "latePeak": 0.05367596193139231,
+            "splitFrame": 4714,
+            "quietGapFrames": 2013,
+            "firstEnergyFraction": 0.695131265133614,
+            "secondEnergyFraction": 0.304868734866386,
+            "trimStartFrames": 560,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 23,
+            "onsetThreshold": 0.013195941495545045,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 44048,
+          "frames": 3366,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 165131,
+            "sourceEndMS": 165320,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 9072,
+            "earlyPeak": 0.09650404983763966,
+            "latePeak": 0.05367596193139231,
+            "splitFrame": 4714,
+            "quietGapFrames": 2013,
+            "firstEnergyFraction": 0.695131265133614,
+            "secondEnergyFraction": 0.304868734866386,
+            "trimStartFrames": 992,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 7,
+            "onsetThreshold": 0.015117054596685846,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 47414,
+          "frames": 7209,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 156486,
+            "sourceEndMS": 156838,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 16896,
+            "earlyPeak": 0.1377833967324546,
+            "latePeak": 0.09387623811004066,
+            "splitFrame": 7209,
+            "quietGapFrames": 11872,
+            "firstEnergyFraction": 0.6370891364997737,
+            "secondEnergyFraction": 0.36291086350022633,
+            "trimStartFrames": 0,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 0,
+            "onsetThreshold": 0.01653400760789455,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 54623,
+          "frames": 4240,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 156486,
+            "sourceEndMS": 156838,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 16896,
+            "earlyPeak": 0.1377833967324546,
+            "latePeak": 0.09387623811004066,
+            "splitFrame": 7209,
+            "quietGapFrames": 11872,
+            "firstEnergyFraction": 0.6370891364997737,
+            "secondEnergyFraction": 0.36291086350022633,
+            "trimStartFrames": 5447,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 25,
+            "onsetThreshold": 0.011265148573204879,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 58863,
+          "frames": 5126,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 157048,
+            "sourceEndMS": 157321,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 13104,
+            "earlyPeak": 0.1434026258487125,
+            "latePeak": 0.09860928529700408,
+            "splitFrame": 5352,
+            "quietGapFrames": 7723,
+            "firstEnergyFraction": 0.7622082066834542,
+            "secondEnergyFraction": 0.23779179331654576,
+            "trimStartFrames": 226,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 35,
+            "onsetThreshold": 0.0172083151018455,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 63989,
+          "frames": 4592,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 157048,
+            "sourceEndMS": 157321,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 13104,
+            "earlyPeak": 0.1434026258487125,
+            "latePeak": 0.09860928529700408,
+            "splitFrame": 5352,
+            "quietGapFrames": 7723,
+            "firstEnergyFraction": 0.7622082066834542,
+            "secondEnergyFraction": 0.23779179331654576,
+            "trimStartFrames": 3160,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 25,
+            "onsetThreshold": 0.011833114235640489,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 68581,
+          "frames": 5597,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 163230,
+            "sourceEndMS": 163515,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 13680,
+            "earlyPeak": 0.08888851823344833,
+            "latePeak": 0.021951164912025582,
+            "splitFrame": 6367,
+            "quietGapFrames": 3342,
+            "firstEnergyFraction": 0.8656192401964565,
+            "secondEnergyFraction": 0.13438075980354347,
+            "trimStartFrames": 687,
+            "trimEndFrames": 83,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.0106666221880138,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 74178,
+          "frames": 5645,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 163230,
+            "sourceEndMS": 163515,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 13680,
+            "earlyPeak": 0.08888851823344833,
+            "latePeak": 0.021951164912025582,
+            "splitFrame": 6367,
+            "quietGapFrames": 3342,
+            "firstEnergyFraction": 0.8656192401964565,
+            "secondEnergyFraction": 0.13438075980354347,
+            "trimStartFrames": 1668,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 0,
+            "onsetThreshold": 0.005464360652111774,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 79823,
+          "frames": 7445,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 164587,
+            "sourceEndMS": 164868,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 13488,
+            "earlyPeak": 0.05150970134017217,
+            "latePeak": 0.030166469276312436,
+            "splitFrame": 7445,
+            "quietGapFrames": 5965,
+            "firstEnergyFraction": 0.8328736844168203,
+            "secondEnergyFraction": 0.16712631558317967,
+            "trimStartFrames": 0,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 0,
+            "onsetThreshold": 0.006181164160820661,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        },
+        {
+          "startFrame": 87268,
+          "frames": 4131,
+          "provenance": {
+            "sourceFile": "whiteFox.mp3",
+            "sourceStartMS": 164587,
+            "sourceEndMS": 164868,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "up",
+            "method": "two-contacts-with-quiet-gap",
+            "sourceFrames": 13488,
+            "earlyPeak": 0.05150970134017217,
+            "latePeak": 0.030166469276312436,
+            "splitFrame": 7445,
+            "quietGapFrames": 5965,
+            "firstEnergyFraction": 0.8328736844168203,
+            "secondEnergyFraction": 0.16712631558317967,
+            "trimStartFrames": 1912,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 21,
+            "onsetThreshold": 0.004302304164730934,
+            "alignmentPasses": 1,
+            "fadeOutMS": 4
+          }
+        }
+      ],
+      "keys": {
+        "0": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "1": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "2": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "3": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "4": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "5": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "6": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "7": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "8": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "9": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "11": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "12": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "13": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "14": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "15": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "16": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "17": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "18": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "19": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "20": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "21": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "22": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "23": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "24": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "25": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "26": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "27": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "28": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "29": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "30": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "31": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "32": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "33": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "34": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "35": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "36": {
+          "down": [
+            12,
+            14
+          ],
+          "up": [
+            13,
+            15
+          ],
+          "sourceKey": "enter"
+        },
+        "37": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "38": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "39": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "40": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "41": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "42": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "43": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "44": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "45": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "46": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "47": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "48": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "49": {
+          "down": [
+            8,
+            10
+          ],
+          "up": [
+            9,
+            11
+          ],
+          "sourceKey": "space"
+        },
+        "50": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "51": {
+          "down": [
+            16,
+            18
+          ],
+          "up": [
+            17,
+            19
+          ],
+          "sourceKey": "backspace"
+        },
+        "53": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "54": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "55": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "56": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "57": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "58": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "59": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "60": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "61": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "62": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "63": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "65": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "67": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "69": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "71": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "75": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "76": {
+          "down": [
+            12,
+            14
+          ],
+          "up": [
+            13,
+            15
+          ],
+          "sourceKey": "enter"
+        },
+        "78": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "81": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "82": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "83": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "84": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "85": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "86": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "87": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "88": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "89": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "91": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "92": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "96": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "97": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "98": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "99": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "100": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "101": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "103": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "109": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "111": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "114": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "115": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "116": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "117": {
+          "down": [
+            16,
+            18
+          ],
+          "up": [
+            17,
+            19
+          ],
+          "sourceKey": "backspace"
+        },
+        "118": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "119": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "120": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "121": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "122": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "123": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "124": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "125": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        },
+        "126": {
+          "down": [
+            0,
+            2,
+            4,
+            6
+          ],
+          "up": [
+            1,
+            3,
+            5,
+            7
+          ],
+          "sourceKey": "ordinary"
+        }
+      },
+      "fallback": {
+        "down": [
+          0,
+          2,
+          4,
+          6
+        ],
+        "up": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "sourceKey": "ordinary"
+      },
+      "separateReleaseKeys": 102,
+      "mappedKeys": 102,
+      "titleZh": "WhiteFox · Hako 紫轴",
+      "category": "keyboard"
+    },
+    "unicomp": {
+      "title": "Unicomp · Buckling Spring",
+      "sampleRate": 48000,
+      "channels": 2,
+      "file": "unicomp/samples.wav",
+      "sha256": "4e3500c84c0b0159bcb36a503ebfb5e52d83ea9d9df7e6763f2b3f27e5e4054e",
+      "frames": 44675,
+      "gain": 0.8998166768994044,
+      "sourceMedianPeak": 0.21115412158696986,
+      "sourceMaximumPeak": 0.3302008326264,
+      "outputMaximumPeak": 0.2971202159233037,
+      "clips": [
+        {
+          "startFrame": 0,
+          "frames": 3552,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 2515,
+            "sourceEndMS": 2600,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 528,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 10,
+            "onsetThreshold": 0.01838601410326862,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 3552,
+          "frames": 3793,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 16151,
+            "sourceEndMS": 16241,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 527,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.014654179934329246,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 7345,
+          "frames": 4087,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 21705,
+            "sourceEndMS": 21796,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 281,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 20,
+            "onsetThreshold": 0.017758760876938538,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 11432,
+          "frames": 4349,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 30277,
+            "sourceEndMS": 30378,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 499,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 12,
+            "onsetThreshold": 0.015404370911868855,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 15781,
+          "frames": 4555,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 29349,
+            "sourceEndMS": 29451,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 341,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 10,
+            "onsetThreshold": 0.009761056699572054,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 20336,
+          "frames": 5230,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 39643,
+            "sourceEndMS": 39762,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 482,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.011604027524801637,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 25566,
+          "frames": 4096,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 20182,
+            "sourceEndMS": 20276,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 416,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 13,
+            "onsetThreshold": 0.024973139427292096,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 29662,
+          "frames": 5747,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 32896,
+            "sourceEndMS": 33023,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 349,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 12,
+            "onsetThreshold": 0.013563631567807037,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 35409,
+          "frames": 5532,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 16872,
+            "sourceEndMS": 16997,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 468,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 2,
+            "onsetThreshold": 0.01609528235402493,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 40941,
+          "frames": 3734,
+          "provenance": {
+            "sourceFile": "unicomp.mp3",
+            "sourceStartMS": 27864,
+            "sourceEndMS": 27953,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 538,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 14,
+            "onsetThreshold": 0.01527721777804463,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        }
+      ],
+      "keys": {
+        "0": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "1": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "2": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "3": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "4": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "5": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "6": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "7": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "8": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "9": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "11": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "12": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "13": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "14": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "15": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "16": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "17": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "18": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "19": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "20": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "21": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "22": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "23": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "24": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "25": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "26": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "27": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "28": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "29": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "30": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "31": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "32": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "33": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "34": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "35": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "36": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "37": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "38": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "39": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "40": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "41": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "42": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "43": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "44": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "45": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "46": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "47": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "48": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "49": {
+          "down": [
+            4,
+            5
+          ],
+          "up": [],
+          "sourceKey": "space"
+        },
+        "50": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "51": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "53": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "54": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "55": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "56": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "57": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "58": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "59": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "60": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "61": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "62": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "63": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "65": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "67": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "69": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "71": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "75": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "76": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "78": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "81": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "82": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "83": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "84": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "85": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "86": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "87": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "88": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "89": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "91": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "92": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "96": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "97": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "98": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "99": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "100": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "101": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "103": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "109": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "111": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "114": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "115": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "116": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "117": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "118": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "119": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "120": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "121": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "122": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "123": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "124": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "125": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "126": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        }
+      },
+      "fallback": {
+        "down": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "up": [],
+        "sourceKey": "ordinary"
+      },
+      "separateReleaseKeys": 0,
+      "mappedKeys": 102,
+      "titleZh": "Unicomp · 屈曲弹簧",
+      "category": "keyboard"
+    },
+    "technicsYellow": {
+      "title": "Technics · Gateron Yellow",
+      "sampleRate": 48000,
+      "channels": 2,
+      "file": "technicsYellow/samples.wav",
+      "sha256": "d5edbe8eea37c636dad38e4b9f6bfe56a4cdc506cbf7b00f15f1093e36d7a4a5",
+      "frames": 42873,
+      "gain": 0.7982379431398231,
+      "sourceMedianPeak": 0.1856632057362624,
+      "sourceMaximumPeak": 0.38835538032761613,
+      "outputMaximumPeak": 0.31,
+      "clips": [
+        {
+          "startFrame": 0,
+          "frames": 4560,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 8034,
+            "sourceEndMS": 8139,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 480,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.00943481204185167,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 4560,
+          "frames": 4271,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 14829,
+            "sourceEndMS": 14930,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 577,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.006695343213739229,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 8831,
+          "frames": 4333,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 31721,
+            "sourceEndMS": 31813,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 83,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 34,
+            "onsetThreshold": 0.0060133932509772335,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 13164,
+          "frames": 3643,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 34618,
+            "sourceEndMS": 34706,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 581,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.006161513469283195,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 16807,
+          "frames": 4515,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 8312,
+            "sourceEndMS": 8418,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 573,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.009256216202890672,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 21322,
+          "frames": 3740,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 36797,
+            "sourceEndMS": 36887,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 580,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.019600594540385808,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 25062,
+          "frames": 3928,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 9429,
+            "sourceEndMS": 9564,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 586,
+            "trimEndFrames": 1966,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.016449360620150802,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 28990,
+          "frames": 4748,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 30679,
+            "sourceEndMS": 30790,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 580,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.015628952014196628,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 33738,
+          "frames": 5554,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 12539,
+            "sourceEndMS": 12677,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 27,
+            "trimEndFrames": 1043,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.010709521642075873,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 39292,
+          "frames": 3581,
+          "provenance": {
+            "sourceFile": "technicsYellow.mp3",
+            "sourceStartMS": 27262,
+            "sourceEndMS": 27349,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 595,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.01252321074497367,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        }
+      ],
+      "keys": {
+        "0": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "1": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "2": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "3": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "4": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "5": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "6": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "7": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "8": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "9": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "11": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "12": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "13": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "14": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "15": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "16": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "17": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "18": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "19": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "20": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "21": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "22": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "23": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "24": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "25": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "26": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "27": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "28": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "29": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "30": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "31": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "32": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "33": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "34": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "35": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "36": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "37": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "38": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "39": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "40": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "41": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "42": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "43": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "44": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "45": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "46": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "47": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "48": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "49": {
+          "down": [
+            4,
+            5
+          ],
+          "up": [],
+          "sourceKey": "space"
+        },
+        "50": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "51": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "53": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "54": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "55": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "56": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "57": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "58": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "59": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "60": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "61": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "62": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "63": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "65": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "67": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "69": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "71": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "75": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "76": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "78": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "81": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "82": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "83": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "84": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "85": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "86": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "87": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "88": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "89": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "91": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "92": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "96": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "97": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "98": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "99": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "100": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "101": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "103": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "109": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "111": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "114": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "115": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "116": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "117": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "118": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "119": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "120": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "121": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "122": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "123": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "124": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "125": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "126": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        }
+      },
+      "fallback": {
+        "down": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "up": [],
+        "sourceKey": "ordinary"
+      },
+      "separateReleaseKeys": 0,
+      "mappedKeys": 102,
+      "titleZh": "Technics · 佳达隆黄轴",
+      "category": "keyboard"
+    },
+    "laneAlps": {
+      "title": "LANE 700 · Alps SKCC",
+      "sampleRate": 48000,
+      "channels": 2,
+      "file": "laneAlps/samples.wav",
+      "sha256": "c287b2025cd0c577a0f26bf181227440ed552658a145ee6bccb5a71e13b778e7",
+      "frames": 41257,
+      "gain": 0.5922516476327686,
+      "sourceMedianPeak": 0.3208095760635373,
+      "sourceMaximumPeak": 0.49434612739983275,
+      "outputMaximumPeak": 0.2927773084534295,
+      "clips": [
+        {
+          "startFrame": 0,
+          "frames": 4665,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 1245,
+            "sourceEndMS": 1354,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 567,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.02264994542935753,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 4665,
+          "frames": 4126,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 5098,
+            "sourceEndMS": 5185,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 50,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 20,
+            "onsetThreshold": 0.013544092135283228,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 8791,
+          "frames": 4224,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 7164,
+            "sourceEndMS": 7252,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 0,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 3,
+            "onsetThreshold": 0.014188171263838482,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 13015,
+          "frames": 3900,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 19837,
+            "sourceEndMS": 19929,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "ordinary",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 516,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.011837987123301532,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 16915,
+          "frames": 5038,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 3521,
+            "sourceEndMS": 3638,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 578,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.010607288162846963,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 21953,
+          "frames": 3937,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 8771,
+            "sourceEndMS": 8865,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "space",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 575,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.03184433592939124,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 25890,
+          "frames": 3644,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 5533,
+            "sourceEndMS": 5621,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 580,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.029218311027081407,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 29534,
+          "frames": 3850,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 20382,
+            "sourceEndMS": 20472,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "enter",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 470,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.029071613441217118,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 33384,
+          "frames": 4161,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 1445,
+            "sourceEndMS": 1543,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 543,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.013530202540002234,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        },
+        {
+          "startFrame": 37545,
+          "frames": 3712,
+          "provenance": {
+            "sourceFile": "laneAlps.mp3",
+            "sourceStartMS": 7507,
+            "sourceEndMS": 7596,
+            "sourceSampleRate": 44100,
+            "sourceKey": "Unlabeled key",
+            "mappingRole": "backspace",
+            "edge": "down",
+            "method": "curated-physical-one-shot",
+            "trimStartFrames": 560,
+            "trimEndFrames": 0,
+            "contactOnsetFrames": 24,
+            "onsetThreshold": 0.009894830273943769,
+            "alignmentPasses": 1,
+            "fadeOutMS": 5
+          }
+        }
+      ],
+      "keys": {
+        "0": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "1": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "2": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "3": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "4": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "5": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "6": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "7": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "8": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "9": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "11": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "12": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "13": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "14": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "15": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "16": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "17": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "18": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "19": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "20": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "21": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "22": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "23": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "24": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "25": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "26": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "27": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "28": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "29": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "30": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "31": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "32": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "33": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "34": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "35": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "36": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "37": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "38": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "39": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "40": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "41": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "42": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "43": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "44": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "45": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "46": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "47": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "48": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "49": {
+          "down": [
+            4,
+            5
+          ],
+          "up": [],
+          "sourceKey": "space"
+        },
+        "50": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "51": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "53": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "54": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "55": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "56": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "57": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "58": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "59": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "60": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "61": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "62": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "63": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "65": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "67": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "69": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "71": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "75": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "76": {
+          "down": [
+            6,
+            7
+          ],
+          "up": [],
+          "sourceKey": "enter"
+        },
+        "78": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "81": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "82": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "83": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "84": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "85": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "86": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "87": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "88": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "89": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "91": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "92": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "96": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "97": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "98": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "99": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "100": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "101": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "103": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "109": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "111": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "114": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "115": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "116": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "117": {
+          "down": [
+            8,
+            9
+          ],
+          "up": [],
+          "sourceKey": "backspace"
+        },
+        "118": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "119": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "120": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "121": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "122": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "123": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "124": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "125": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        },
+        "126": {
+          "down": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "up": [],
+          "sourceKey": "ordinary"
+        }
+      },
+      "fallback": {
+        "down": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "up": [],
+        "sourceKey": "ordinary"
+      },
+      "separateReleaseKeys": 0,
+      "mappedKeys": 102,
+      "titleZh": "LANE 700 · Alps 轴",
+      "category": "keyboard"
     }
   },
   "processing": [
@@ -58048,6 +65093,51 @@
       "bytes": 804015,
       "sha256": "876de639e8fec24c90e20f75f13b3d241b5f8e07890a1f46a569c6ae194e1870",
       "file": "wood-table.ogg"
+    },
+    {
+      "url": "https://cdn.freesound.org/previews/815/815614_15899953-hq.mp3",
+      "page": "https://freesound.org/people/Techrul/sounds/815614/",
+      "author": "Techrul / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 1434912,
+      "sha256": "c426ec057d1d2e52dd6cb97cf12269c9c5c76bc32eab003fe9fd3741737f13b0",
+      "file": "rainy75.mp3"
+    },
+    {
+      "url": "https://cdn.freesound.org/previews/546/546167_12206738-hq.mp3",
+      "page": "https://freesound.org/people/grcekh/sounds/546167/",
+      "author": "grcekh / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 3390649,
+      "sha256": "c72aea6e089a572e3a466305523b3ad4ab96be437c42c1e51ac1c4254943e1b3",
+      "file": "whiteFox.mp3"
+    },
+    {
+      "url": "https://cdn.freesound.org/previews/489/489423_5487341-hq.mp3",
+      "page": "https://freesound.org/people/SamsterBirdies/sounds/489423/",
+      "author": "SamsterBirdies / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 3315651,
+      "sha256": "5dc0c6d263caa55e38f7230d15d8b686bfa99736b989e39421855b1030309ead",
+      "file": "unicomp.mp3"
+    },
+    {
+      "url": "https://cdn.freesound.org/previews/665/665075_2686637-hq.mp3",
+      "page": "https://freesound.org/people/zrrion/sounds/665075/",
+      "author": "zrrion / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 1259285,
+      "sha256": "0f70bd54f17941eeb8f2d7cb5b1d1b362c55f25322e0421448a9d04d072e5a16",
+      "file": "technicsYellow.mp3"
+    },
+    {
+      "url": "https://cdn.freesound.org/previews/469/469014_2686637-hq.mp3",
+      "page": "https://freesound.org/people/zrrion/sounds/469014/",
+      "author": "zrrion / Freesound",
+      "license": "CC0-1.0",
+      "bytes": 596322,
+      "sha256": "7d201e7a9f0ae31d2a09151214e98837d9012201f7e64547e35f91eb3e559c61",
+      "file": "laneAlps.mp3"
     }
   ]
 }

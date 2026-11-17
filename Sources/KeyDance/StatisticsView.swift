@@ -2,20 +2,31 @@ import SwiftUI
 import Charts
 
 enum TimeRange: String, CaseIterable {
-    case today = "今天", hour = "近一小时", week = "近七天", custom = "自定义"
+    case today = "今天", hour = "近一小时", week = "近七天", month = "近 30 天", custom = "自定义"
 
     var trendInterval: StatisticsTrendInterval? {
         switch self {
         case .today: return .hours(1)
         case .hour: return .minutes(5)
-        case .week: return .day
+        case .week, .month: return .day
         case .custom: return nil
+        }
+    }
+
+    var lookback: StatisticsLookback {
+        switch self {
+        case .today: return .calendarDays(1)
+        case .week: return .calendarDays(7)
+        case .month: return .calendarDays(30)
+        case .hour, .custom: return .elapsed
         }
     }
 }
 
 final class StatisticsPresentationState: ObservableObject {
     @Published var range: TimeRange = .today
+    @Published var activityRange: StatisticsDayRange = .week
+    @Published var activityDay: Date?
     @Published var from = Calendar.current.startOfDay(for: Date())
     @Published var to = Calendar.current.dateInterval(of: .minute, for: Date())!.end
     @Published var showAllKeys = false
@@ -58,39 +69,71 @@ struct StatisticsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var presentation: StatisticsPresentationState
     @State private var snapshot: StatisticsInsights?
+    @State private var comparison: StatisticsComparison?
+    @State private var dailyActivity: [StatisticsActiveMinutePoint] = []
+    @State private var hourlyActivity: [StatisticsActiveMinutePoint] = []
 
     private var dates: (Date, Date) {
         let calendar = Calendar.current
         switch presentation.range {
         case .today: return (calendar.startOfDay(for: model.now), model.now)
         case .hour: return (model.now.addingTimeInterval(-3600), model.now)
-        case .week: return (calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: model.now))!, model.now)
+        case .week: return (StatisticsDayRange.week.start(through: model.now, calendar: calendar), model.now)
+        case .month: return (StatisticsDayRange.month.start(through: model.now, calendar: calendar), model.now)
         case .custom: return (presentation.from, presentation.to)
         }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             rangeControls
             if dates.1 <= dates.0 {
                 ContentUnavailableView(L("结束时间需要晚于开始时间。"), systemImage: "calendar.badge.exclamationmark")
                     .frame(maxWidth: .infinity, minHeight: 260)
                     .accessibilityIdentifier("statistics-invalid-range")
+                activeMinutes
             } else if let snapshot {
-                StatisticsDashboard(snapshot: snapshot, presentation: presentation)
+                StatisticsDashboard(snapshot: snapshot, comparison: comparison, activeMinutes: activeMinutes,
+                                    presentation: presentation)
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 260)
             }
         }
-        .onAppear(perform: refresh)
-        .onChange(of: model.now) { _, _ in refresh() }
+        .onAppear(perform: refreshAll)
+        .onChange(of: model.now) { _, _ in refreshAll() }
         .onChange(of: presentation.range) { _, _ in refresh() }
         .onChange(of: presentation.from) { _, _ in refresh() }
         .onChange(of: presentation.to) { _, _ in refresh() }
+        .onChange(of: presentation.activityRange) { _, _ in refreshDailyActivity() }
+        .onChange(of: presentation.activityDay) { _, _ in refreshHourlyActivity() }
     }
 
     private func refresh() {
-        snapshot = model.statistics.insights(from: dates.0, to: dates.1, trendInterval: presentation.range.trendInterval)
+        let (from, to) = dates
+        snapshot = model.statistics.insights(from: from, to: to, trendInterval: presentation.range.trendInterval)
+        comparison = model.statistics.comparison(from: from, to: to, lookback: presentation.range.lookback)
+    }
+
+    private func refreshDailyActivity() {
+        dailyActivity = model.statistics.dailyActivity(through: model.now, range: presentation.activityRange)
+        if let day = presentation.activityDay, !dailyActivity.contains(where: { $0.date == day }) {
+            presentation.activityDay = nil
+        }
+        refreshHourlyActivity()
+    }
+
+    private func refreshHourlyActivity() {
+        hourlyActivity = model.statistics.hourlyActivity(on: presentation.activityDay ?? model.now, through: model.now)
+    }
+
+    private func refreshAll() {
+        refresh()
+        refreshDailyActivity()
+    }
+
+    private var activeMinutes: ActiveMinutesCard {
+        ActiveMinutesCard(days: dailyActivity, hours: hourlyActivity,
+                          range: $presentation.activityRange, selectedDay: $presentation.activityDay)
     }
 
     private var rangeControls: some View {
@@ -101,7 +144,7 @@ struct StatisticsView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 372)
+                .frame(maxWidth: 458)
                 .accessibilityIdentifier("statistics-range")
                 InfoHelpButton(title: "统计方式", message: "只统计真实按下的次数，包括 Shift 等修饰键；长按产生的重复输入不计数。试听按钮和屏幕键盘不计数。时间按本机时区、整分钟统计。结束时间恰好为整分钟时，不计入该分钟。", identifier: "statistics-help")
                 Spacer(minLength: 0)
@@ -135,13 +178,18 @@ struct StatisticsView: View {
     }
 
     private var dateRangeCaption: String {
-        let style = Date.FormatStyle(date: .abbreviated, time: .shortened).locale(AppLocalization.locale)
-        return dates.0.formatted(style) + " – " + dates.1.formatted(style) + "  ·  " + L("本机时间")
+        let start = snapshot?.trend.first?.start ?? dates.0
+        let end = snapshot?.trend.last?.end ?? dates.1
+        let interval = start < end ? statisticsDateInterval(from: start, to: end)
+            : start.formatted(.dateTime.month().day().hour().minute().locale(AppLocalization.locale))
+        return interval + "  ·  " + L("本机时间")
     }
 }
 
 private struct StatisticsDashboard: View {
     let snapshot: StatisticsInsights
+    let comparison: StatisticsComparison?
+    let activeMinutes: ActiveMinutesCard
     @ObservedObject var presentation: StatisticsPresentationState
     @State private var hoveredKey: UInt16?
     @State private var hoveredDate: Date?
@@ -159,31 +207,84 @@ private struct StatisticsDashboard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            metrics
-            heatmap
+        VStack(alignment: .leading, spacing: 16) {
+            overview
             activity
+            activeMinutes
+            heatmap
             ranking
         }
         .onChange(of: presentation.search) { _, _ in presentation.expanded = false }
         .onChange(of: presentation.showAllKeys) { _, _ in presentation.expanded = false }
     }
 
-    private var metrics: some View {
-        HStack(spacing: 12) {
-            metric("总敲击", value: number(snapshot.total), detail: Lf("%d 个键", snapshot.counts.count), accented: true)
-            metric("活跃分钟", value: number(snapshot.activeMinutes), detail: L("分钟"),
-                   explanation: "只有发生过敲击的分钟才计入活跃分钟，不能用来衡量连续打字时长。")
-            metric("平均每分钟", value: snapshot.averagePerActiveMinute.formatted(.number.locale(AppLocalization.locale).precision(.fractionLength(0...1))), detail: L("次/分钟"),
-                   explanation: "总敲击除以活跃分钟。统计包含修饰键，不等同于每分钟字数。")
-            metric("最高一分钟", value: snapshot.peakMinute.map { number($0.count) } ?? "—",
-                   detail: snapshot.peakMinute.map { minuteLabel($0.date) } ?? L("暂无记录"),
-                   explanation: "所选时间内，敲击次数最多的一个自然分钟。")
+    private var overview: some View {
+        let baseline = comparison.flatMap { $0.hasHistory ? $0 : nil }
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 5) {
+                title("概览")
+                Spacer(minLength: 10)
+                Text(baseline.map { Lf("对比 %@", statisticsDateInterval(from: $0.from, to: $0.to)) }
+                     ?? L("暂无可对比的历史"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Palette.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .accessibilityIdentifier("statistics-comparison-period")
+                InfoHelpButton(title: "历史对比", message: "今天、近七天和近 30 天与上一时段的相同本地时刻对齐。近一小时和自定义与紧邻的等长时段对比。若上一时段开始时还没有按键记录，则不显示变化。", identifier: "statistics-comparison-help")
+            }
+            HStack(alignment: .top, spacing: 14) {
+                metric("总敲击", value: number(snapshot.total),
+                       detail: Lf("%d 个键", snapshot.counts.count), accented: true,
+                       change: baseline.map { metricChange(current: snapshot.total, previous: $0.total, units: "%@ 次") })
+                metricDivider
+                metric("活跃分钟", value: number(snapshot.activeMinutes), detail: L("分钟"),
+                       explanation: "只有发生过敲击的分钟才计入活跃分钟，不能用来衡量连续打字时长。",
+                       change: baseline.map { metricChange(current: snapshot.activeMinutes, previous: $0.activeMinutes, units: "%@ 分钟") })
+                metricDivider
+                metric("平均每分钟", value: snapshot.averagePerActiveMinute.formatted(.number.locale(AppLocalization.locale).precision(.fractionLength(0...1))),
+                       detail: L("次/分钟"), explanation: "总敲击除以活跃分钟。统计包含修饰键，不等同于每分钟字数。")
+                metricDivider
+                metric("最高一分钟", value: snapshot.peakMinute.map { number($0.count) } ?? "—",
+                       detail: snapshot.peakMinute.map { minuteLabel($0.date) } ?? L("暂无记录"),
+                       explanation: "所选时间内，敲击次数最多的一个自然分钟。")
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(18)
+        .cardStyle()
+        .accessibilityIdentifier("statistics-overview")
     }
 
-    private func metric(_ title: String, value: String, detail: String, accented: Bool = false, explanation: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+    private var metricDivider: some View {
+        Rectangle().fill(Palette.line.opacity(0.7)).frame(width: 1)
+            .accessibilityHidden(true)
+    }
+
+    private struct MetricChange {
+        let label: String
+        let previous: String
+    }
+
+    private func metricChange(current: Int, previous: Int, units: String) -> MetricChange {
+        let difference = current - previous
+        let label: String
+        if difference == 0 {
+            label = L("持平")
+        } else if previous == 0 || abs(Double(difference) / Double(previous)) < 0.0005 {
+            let count = difference.formatted(.number.locale(AppLocalization.locale).sign(strategy: .always()))
+            label = Lf(units, count)
+        } else {
+            label = (Double(difference) / Double(previous)).formatted(
+                .percent.locale(AppLocalization.locale).precision(.fractionLength(0...1)).sign(strategy: .always())
+            )
+        }
+        return MetricChange(label: label, previous: Lf("上一时段 %@", Lf(units, number(previous))))
+    }
+
+    private func metric(_ title: String, value: String, detail: String, accented: Bool = false,
+                        explanation: String? = nil, change: MetricChange? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 1) {
                 Text(L(title)).font(.system(size: 11, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8)
                 if let explanation { InfoHelpButton(title: title, message: explanation) }
@@ -191,23 +292,36 @@ private struct StatisticsDashboard: View {
             .foregroundStyle(Palette.muted)
             .frame(height: 20, alignment: .leading)
             Text(value)
-                .font(.system(size: 28, weight: .semibold, design: .rounded))
+                .font(.system(size: 27, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(accented ? Palette.accent : Palette.ink)
                 .lineLimit(1).minimumScaleFactor(0.6)
-            Text(detail).font(.system(size: 10)).foregroundStyle(Palette.muted).lineLimit(1)
+                .frame(height: 34, alignment: .center)
+            if let change {
+                Text(change.label)
+                    .font(.system(size: 11, weight: .medium)).monospacedDigit()
+                    .foregroundStyle(Palette.muted)
+                    .lineLimit(1)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Palette.raisedSurface, in: Capsule())
+                    .help(detail + "  ·  " + change.previous)
+                    .accessibilityLabel(Lf("较上一时段 %@", change.label))
+                    .accessibilityHint(detail + "  ·  " + change.previous)
+            } else {
+                Text(detail).font(.system(size: 11)).foregroundStyle(Palette.muted)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .frame(height: 17, alignment: .center)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .cardStyle()
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     private var heatmap: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 4) {
                 title("按键分布")
-                InfoHelpButton(title: "按键分布", message: "颜色按次数分为五档，让常用键与偶尔使用的键都容易看清。", identifier: "statistics-keymap-help")
+                InfoHelpButton(title: "按键分布", message: "颜色按敲击次数分为五档。悬停查看次数，点击固定。功能键和其他按键可在下方查看。", identifier: "statistics-keymap-help")
                 Spacer()
                 Text(L("主键区")).font(.caption).foregroundStyle(Palette.muted)
             }
@@ -227,10 +341,8 @@ private struct StatisticsDashboard: View {
                 Text(L("次")).font(.system(size: 10)).foregroundStyle(Palette.muted)
             }
             .accessibilityIdentifier("statistics-heatmap-legend")
-            Text(L("热力图展示主键区，功能键和其他按键可在下方排行查看。"))
-                .font(.system(size: 10)).foregroundStyle(Palette.muted)
         }
-        .padding(20)
+        .padding(18)
         .cardStyle()
     }
 
@@ -295,10 +407,8 @@ private struct StatisticsDashboard: View {
                     }
                 }
                 .accessibilityIdentifier("statistics-activity")
-            Text(L("按时段汇总，悬停查看详情。"))
-                .font(.system(size: 10)).foregroundStyle(Palette.muted)
         }
-        .padding(20)
+        .padding(18)
         .cardStyle()
     }
 
@@ -308,7 +418,7 @@ private struct StatisticsDashboard: View {
                 Text(bucketLabel(bucket)).foregroundStyle(Palette.muted)
                 Text(Lf("%@ 次", number(bucket.count))).fontWeight(.semibold).monospacedDigit()
             } else if let peak = snapshot.trend.max(by: { $0.count < $1.count }), peak.count > 0 {
-                Text(L("最多")).foregroundStyle(Palette.muted)
+                Text(L("峰值")).foregroundStyle(Palette.muted)
                 Text(bucketLabel(peak)).foregroundStyle(Palette.muted)
                 Text(Lf("%@ 次", number(peak.count))).fontWeight(.semibold).monospacedDigit()
             } else {
@@ -503,7 +613,7 @@ private struct StatisticsDashboard: View {
                 }
             }
         }
-        .padding(20)
+        .padding(18)
         .cardStyle()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("statistics-ranking")
@@ -564,4 +674,252 @@ private struct StatisticsDashboard: View {
             : .init(date: .abbreviated, time: .shortened).locale(AppLocalization.locale)
         return date.formatted(format)
     }
+}
+
+private struct ActiveMinutesCard: View {
+    let days: [StatisticsActiveMinutePoint]
+    let hours: [StatisticsActiveMinutePoint]
+    @Binding var range: StatisticsDayRange
+    @Binding var selectedDay: Date?
+    @State private var hoveredDay: Date?
+    @State private var hoveredHour: Date?
+
+    private var focusedDay: Date? { selectedDay ?? days.last?.date }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 4) {
+                title("每日活跃分钟")
+                InfoHelpButton(title: "每日活跃分钟", message: "一分钟内有敲击记录，就计为 1 个活跃分钟。按本机日期汇总。点击曲线查看当天的分时统计。", identifier: "statistics-daily-activity-help")
+                Spacer()
+                Picker(L("活跃分钟时间范围"), selection: $range) {
+                    ForEach(StatisticsDayRange.allCases, id: \.self) { option in
+                        Text(Lf("%d 天", option.rawValue)).tag(option)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(width: 150)
+                .accessibilityIdentifier("statistics-daily-activity-range")
+            }
+            dayDetails
+            ActiveMinutesPlot(points: days, interval: .day, selectedDate: focusedDay,
+                              hoveredDate: $hoveredDay, selectDate: selectDay)
+                .frame(height: 174)
+                .accessibilityIdentifier("statistics-daily-activity-chart")
+            Divider().overlay(Palette.line.opacity(0.45))
+            HStack(spacing: 4) {
+                title("分时活跃分钟")
+                InfoHelpButton(title: "分时活跃分钟", message: "每个点表示这一小时中有敲击记录的分钟数。查看今天时，曲线更新至当前小时。", identifier: "statistics-hourly-activity-help")
+                Spacer()
+                Picker(L("查看哪一天"), selection: $selectedDay) {
+                    Text(L("今天")).tag(nil as Date?)
+                    ForEach(days.dropLast().reversed()) { day in
+                        Text(activityDateLabel(day.date)).tag(Optional(day.date))
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 150)
+                .accessibilityIdentifier("statistics-hourly-activity-day")
+            }
+            hourDetails
+            ActiveMinutesPlot(points: hours, interval: .hour, hoveredDate: $hoveredHour)
+                .frame(height: 156)
+                .accessibilityIdentifier("statistics-hourly-activity-chart")
+        }
+        .padding(18)
+        .cardStyle()
+        .onChange(of: range) { _, _ in hoveredDay = nil }
+        .onChange(of: hours.first?.date) { _, _ in hoveredHour = nil }
+    }
+
+    private func selectDay(_ date: Date) {
+        selectedDay = date == days.last?.date ? nil : date
+    }
+
+    private func title(_ text: String) -> some View {
+        Text(L(text))
+            .font(.system(size: 14, weight: .semibold))
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var dayDetails: some View {
+        let inspected = days.first { $0.date == (hoveredDay ?? focusedDay) }
+        return HStack(spacing: 8) {
+            if let inspected {
+                Text(inspected.date == days.last?.date ? L("今天") : activityDateLabel(inspected.date))
+                    .foregroundStyle(Palette.muted)
+                Text(activeMinutesLabel(inspected.activeMinutes)).fontWeight(.semibold).monospacedDigit()
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 12))
+        .frame(height: 20)
+        .accessibilityIdentifier("statistics-daily-activity-details")
+    }
+
+    private var hourDetails: some View {
+        let hovered = hours.first { $0.date == hoveredHour }
+        let peak = hours.max { $0.activeMinutes < $1.activeMinutes }
+        return HStack(spacing: 8) {
+            if let point = hovered ?? peak, hovered != nil || point.activeMinutes > 0 {
+                if hovered == nil { Text(L("峰值")).foregroundStyle(Palette.muted) }
+                Text(activityHourLabel(point.date, in: hours)).foregroundStyle(Palette.muted)
+                Text(activeMinutesLabel(point.activeMinutes)).fontWeight(.semibold).monospacedDigit()
+            } else {
+                Text(L("当天没有敲击记录")).foregroundStyle(Palette.muted)
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 12))
+        .frame(height: 20)
+        .accessibilityIdentifier("statistics-hourly-activity-details")
+    }
+}
+
+private struct ActiveMinutesPlot: View {
+    enum Interval { case day, hour }
+
+    let points: [StatisticsActiveMinutePoint]
+    let interval: Interval
+    var selectedDate: Date?
+    @Binding var hoveredDate: Date?
+    var selectDate: ((Date) -> Void)?
+
+    private var horizontalLabel: String { L(interval == .day ? "日期" : "时间") }
+
+    var body: some View {
+        if let start = points.first?.date, let end = points.last?.date {
+            let intervalSeconds = interval == .day ? 86_400.0 : 3_600.0
+            let margin = max(intervalSeconds * 0.35, end.timeIntervalSince(start) * 0.045)
+            chart(domain: start.addingTimeInterval(-margin)...end.addingTimeInterval(margin))
+        }
+    }
+
+    private func chart(domain: ClosedRange<Date>) -> some View {
+        let maximum = points.map(\.activeMinutes).max() ?? 0
+        let selected = points.first { $0.date == selectedDate }
+        let hovered = points.first { $0.date == hoveredDate }
+        return Chart {
+            ForEach(points) { point in
+                AreaMark(x: .value(horizontalLabel, point.date),
+                         yStart: .value(L("活跃分钟"), 0),
+                         yEnd: .value(L("活跃分钟"), point.activeMinutes))
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(LinearGradient(colors: [Palette.accent.opacity(0.19), Palette.accent.opacity(0.01)],
+                                                    startPoint: .top, endPoint: .bottom))
+                    .accessibilityHidden(true)
+                LineMark(x: .value(horizontalLabel, point.date), y: .value(L("活跃分钟"), point.activeMinutes))
+                    .interpolationMethod(.monotone)
+                    .lineStyle(StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(maximum > 0 ? Palette.accent : Palette.line)
+                    .accessibilityLabel(detailLabel(point.date))
+                    .accessibilityValue(activeMinutesLabel(point.activeMinutes))
+            }
+            if let highlighted = hovered ?? selected {
+                RuleMark(x: .value(horizontalLabel, highlighted.date))
+                    .foregroundStyle(Palette.muted.opacity(hovered == nil ? 0.28 : 0.45))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .accessibilityHidden(true)
+            }
+            if let point = hovered ?? selected ?? (points.count == 1 ? points.first : nil) {
+                PointMark(x: .value(horizontalLabel, point.date), y: .value(L("活跃分钟"), point.activeMinutes))
+                    .foregroundStyle(Palette.accent)
+                    .symbolSize(hovered == nil ? 32 : 48)
+                    .accessibilityHidden(true)
+            }
+        }
+        .chartXScale(domain: domain)
+        .chartYScale(domain: 0...max(5.0, Double(maximum) * 1.15))
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 4]))
+                    .foregroundStyle(Palette.line.opacity(0.7))
+                AxisValueLabel().foregroundStyle(Palette.muted)
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: axisDates) { value in
+                AxisValueLabel(centered: false, anchor: .top) {
+                    if let date = value.as(Date.self) {
+                        Text(axisLabel(date)).font(.system(size: 10)).foregroundStyle(Palette.muted)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                }
+            }
+        }
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle().fill(.clear)
+                    .contentShape(Rectangle())
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active(let location):
+                            let date = nearestDate(at: location, proxy: proxy, geometry: geometry)
+                            if date != hoveredDate { hoveredDate = date }
+                        case .ended: hoveredDate = nil
+                        }
+                    }
+                    .onTapGesture { location in
+                        if let date = nearestDate(at: location, proxy: proxy, geometry: geometry) {
+                            selectDate?(date)
+                        }
+                    }
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private func nearestDate(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) -> Date? {
+        guard let frame = proxy.plotFrame else { return nil }
+        let plot = geometry[frame]
+        guard plot.contains(location), let date = proxy.value(atX: location.x - plot.minX, as: Date.self) else { return nil }
+        return points.min { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }?.date
+    }
+
+    private var axisDates: [Date] {
+        let step = interval == .day && points.count <= 7 ? 1 : max(1, (points.count + 5) / 6)
+        let dates = stride(from: 0, to: points.count, by: step).map { points[$0].date }
+        guard let last = points.last?.date, dates.last != last else { return dates }
+        return dates + [last]
+    }
+
+    private func axisLabel(_ date: Date) -> String {
+        if interval == .hour { return date.formatted(.dateTime.hour().minute().locale(AppLocalization.locale)) }
+        return date.formatted(.dateTime.month(.twoDigits).day(.twoDigits).locale(AppLocalization.locale))
+    }
+
+    private func detailLabel(_ date: Date) -> String {
+        interval == .day ? activityDateLabel(date) : activityHourLabel(date, in: points)
+    }
+}
+
+private func activityDateLabel(_ date: Date) -> String {
+    date.formatted(.dateTime.month(.abbreviated).day().year().locale(AppLocalization.locale))
+}
+
+private func statisticsDateInterval(from: Date, to: Date) -> String {
+    let style = Date.IntervalFormatStyle()
+        .locale(AppLocalization.locale).month(.abbreviated).day().hour().minute()
+    let calendar = Calendar.current
+    let range = from..<to
+    if calendar.isDate(from, equalTo: Date(), toGranularity: .year),
+       calendar.isDate(from, equalTo: to, toGranularity: .year) {
+        return range.formatted(style)
+    }
+    return range.formatted(style.year())
+}
+
+private func activityHourLabel(_ date: Date, in hours: [StatisticsActiveMinutePoint]) -> String {
+    let time = date.formatted(.dateTime.hour().minute().locale(AppLocalization.locale))
+    let zone = Calendar.current.timeZone
+    guard let first = hours.first?.date, let last = hours.last?.date,
+          zone.secondsFromGMT(for: first) != zone.secondsFromGMT(for: last),
+          let abbreviation = zone.abbreviation(for: date) else { return time }
+    return time + " " + abbreviation
+}
+
+private func activeMinutesLabel(_ minutes: Int) -> String {
+    Lf("%@ 分钟", minutes.formatted(.number.locale(AppLocalization.locale)))
 }

@@ -76,7 +76,7 @@ swiftc -parse-as-library -module-cache-path "$CLANG_MODULE_CACHE_PATH" scripts/m
 cp "$ROOT/.build/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ROOT/.build/AppIcon.iconset/icon_512x512@2x.png" "$APP/Contents/Resources/KeyWooIcon.png"
 # Music mode remains internal; omit its recordings and local-model worker.
-cp -R "$ROOT/Sources/KeyDance/Resources/KeyboardSounds" "$APP/Contents/Resources/KeyboardSounds"
+python3 "$ROOT/scripts/package-keyboard-sounds.py" "$ROOT/Sources/KeyDance/Resources/KeyboardSounds" "$APP/Contents/Resources/KeyboardSounds"
 python3 "$ROOT/scripts/copy-release-docs.py" "$APP/Contents/Resources/Documentation"
 python3 "$ROOT/scripts/build-receipt.py" "$ROOT/.build/build-source.json" --verify
 cp "$ROOT/.build/build-source.json" "$APP/Contents/Resources/build-source.json"

@@ -301,5 +301,50 @@
     "bytes": 804015,
     "sha256": "876de639e8fec24c90e20f75f13b3d241b5f8e07890a1f46a569c6ae194e1870",
     "file": "wood-table.ogg"
+  },
+  {
+    "url": "https://cdn.freesound.org/previews/815/815614_15899953-hq.mp3",
+    "page": "https://freesound.org/people/Techrul/sounds/815614/",
+    "author": "Techrul / Freesound",
+    "license": "CC0-1.0",
+    "bytes": 1434912,
+    "sha256": "c426ec057d1d2e52dd6cb97cf12269c9c5c76bc32eab003fe9fd3741737f13b0",
+    "file": "rainy75.mp3"
+  },
+  {
+    "url": "https://cdn.freesound.org/previews/546/546167_12206738-hq.mp3",
+    "page": "https://freesound.org/people/grcekh/sounds/546167/",
+    "author": "grcekh / Freesound",
+    "license": "CC0-1.0",
+    "bytes": 3390649,
+    "sha256": "c72aea6e089a572e3a466305523b3ad4ab96be437c42c1e51ac1c4254943e1b3",
+    "file": "whiteFox.mp3"
+  },
+  {
+    "url": "https://cdn.freesound.org/previews/489/489423_5487341-hq.mp3",
+    "page": "https://freesound.org/people/SamsterBirdies/sounds/489423/",
+    "author": "SamsterBirdies / Freesound",
+    "license": "CC0-1.0",
+    "bytes": 3315651,
+    "sha256": "5dc0c6d263caa55e38f7230d15d8b686bfa99736b989e39421855b1030309ead",
+    "file": "unicomp.mp3"
+  },
+  {
+    "url": "https://cdn.freesound.org/previews/665/665075_2686637-hq.mp3",
+    "page": "https://freesound.org/people/zrrion/sounds/665075/",
+    "author": "zrrion / Freesound",
+    "license": "CC0-1.0",
+    "bytes": 1259285,
+    "sha256": "0f70bd54f17941eeb8f2d7cb5b1d1b362c55f25322e0421448a9d04d072e5a16",
+    "file": "technicsYellow.mp3"
+  },
+  {
+    "url": "https://cdn.freesound.org/previews/469/469014_2686637-hq.mp3",
+    "page": "https://freesound.org/people/zrrion/sounds/469014/",
+    "author": "zrrion / Freesound",
+    "license": "CC0-1.0",
+    "bytes": 596322,
+    "sha256": "7d201e7a9f0ae31d2a09151214e98837d9012201f7e64547e35f91eb3e559c61",
+    "file": "laneAlps.mp3"
   }
 ]

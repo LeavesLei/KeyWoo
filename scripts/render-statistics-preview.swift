@@ -33,7 +33,11 @@ enum RenderStatisticsPreview {
         let language: AppLanguage
         let appearance: AppAppearance
         var empty = false
-        var week = false
+        var historyDays = 65
+        var skipYesterday = false
+        var range: TimeRange = .today
+        var activityRange: StatisticsDayRange = .week
+        var daysAgo: Int?
         var pinnedKey: UInt16?
         var search = ""
         var invalidRange = false
@@ -53,14 +57,20 @@ enum RenderStatisticsPreview {
         defer { AppLocalization.language = previousLanguage }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 8 * 3600)!
-        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 10, hour: 17, minute: 43))!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 10, hour: 17, minute: 43, second: 32))!
         let scenarios = [
             Scenario(name: "populated-zh-light-706", width: 706, language: .simplifiedChinese, appearance: .light, pinnedKey: 49),
             Scenario(name: "populated-zh-light-866", width: 866, language: .simplifiedChinese, appearance: .light),
             Scenario(name: "populated-en-light-866", width: 866, language: .english, appearance: .light, pinnedKey: 56),
             Scenario(name: "populated-en-dark-866", width: 866, language: .english, appearance: .dark),
+            Scenario(name: "new-history-en-dark-706", width: 706, language: .english, appearance: .dark, historyDays: 1),
+            Scenario(name: "zero-baseline-zh-light-706", width: 706, language: .simplifiedChinese, appearance: .light, skipYesterday: true),
             Scenario(name: "populated-zh-dark-1100", width: 1100, language: .simplifiedChinese, appearance: .dark),
-            Scenario(name: "week-zh-light-866", width: 866, language: .simplifiedChinese, appearance: .light, week: true),
+            Scenario(name: "week-zh-light-866", width: 866, language: .simplifiedChinese, appearance: .light, range: .week),
+            Scenario(name: "month-en-light-706", width: 706, language: .english, appearance: .light,
+                     range: .month, activityRange: .month, daysAgo: 11),
+            Scenario(name: "month-zh-dark-706", width: 706, language: .simplifiedChinese, appearance: .dark,
+                     range: .month, activityRange: .month, daysAgo: 5),
             Scenario(name: "empty-zh-light-706", width: 706, language: .simplifiedChinese, appearance: .light, empty: true),
             Scenario(name: "empty-en-dark-866", width: 866, language: .english, appearance: .dark, empty: true),
             Scenario(name: "search-no-results-en-light-706", width: 706, language: .english, appearance: .light, search: "no-matching-key"),
@@ -74,7 +84,7 @@ enum RenderStatisticsPreview {
             let directory = output.appendingPathComponent("fixture-" + scenario.name, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let archive = directory.appendingPathComponent("statistics.json")
-            try writeArchive(to: archive, now: now, calendar: calendar, empty: scenario.empty)
+            try writeArchive(to: archive, now: now, calendar: calendar, scenario: scenario)
             let initialData = try Data(contentsOf: archive)
             let model = AppModel(
                 defaults: PreviewDefaults(["appLanguage": scenario.language.rawValue,
@@ -89,7 +99,12 @@ enum RenderStatisticsPreview {
             model.now = now
             model.page = .statistics
             let presentation = StatisticsPresentationState()
-            if scenario.week { presentation.range = .week }
+            presentation.range = scenario.range
+            presentation.activityRange = scenario.activityRange
+            if let daysAgo = scenario.daysAgo,
+               let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now) {
+                presentation.activityDay = Calendar.current.startOfDay(for: date)
+            }
             presentation.selectedKey = scenario.pinnedKey
             presentation.search = scenario.search
             presentation.showAllKeys = scenario.showAllKeys
@@ -114,8 +129,11 @@ enum RenderStatisticsPreview {
                               userInfo: [NSLocalizedDescriptionKey: "Preview changed its statistics fixture."])
             }
             rendered.append(["file": png.lastPathComponent, "width": size.width, "height": size.height,
-                             "empty": scenario.empty, "language": scenario.language.rawValue,
+                             "empty": scenario.empty, "historyDays": scenario.historyDays,
+                             "skipYesterday": scenario.skipYesterday, "language": scenario.language.rawValue,
                              "appearance": scenario.appearance.rawValue, "search": scenario.search,
+                             "range": presentation.range.rawValue, "activityDays": presentation.activityRange.rawValue,
+                             "daysAgo": scenario.daysAgo ?? 0,
                              "showAllKeys": scenario.showAllKeys, "invalidRange": scenario.invalidRange,
                              "oneMinute": scenario.oneMinute])
         }
@@ -161,14 +179,15 @@ enum RenderStatisticsPreview {
         return hosting.frame.size
     }
 
-    private static func writeArchive(to url: URL, now: Date, calendar: Calendar, empty: Bool) throws {
+    private static func writeArchive(to url: URL, now: Date, calendar: Calendar, scenario: Scenario) throws {
         var records: [[String: Any]] = []
-        if !empty {
+        if !scenario.empty {
             let keys: [UInt16] = [0, 1, 2, 3, 5, 4, 38, 40, 37, 14, 13, 15, 17, 31, 32, 49, 36, 51, 55, 56, 123, 124, 122]
-            for day in 0..<7 {
+            for day in 0..<scenario.historyDays where day != 5 && day != 20 && !(day == 1 && scenario.skipYesterday) {
                 let date = calendar.date(byAdding: .day, value: -day, to: now)!
                 let start = calendar.startOfDay(for: date)
-                for minuteOfDay in stride(from: 8 * 60, through: 17 * 60 + 42, by: 3) {
+                let cadence = 3 + (day * 7 % 13)
+                for minuteOfDay in stride(from: 8 * 60, through: 17 * 60 + 42, by: cadence) {
                     guard !(minuteOfDay > 11 * 60 + 20 && minuteOfDay < 13 * 60 + 10) else { continue }
                     let instant = start.addingTimeInterval(Double(minuteOfDay * 60))
                     guard instant <= now else { continue }
