@@ -26,6 +26,7 @@ public sealed partial class MainWindow {
     private Border? currentSoundIcon;
     private TextBlock? recordingSource, recordingDetail, recordingCredit;
     private FrameworkElement? soundVersionControl;
+    private Button? showCurrentSound;
     private readonly Dictionary<string, TextBlock> soundIndicators = [];
     private bool CanPreviewSound => enabled && !sessionLocked && !powerSuspended && !closing && audio is not null && audioError is null;
 
@@ -286,6 +287,7 @@ public sealed partial class MainWindow {
         var catalog = Panel();
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
         var clearFilter = MakeButton(T("显示当前音色", "Show current sound"), (_, _) => { });
+        showCurrentSound = clearFilter;
         clearFilter.Margin = new Thickness(0);
         clearFilter.Padding = new Thickness(8, 4, 8, 4);
         clearFilter.FontSize = 12;
@@ -345,8 +347,6 @@ public sealed partial class MainWindow {
             grid.Visibility = visible.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
             empty.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
             emptyText.Text = soundBank is null ? T("正在加载音色…", "Loading sounds…") : T("没有匹配的音色", "No matching sounds");
-            clearFilter.Visibility = soundBank is not null && !visible.Any(preset => preset.Id == settings.Preset)
-                ? Visibility.Visible : Visibility.Collapsed;
             UpdatePresets();
         }
 
@@ -445,6 +445,8 @@ public sealed partial class MainWindow {
         }
         if (soundVersionControl is not null) soundVersionControl.Visibility =
             soundBank?.HiFiPacks.ContainsKey(settings.Preset) == true ? Visibility.Visible : Visibility.Collapsed;
+        if (showCurrentSound is not null) showCurrentSound.Visibility = selected is not null && !presetButtons.ContainsKey(selected.Id)
+            ? Visibility.Visible : Visibility.Collapsed;
 
         string? unavailable = sessionLocked || powerSuspended ? T("系统休眠期间暂停试听。", "Preview is paused while the system is locked or asleep.")
             : !enabled ? T("继续运行后即可试听。", "Resume KeyWoo to preview sounds.")

@@ -33,7 +33,7 @@ def package(source, destination):
         packaged_bytes += target.stat().st_size
     if source_bytes == 0:
         raise ValueError("No keyboard sounds to package.")
-    print(f"Keyboard sounds: {source_bytes:,} source bytes → {packaged_bytes:,} packaged bytes")
+    print(f"Keyboard sounds: {source_bytes:,} source bytes -> {packaged_bytes:,} packaged bytes")
 
 
 if __name__ == "__main__":

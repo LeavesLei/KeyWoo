@@ -140,11 +140,15 @@ internal static class InterfaceVerification {
             }
         }
         var search=Find<TextBox>(root,"sound-catalog-search");
+        var showCurrent=Find<Button>(root,"sound-category-current");
         search.Text="whitefox";
         Layout(root);
         Require(PresetControls(root).SequenceEqual(new[]{"preset-whiteFox"}),"Searching by board name must narrow the displayed catalog to WhiteFox.");
+        Require(showCurrent.IsVisible,"Searching away from the selected sound must expose the shortcut to it.");
         RequireReachable(root,Find<Button>(root,"preset-whiteFox"));
         Save(root,screenshot);
+        Click(root,"preset-whiteFox");Layout(root);
+        Require(!showCurrent.IsVisible,"Selecting a search result must hide the shortcut while the current sound is visible.");
         search.Text="No-such-recording";
         Layout(root);
         Require(!PresetControls(root).Any()&&Find<Border>(root,"sound-catalog-empty").IsVisible,
@@ -156,7 +160,7 @@ internal static class InterfaceVerification {
         Require(fun.Contains("preset-mahjongTiles")&&fun.Contains("preset-streetBeat")&&!fun.Contains("preset-rainy75"),
             "The fun catalog must group recorded effects and synthesized sounds.");
         Click(root,"sound-category-current");Layout(root);
-        Require(category.SelectedIndex==0&&PresetControls(root).Contains("preset-laneAlps"),"Jumping to the current sound must restore its category.");
+        Require(category.SelectedIndex==0&&PresetControls(root).Contains("preset-whiteFox"),"Jumping to the current sound must restore its category.");
         Click(root,"preset-red");
         ScrollAncestor(search)?.ScrollToTop();Pump();Layout(root);
     }
