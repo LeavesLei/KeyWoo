@@ -202,7 +202,6 @@ public sealed partial class MainWindow {
         watermark.VerticalAlignment = VerticalAlignment.Center;
         watermark.Margin = new Thickness(11, 0, 11, 0);
         watermark.Visibility = input.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        AutomationProperties.SetAccessibilityView(watermark, AccessibilityView.Raw);
         input.TextChanged += (_, _) => watermark.Visibility = input.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         var field = new Grid();
         field.Children.Add(input);
@@ -397,7 +396,6 @@ public sealed partial class MainWindow {
         indicator.Width = 14;
         indicator.Margin = new Thickness(3, 0, 0, 0);
         indicator.VerticalAlignment = VerticalAlignment.Center;
-        AutomationProperties.SetAccessibilityView(indicator, AccessibilityView.Raw);
         DockPanel.SetDock(indicator, Dock.Right);
         row.Children.Add(indicator);
 
@@ -498,7 +496,7 @@ public sealed partial class MainWindow {
 
     private static SoundProfile ProfileOf(SoundPreset preset) => preset.Id switch {
         "rainy75" => new("柔和 · 实录", "Soft · Recorded", "柔厚触底，带短促铝壳共鸣", "Soft bottom-out with a short aluminum case resonance"),
-        "whiteFox" => new("段落 · 实录", "Tactile · Recorded", "利落段落，清晰的触底颗粒", "Crisp Hako Purple tactility and a defined bottom-out"),
+        "whiteFox" => new("段落 · 实录", "Tactile · Recorded", "利落段落，清晰的触底颗粒", "Crisp Hako Violet tactility and a defined bottom-out"),
         "unicomp" => new("复古 · 实录", "Vintage · Recorded", "复古弹簧声，清脆有金属余韵", "Crisp buckling springs with a metallic ring"),
         "technicsYellow" => new("线性 · 实录", "Linear · Recorded", "顺滑线性，低沉紧实的老键盘声", "Smooth Gateron Yellow switches with a tight, low sound"),
         "laneAlps" => new("复古 · 实录", "Vintage · Recorded", "老式电信键盘，短促干脆", "Short, crisp Alps switches from a vintage telephone keyboard"),

@@ -50,8 +50,11 @@ try {
     Copy-Item (Join-Path $repo 'release-version.json') (Join-Path $staging 'release-version.json')
     $report = Join-Path $artifacts ((Split-Path -Leaf $staging) + '-assets.json')
     $app = Start-Process -FilePath (Join-Path $staging 'KeyWoo.exe') -ArgumentList @('--verify-assets', ('"' + $report + '"')) -Wait -PassThru
-    if ($app.ExitCode -ne 0 -or -not (Test-Path $report)) { throw 'Packaged executable failed its no-device asset/PCM self-check.' }
-    $result = Get-Content -Raw $report | ConvertFrom-Json
+    if (-not (Test-Path -LiteralPath $report)) { throw 'Packaged executable did not write its native verification report.' }
+    $packagedReport = Join-Path $artifacts 'packaged-assets.json'
+    Move-Item -LiteralPath $report -Destination $packagedReport -Force
+    if ($app.ExitCode -ne 0) { throw 'Packaged executable failed its native self-check. See packaged-assets.json.' }
+    $result = Get-Content -Raw $packagedReport | ConvertFrom-Json
     $expectedPresets = @('manifest.json', 'synthetic-manifest.json', 'street-beat-manifest.json') | ForEach-Object {
         (Get-Content -Raw (Join-Path $soundSource $_) | ConvertFrom-Json).packs.PSObject.Properties.Name
     }
@@ -69,7 +72,6 @@ try {
         $licenseDirectory = Join-Path $staging "Licenses/$framework"
         if (-not ((Test-Path (Join-Path $licenseDirectory 'LICENSE')) -or (Test-Path (Join-Path $licenseDirectory 'LICENSE.TXT')))) { throw "Missing runtime license: $framework" }
     }
-    Move-Item -LiteralPath $report -Destination (Join-Path $artifacts 'packaged-assets.json') -Force
     $files = @(Get-ChildItem $staging -File -Recurse | Sort-Object FullName | ForEach-Object {
         @{ path = [IO.Path]::GetRelativePath($staging, $_.FullName).Replace('\','/'); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(); bytes = $_.Length }
     })
