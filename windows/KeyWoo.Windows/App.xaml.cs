@@ -22,11 +22,17 @@ public partial class App : System.Windows.Application {
                     hiFiHashes.Add(preset.Id,restored);
                 }
                 if(hashes.Values.Distinct().Count()!=hashes.Count)throw new InvalidDataException("Duplicate preset PCM");
-                var keyBurst=KeyBurstVerification.Run(e.Args[1]);
-                var edgeGlow=EdgeGlowVerification.Run(e.Args[1]);
-                var statistics=StatisticsVerification.Run(e.Args[1]);
-                var ui=InterfaceVerification.Run(e.Args[1],bank);
-                File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=true,presets=hashes,hiFiPresets=hiFiHashes,keyBurst,edgeGlow,statistics,ui,deviceTested=false},new JsonSerializerOptions{WriteIndented=true}));Shutdown(0);
+                var errors=new Dictionary<string,string>();
+                T? Verify<T>(string name,Func<T> check) where T:class {
+                    try {return check();}
+                    catch(Exception error) {errors.Add(name,error.ToString());return null;}
+                }
+                var keyBurst=Verify("keyBurst",()=>KeyBurstVerification.Run(e.Args[1]));
+                var edgeGlow=Verify("edgeGlow",()=>EdgeGlowVerification.Run(e.Args[1]));
+                var statistics=Verify("statistics",()=>StatisticsVerification.Run(e.Args[1]));
+                var ui=Verify("ui",()=>InterfaceVerification.Run(e.Args[1],bank));
+                bool passed=errors.Count==0;
+                File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed,presets=hashes,hiFiPresets=hiFiHashes,keyBurst,edgeGlow,statistics,ui,errors,deviceTested=false},new JsonSerializerOptions{WriteIndented=true}));Shutdown(passed?0:1);
             } catch(Exception ex){File.WriteAllText(e.Args[1],JsonSerializer.Serialize(new{passed=false,error=ex.ToString()}));Shutdown(1);}
             return;
         }
